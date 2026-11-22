@@ -7,3 +7,14 @@ $MAIL_TO   = 'tuzlumustafa@gmail.com';   // DENEME: formun düşeceği adres (ca
 $SITE_NAME = 'Marmara Ofis';
 // Gönderen adresi: mümkünse alan adınıza ait bir adres yazın (SPF/spam için). Boşsa no-reply@<alanadı> kullanılır.
 $MAIL_FROM = '';
+
+// SMTP (önerilen). Gerçek bilgileri BURAYA YAZMAYIN (repo'ya girer).
+// Sunucuda, bu dosyanın yanına config.local.php oluşturup şu satırları yazın:
+//   <?php
+//   $SMTP = ['host' => 'mail.alanadiniz.com', 'port' => 587, 'secure' => 'tls', 'user' => 'info@alanadiniz.com', 'pass' => 'SIFRE'];
+//   $MAIL_FROM = 'info@alanadiniz.com';
+// secure: 'tls' (STARTTLS, port 587), 'ssl' (port 465) veya '' (şifresiz, 25).
+// host boşsa PHP mail() denenir.
+$SMTP = ['host' => '', 'port' => 587, 'secure' => 'tls', 'user' => '', 'pass' => ''];
+
+if (is_file(__DIR__ . '/config.local.php')) { require __DIR__ . '/config.local.php'; }

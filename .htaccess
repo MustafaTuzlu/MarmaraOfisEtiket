@@ -1,7 +1,7 @@
 DirectoryIndex index.html
 AddDefaultCharset UTF-8
 Options -Indexes
-<FilesMatch "^(config\.php)$">
+<FilesMatch "^config(\.local)?\.php$">
   Require all denied
 </FilesMatch>
 <IfModule mod_deflate.c>
