@@ -1,16 +1,54 @@
 DirectoryIndex index.html
 AddDefaultCharset UTF-8
 Options -Indexes
+ErrorDocument 404 /404.html
+
 <FilesMatch "^config(\.local)?\.php$">
   Require all denied
 </FilesMatch>
-<IfModule mod_deflate.c>
-  AddOutputFilterByType DEFLATE text/html text/css application/javascript image/svg+xml
+
+# --- Kanonik adres: https + www'suz (marmaraofisetiket.net) ---
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # http -> https
+  RewriteCond %{HTTPS} !=on
+  RewriteCond %{HTTP:X-Forwarded-Proto} !https [NC]
+  RewriteRule ^ https://marmaraofisetiket.net%{REQUEST_URI} [L,R=301]
+
+  # www -> www'suz
+  RewriteCond %{HTTP_HOST} ^www\.marmaraofisetiket\.net$ [NC]
+  RewriteRule ^ https://marmaraofisetiket.net%{REQUEST_URI} [L,R=301]
+
+  # /index.html -> /
+  RewriteCond %{THE_REQUEST} \s/index\.html[\s?]
+  RewriteRule ^index\.html$ / [L,R=301]
+
+  # Yinelenen / eski sayfalar -> kanonik sayfa
+  RewriteRule ^(tr\.html|tr/tr\.html|tr/urun/tr\.html|tr/urunlerimiz/tr\.html|tr/?)$ / [L,R=301]
+  RewriteRule ^(en/en\.html|en/product/en\.html|en/products/en\.html|en/?)$ /en.html [L,R=301]
+  RewriteRule ^(de/de\.html|de/?)$ /de.html [L,R=301]
+  RewriteRule ^about-us\.html$ /en/about-us.html [L,R=301]
 </IfModule>
+
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css text/plain text/xml application/xml application/javascript application/json application/ld+json image/svg+xml
+</IfModule>
+
 <IfModule mod_expires.c>
   ExpiresActive On
   ExpiresByType image/jpeg "access plus 1 month"
   ExpiresByType image/png "access plus 1 month"
+  ExpiresByType image/gif "access plus 1 month"
+  ExpiresByType image/webp "access plus 1 month"
+  ExpiresByType image/svg+xml "access plus 1 month"
+  ExpiresByType image/x-icon "access plus 1 month"
+  ExpiresByType font/woff2 "access plus 1 year"
+  ExpiresByType font/woff "access plus 1 year"
   ExpiresByType text/css "access plus 1 week"
   ExpiresByType application/javascript "access plus 1 week"
+</IfModule>
+
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
 </IfModule>

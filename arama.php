@@ -1,4 +1,5 @@
 <?php
+header('X-Robots-Tag: noindex, follow');
 // Basit site içi arama: sayfa başlıklarında / açıklamalarında arar.
 $lang = $_GET['lang'] ?? 'tr';
 if (!in_array($lang, ['tr', 'en', 'de'], true)) { $lang = 'tr'; }
@@ -6,7 +7,7 @@ $q = trim((string)($_GET['q'] ?? ''));
 $q = mb_substr($q, 0, 80, 'UTF-8');
 
 $L = [
-  'tr' => ['title' => 'Arama', 'res' => 'Arama sonuçları', 'none' => 'Sonuç bulunamadı.', 'home' => 'tr.html', 'ph' => 'Ne aramıştınız?', 'home_t' => 'Anasayfa'],
+  'tr' => ['title' => 'Arama', 'res' => 'Arama sonuçları', 'none' => 'Sonuç bulunamadı.', 'home' => './', 'ph' => 'Ne aramıştınız?', 'home_t' => 'Anasayfa'],
   'en' => ['title' => 'Search', 'res' => 'Search results', 'none' => 'No results found.', 'home' => 'en.html', 'ph' => 'What are you looking for?', 'home_t' => 'Home'],
   'de' => ['title' => 'Suche', 'res' => 'Suchergebnisse', 'none' => 'Keine Ergebnisse gefunden.', 'home' => 'de.html', 'ph' => 'Wonach suchen Sie?', 'home_t' => 'Startseite'],
 ][$lang];

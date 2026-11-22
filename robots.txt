@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /arama.php
+Disallow: /mail.php
+Disallow: /config.php
+Disallow: /orijinal/
+
+Sitemap: https://marmaraofisetiket.net/sitemap.xml
