@@ -11,7 +11,7 @@ $MAIL_FROM = '';
 // SMTP (önerilen). Gerçek bilgileri BURAYA YAZMAYIN (repo'ya girer).
 // Sunucuda, bu dosyanın yanına config.local.php oluşturup şu satırları yazın:
 //   <?php
-//   $SMTP = ['host' => 'mail.alanadiniz.com', 'port' => 587, 'secure' => 'tls', 'user' => 'info@alanadiniz.com', 'pass' => 'SIFRE'];
+//   $SMTP = ['host' => 'mail.alanadiniz.com', 'port' => 465, 'secure' => 'ssl', 'user' => 'info@alanadiniz.com', 'pass' => 'SIFRE'];
 //   $MAIL_FROM = 'info@alanadiniz.com';
 // secure: 'tls' (STARTTLS, port 587), 'ssl' (port 465) veya '' (şifresiz, 25).
 // host boşsa PHP mail() denenir.
