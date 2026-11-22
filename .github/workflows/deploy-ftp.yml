@@ -18,9 +18,9 @@ jobs:
       - name: Write SMTP config (secret'tan)
         env:
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
-          SMTP_HOST: ${{ vars.SMTP_HOST || 'mail.marmaraofisetiket.net' }}
-          SMTP_PORT: ${{ vars.SMTP_PORT || '587' }}
-          SMTP_SECURE: ${{ vars.SMTP_SECURE || 'tls' }}
+          SMTP_HOST: ${{ vars.SMTP_HOST || 'mail.kurumsaleposta.com' }}
+          SMTP_PORT: ${{ vars.SMTP_PORT || '465' }}
+          SMTP_SECURE: ${{ vars.SMTP_SECURE || 'ssl' }}
           SMTP_USER: ${{ vars.SMTP_USER || 'iletisim@marmaraofisetiket.net' }}
         run: |
           if [ -z "$SMTP_PASS" ]; then echo "SMTP_PASS secret tanımlı değil; config.local.php üretilmedi (mail() kullanılacak)."; exit 0; fi
