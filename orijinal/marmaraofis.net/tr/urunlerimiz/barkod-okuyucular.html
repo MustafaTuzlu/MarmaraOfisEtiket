@@ -1,0 +1,867 @@
+
+
+
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="tr">
+<head><meta charset="UTF-8" /><title>
+	Barkod Okuyucular | Marmara Ofis
+</title>
+
+    <!-- responsive meta -->
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- For IE -->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+    <!-- master stylesheet -->
+    <link rel="stylesheet" href="../../css/style.css" />
+    <!-- Responsive stylesheet -->
+    <link rel="stylesheet" href="../../css/responsive.css" />
+    <!--Color Switcher Mockup-->
+    <link rel="stylesheet" href="../../css/color-switcher-design.css" />
+    <!--Color Themes-->
+    <link rel="stylesheet" href="../../css/color-themes/yellow-theme.css" />
+    
+
+    <!-- Fixing Internet Explorer-->
+    <!--[if lt IE 9]>
+        <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+        <script src="/js/html5shiv.js"></script>
+    <![endif]-->
+
+    <link rel="shortcut icon" href="../../Upload/favicon.png" />
+    
+</head>
+<body>
+    <form method="post" action="barkod-okuyucular.html" id="form1">
+<input type="hidden" name="__VIEWSTATE" id="__VIEWSTATE" value="/wEPDwUKMTc3NDMzNzM5NQ9kFgJmD2QWAgIDD2QWDAIDDxYCHgtfIUl0ZW1Db3VudAIEFghmD2QWAmYPFQIOL3RyL2hha2tpbWl6ZGEMSGFra8SxbcSxemRhZAIBD2QWAmYPFQIRL3RyL3Zpenlvbi1taXN5b24PVml6eW9uICYgTWlzeW9uZAICD2QWAmYPFQIWL3RyL2thbGl0ZS1wb2xpdGlrYW1pehNLYWxpdGUgUG9saXRpa2FtxLF6ZAIDD2QWAmYPFQILL3RyL2thcml5ZXIHS2FyaXllcmQCBA8WAh8AAgUWCmYPZBYCZg8VAhkvdHIvdXJ1bmxlcmltaXovZXRpa2V0bGVyCUV0aWtldGxlcmQCAQ9kFgJmDxUCGC90ci91cnVubGVyaW1pei9yaWJvbmxhcghSaWJvbmxhcmQCAg9kFgJmDxUCHy90ci91cnVubGVyaW1pei9lbC10ZXJtaW5hbGxlcmkPRWwgVGVybWluYWxsZXJpZAIDD2QWAmYPFQIgL3RyL3VydW5sZXJpbWl6L2JhcmtvZC15YXppY2lsYXISQmFya29kIFlhesSxY8SxbGFyZAIED2QWAmYPFQIhL3RyL3VydW5sZXJpbWl6L2JhcmtvZC1va3V5dWN1bGFyEUJhcmtvZCBPa3V5dWN1bGFyZAIFD2QWAgIBDxYCHgtwbGFjZWhvbGRlcgUTTmUgYXJhbcSxxZ90xLFuxLF6P2QCBg9kFgYCBQ8WAh4JaW5uZXJodG1sBRFCYXJrb2QgT2t1eXVjdWxhcmQCBw9kFgICAQ8WAh8AAgUWCmYPZBYCZg8VAh0vdHIvdXJ1bmxlcmltaXovMmQtb2t1eXVjdWxhcg0yRCBPa3V5dWN1bGFyZAIBD2QWAmYPFQIgL3RyL3VydW5sZXJpbWl6L2FyZ294LW9rdXl1Y3VsYXIQQXJnb3ggT2t1eXVjdWxhcmQCAg9kFgJmDxUCLC90ci91cnVubGVyaW1pei9kYXRhbG9naWMta2FibG9sdS1va3V5dWN1bGFyHERhdGFsb2dpYyBLYWJsb2x1IE9rdXl1Y3VsYXJkAgMPZBYCZg8VAikvdHIvdXJ1bmxlcmltaXovc3ltYm9sLWthYmxvbHUtb2t1eXVjdWxhchlTeW1ib2wgS2FibG9sdSBPa3V5dWN1bGFyZAIED2QWAmYPFQIqL3RyL3VydW5sZXJpbWl6L3N5bWJvbC1rYWJsb3N1ei1va3V5dWN1bGFyGlN5bWJvbCBLYWJsb3N1eiBPa3V5dWN1bGFyZAIJDxYCHgVjbGFzcwUvY29sLXhsLTkgY29sLWxnLTkgY29sLW1kLTkgY29sLXNtLTkgZmxvYXQtcmlnaHQWAgIBDxYCHwACERYiZg9kFgJmDxUIEy90ci91cnVuL2didDQ0MDAtMmQKR0JUNDQwMCAyRBMvdHIvdXJ1bi9nYnQ0NDAwLTJkCkdCVDQ0MDAgMkQWL1VwbG9hZC9HQlQ0NDAwLTJELmpwZwATL3RyL3VydW4vZ2J0NDQwMC0yZApHQlQ0NDAwIDJEZAIBD2QWAmYPFQgaL3RyL3VydW4vcG93ZXJzY2FuLTcwMDAtMmQRUE9XRVJTQ0FOLTcwMDAtMkQaL3RyL3VydW4vcG93ZXJzY2FuLTcwMDAtMmQRUE9XRVJTQ0FOLTcwMDAtMkQdL1VwbG9hZC9QT1dFUlNDQU4tNzAwMC0yRC5qcGcAGi90ci91cnVuL3Bvd2Vyc2Nhbi03MDAwLTJkEVBPV0VSU0NBTi03MDAwLTJEZAICD2QWAmYPFQgZL3RyL3VydW4vc3BpZGVyLXNwLTQwMC0yZBNTUMSwREVSIFNQIDQwMCAoMkQpGS90ci91cnVuL3NwaWRlci1zcC00MDAtMmQTU1DEsERFUiBTUCA0MDAgKDJEKR8vVXBsb2FkL1NQxLBERVItU1AtNDAwLSgyRCkuanBnABkvdHIvdXJ1bi9zcGlkZXItc3AtNDAwLTJkE1NQxLBERVIgU1AgNDAwICgyRClkAgMPZBYCZg8VCBcvdHIvdXJ1bi9hcmdveC1hcy05NTAwaA5BUkdPWCBBUy05NTAwSBcvdHIvdXJ1bi9hcmdveC1hcy05NTAwaA5BUkdPWCBBUy05NTAwSBovVXBsb2FkL0FSR09YLUFTLTk1MDBILmpwZwAXL3RyL3VydW4vYXJnb3gtYXMtOTUwMGgOQVJHT1ggQVMtOTUwMEhkAgQPZBYCZg8VCCEvdHIvdXJ1bi9kYXRhbG9naWMtZ3J5cGhvLWQ0MzItMmQZREFUQUxPR8SwQyBHUllQSE8gRDQzMiAyRCEvdHIvdXJ1bi9kYXRhbG9naWMtZ3J5cGhvLWQ0MzItMmQZREFUQUxPR8SwQyBHUllQSE8gRDQzMiAyRCUvVXBsb2FkL0RBVEFMT0fEsEMtR1JZUEhPLUQ0MzIgMkQuanBnACEvdHIvdXJ1bi9kYXRhbG9naWMtZ3J5cGhvLWQ0MzItMmQZREFUQUxPR8SwQyBHUllQSE8gRDQzMiAyRGQCBQ9kFgJmDxUIFi90ci91cnVuL2didDQ0MDAtaGMtMmQNR0JUNDQwMC1IQyAyRBYvdHIvdXJ1bi9nYnQ0NDAwLWhjLTJkDUdCVDQ0MDAtSEMgMkQcL1VwbG9hZC9HQlQ0NDAwLUhDLTJEX24xLmpwZwAWL3RyL3VydW4vZ2J0NDQwMC1oYy0yZA1HQlQ0NDAwLUhDIDJEZAIGD2QWAmYPFQgTL3RyL3VydW4vYXJnb3gtODMxMApBUkdPWCA4MzEwEy90ci91cnVuL2FyZ294LTgzMTAKQVJHT1ggODMxMBkvVXBsb2FkL0FSR09YLTgzMTBfbjUuanBnABMvdHIvdXJ1bi9hcmdveC04MzEwCkFSR09YIDgzMTBkAgcPZBYCZg8VCBYvdHIvdXJ1bi9hcmdveC1hcy04NTIwDUFSR09YIEFTIDg1MjAWL3RyL3VydW4vYXJnb3gtYXMtODUyMA1BUkdPWCBBUyA4NTIwGS9VcGxvYWQvQVJHT1gtQVMtODUyMC5qcGcAFi90ci91cnVuL2FyZ294LWFzLTg1MjANQVJHT1ggQVMgODUyMGQCCA9kFgJmDxUIFi90ci91cnVuL2FyZ294LWFzLTgwMDANQVJHT1ggQVMtODAwMBYvdHIvdXJ1bi9hcmdveC1hcy04MDAwDUFSR09YIEFTLTgwMDAZL1VwbG9hZC9BUkdPWC1BUy04MDAwLmpwZwAWL3RyL3VydW4vYXJnb3gtYXMtODAwMA1BUkdPWCBBUy04MDAwZAIJD2QWAmYPFQgWL3RyL3VydW4vYXJnb3gtYXMtODE1MA1BUkdPWCBBUy04MTUwFi90ci91cnVuL2FyZ294LWFzLTgxNTANQVJHT1ggQVMtODE1MBovVXBsb2FkL0FSR09YLUFTLTg1MjA0LmpwZwAWL3RyL3VydW4vYXJnb3gtYXMtODE1MA1BUkdPWCBBUy04MTUwZAIKD2QWAmYPFQgWL3RyL3VydW4vYXJnb3gtYXMtOTUwMA1BUkdPWCBBUy05NTAwFi90ci91cnVuL2FyZ294LWFzLTk1MDANQVJHT1ggQVMtOTUwMBkvVXBsb2FkL0FSR09YLUFTLTk1MDAuanBnABYvdHIvdXJ1bi9hcmdveC1hcy05NTAwDUFSR09YIEFTLTk1MDBkAgsPZBYCZg8VCCQvdHIvdXJ1bi9kYXRhbG9naWMtcXVpY2tzY2FuLXFkLTIxMzAcREFUQUxPR0lDIFFVxLBDS1NDQU4gUUQgMjEzMCQvdHIvdXJ1bi9kYXRhbG9naWMtcXVpY2tzY2FuLXFkLTIxMzAcREFUQUxPR0lDIFFVxLBDS1NDQU4gUUQgMjEzMCgvVXBsb2FkL0RBVEFMT0dJQy1RVcSwQ0tTQ0FOLVFELTIxMzAuanBnACQvdHIvdXJ1bi9kYXRhbG9naWMtcXVpY2tzY2FuLXFkLTIxMzAcREFUQUxPR0lDIFFVxLBDS1NDQU4gUUQgMjEzMGQCDA9kFgJmDxUIGy90ci91cnVuL3Bvd2Vyc2Nhbi1wYnQtODMwMBJQT1dFUlNDQU4gUEJULTgzMDAbL3RyL3VydW4vcG93ZXJzY2FuLXBidC04MzAwElBPV0VSU0NBTiBQQlQtODMwMB4vVXBsb2FkL1BPV0VSU0NBTi1QQlQtODMwMC5qcGcAGy90ci91cnVuL3Bvd2Vyc2Nhbi1wYnQtODMwMBJQT1dFUlNDQU4gUEJULTgzMDBkAg0PZBYCZg8VCBkvdHIvdXJ1bi9tb3Rvcm9sYS1scy0xMjAzEE1PVE9ST0xBIExTIDEyMDMZL3RyL3VydW4vbW90b3JvbGEtbHMtMTIwMxBNT1RPUk9MQSBMUyAxMjAzHC9VcGxvYWQvTU9UT1JPTEEtTFMtMTIwMy5qcGcAGS90ci91cnVuL21vdG9yb2xhLWxzLTEyMDMQTU9UT1JPTEEgTFMgMTIwM2QCDg9kFgJmDxUIGS90ci91cnVuL21vdG9yb2xhLWxzLTIyMDgQTU9UT1JPTEEgTFMgMjIwOBkvdHIvdXJ1bi9tb3Rvcm9sYS1scy0yMjA4EE1PVE9ST0xBIExTIDIyMDgfL1VwbG9hZC9NT1RPUk9MQS1MUy0yMjA4X241LmpwZwAZL3RyL3VydW4vbW90b3JvbGEtbHMtMjIwOBBNT1RPUk9MQSBMUyAyMjA4ZAIPD2QWAmYPFQgcL3RyL3VydW4vbW90b3JvbGEtbHMtMzU3OC1lchNNT1RPUk9MQSBMUyAzNTc4LUVSHC90ci91cnVuL21vdG9yb2xhLWxzLTM1NzgtZXITTU9UT1JPTEEgTFMgMzU3OC1FUh8vVXBsb2FkL01PVE9ST0xBLUxTLTM1NzgtRVIuanBnABwvdHIvdXJ1bi9tb3Rvcm9sYS1scy0zNTc4LWVyE01PVE9ST0xBIExTIDM1NzgtRVJkAhAPZBYCZg8VCBwvdHIvdXJ1bi9tb3Rvcm9sYS1scy0zNTc4LWZ6E01PVE9ST0xBIExTIDM1NzgtRlocL3RyL3VydW4vbW90b3JvbGEtbHMtMzU3OC1mehNNT1RPUk9MQSBMUyAzNTc4LUZaIi9VcGxvYWQvTU9UT1JPTEEtTFMtMzU3OC1GWl9uMS5qcGcAHC90ci91cnVuL21vdG9yb2xhLWxzLTM1NzgtZnoTTU9UT1JPTEEgTFMgMzU3OC1GWmQCBw8WAh8AAgUWCmYPZBYCZg8VAhkvdHIvdXJ1bmxlcmltaXovZXRpa2V0bGVyCUV0aWtldGxlcmQCAQ9kFgJmDxUCGC90ci91cnVubGVyaW1pei9yaWJvbmxhcghSaWJvbmxhcmQCAg9kFgJmDxUCHy90ci91cnVubGVyaW1pei9lbC10ZXJtaW5hbGxlcmkPRWwgVGVybWluYWxsZXJpZAIDD2QWAmYPFQIgL3RyL3VydW5sZXJpbWl6L2JhcmtvZC15YXppY2lsYXISQmFya29kIFlhesSxY8SxbGFyZAIED2QWAmYPFQIhL3RyL3VydW5sZXJpbWl6L2JhcmtvZC1va3V5dWN1bGFyEUJhcmtvZCBPa3V5dWN1bGFyZAIIDxYCHwACBBYIZg9kFgJmDxUCDi90ci9oYWtraW1pemRhDEhha2vEsW3EsXpkYWQCAQ9kFgJmDxUCES90ci92aXp5b24tbWlzeW9uD1ZpenlvbiAmIE1pc3lvbmQCAg9kFgJmDxUCFi90ci9rYWxpdGUtcG9saXRpa2FtaXoTS2FsaXRlIFBvbGl0aWthbcSxemQCAw9kFgJmDxUCCy90ci9rYXJpeWVyB0thcml5ZXJkZDTV4/8WaTwb/tNHPAddqOtkIcYa" />
+
+
+<script src="../../ScriptResource.axd%3Fd=wSAazpoD0AnXvPb24RzG2mHj48MkWK5R8ASCT8CmR3nhQR0RKDHjDM9LAA1h2mmeoqHQVjlHOhgPTxP8j62R71oAl11XBYjX72wC6cfzj_cHMG4MnBdfJmC3F32ldCCsfPsOCw2&amp;t=23c9c237" type="text/javascript"></script>
+<script type="text/javascript">
+//<![CDATA[
+if (typeof(Sys) === 'undefined') throw new Error('ASP.NET Ajax client-side framework failed to load.');
+//]]>
+</script>
+
+<input type="hidden" name="__VIEWSTATEGENERATOR" id="__VIEWSTATEGENERATOR" value="C092E9BD" />
+        
+        
+        
+
+        <div class="boxed_wrapper">
+
+
+            <!-- Top bar area -->
+            <section class="top-bar-area">
+                <div class="container">
+                    <div class="row">
+                        <div class="col-xl-12 col-lg-12 col-md-12">
+                            <div class="top-bar clearfix">
+                                <!--Start top left content-->
+                                <div class="top-left-content clearfix float-left">
+                                    <p><span class="icon-mountain thm-clr"></span>Barkod Yazıcı ve Etiket Sistemlerinde Profesyonel...&nbsp;<a href="../iletisim.html" target="_blank">Bize Ulaşın</a></p>
+                                </div>
+                                <!--End top left content-->
+                                <!--Start top right content-->
+                                <div class="top-right-content clearfix float-right">
+                                    <div class="top-social-box">
+                                        <ul class="social-links">
+                                            <li><a href="barkod-okuyucular.html"><i class="fa fa-facebook" aria-hidden="true"></i></a></li>
+                                            <li><a href="barkod-okuyucular.html"><i class="fa fa-twitter" aria-hidden="true"></i></a></li>
+                                            <li><a href="barkod-okuyucular.html"><i class="fa fa-instagram" aria-hidden="true"></i></a></li>
+                                            <li><a href="barkod-okuyucular.html"><i class="fa fa-google-plus" aria-hidden="true"></i></a></li>
+                                        </ul>
+                                    </div>
+                                    <div class="language-switcher float-right">
+                                        <ul class="language">
+                                            <li><a href="../../en.html">
+                                                <img src="../../assets/language-switcher/gb.png" /></a></li>
+                                            <li><a href="../../tr.html">
+                                                <img src="../../assets/language-switcher/tr.png" /></a></li>
+                                            <li><a href="../../de.html">
+                                                <img src="../../assets/language-switcher/de.png" /></a></li>
+                                        </ul>
+
+                                    </div>
+                                </div>
+                                <!--End top right content-->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <!--End Top bar area -->
+
+            <!--Start header area-->
+            <header class="header-area stricky">
+                <div class="container">
+                    <div class="row">
+                        <div class="col-xl-12 col-lg-12 col-md-12">
+                            <div class="inner-content clearfix">
+                                <div class="header-left float-left">
+                                    <div class="logo">
+                                        <a href="../../tr.html">
+                                            <img src="../../Upload/logo.png" alt="Marmara Ofis">
+                                        </a>
+                                    </div>
+                                </div>
+                                <div class="header-middle clearfix float-left">
+                                    <!--Start mainmenu-->
+                                    <nav class="main-menu clearfix float-left">
+                                        <div class="navbar-header clearfix">
+                                            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                                                <span class="icon-bar"></span>
+                                                <span class="icon-bar"></span>
+                                                <span class="icon-bar"></span>
+                                            </button>
+                                        </div>
+                                        <div class="navbar-collapse collapse clearfix">
+                                            <ul class="navigation clearfix">
+                                                <li><a href="tr.html">Anasayfa</a></li>
+                                                <li class="dropdown"><a href="barkod-okuyucular.html#">Kurumsal</a>
+                                                    <ul>
+                                                        
+                                                                <li><a href="../hakkimizda.html">Hakkımızda</a></li>
+                                                            
+                                                                <li><a href="../vizyon-misyon.html">Vizyon & Misyon</a></li>
+                                                            
+                                                                <li><a href="../kalite-politikamiz.html">Kalite Politikamız</a></li>
+                                                            
+                                                                <li><a href="../kariyer.html">Kariyer</a></li>
+                                                            
+                                                    </ul>
+                                                </li>
+                                                <li class="dropdown"><a href="barkod-okuyucular.html#">Ürünlerimiz</a>
+                                                    <ul>
+                                                        
+                                                                <li><a href="etiketler.html">Etiketler</a></li>
+                                                            
+                                                                <li><a href="ribonlar.html">Ribonlar</a></li>
+                                                            
+                                                                <li><a href="el-terminalleri.html">El Terminalleri</a></li>
+                                                            
+                                                                <li><a href="barkod-yazicilar.html">Barkod Yazıcılar</a></li>
+                                                            
+                                                                <li><a href="barkod-okuyucular.html">Barkod Okuyucular</a></li>
+                                                            
+                                                    </ul>
+                                                </li>
+                                                <li><a href="../iletisim.html">İletişime Geç</a></li>
+                                            </ul>
+                                        </div>
+                                    </nav>
+                                    <!--End mainmenu-->
+                                </div>
+                                <div class="header-right float-right">
+                                    <div class="outer-search-box">
+                                        <div class="seach-toggle"><i class="fa fa-search"></i></div>
+                                        <ul class="search-box">
+                                            <li>
+                                                <div id="pnl">
+	
+                                                    <div class="form-group">
+                                                        <input name="ctl00$txt_kelime" type="text" id="txt_kelime" placeholder="Ne aramıştınız?" />
+                                                        <button onclick="__doPostBack('ctl00$btn_ara2','')" id="btn_ara2" type="submit"><i class="fa fa-search"></i></button>
+                                                        <input type="submit" name="ctl00$btn_ara" value="" id="btn_ara" style="display:none" />
+                                                    </div>
+                                                
+</div>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                    <div class="contact-us">
+                                        <span>Yardıma mı ihtiyacın var?</span>
+                                        <p>
+                                            <a href="tel:02125487396">(0212) 548 73 96</a>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+            <!--End header area-->
+
+            
+    
+
+    
+    <section class="breadcrumb-area" style="background-image: url(http://marmaraofis.net/tr/urunlerimiz/images/resources/breadcrumb-bg.jpg);">
+        <div class="container">
+            <div class="row">
+                <div class="col-xl-12">
+                    <div class="title float-left">
+                        <h1 id="body_h_title">Barkod Okuyucular</h1>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="shop-area" class="main-shop-area">
+        <div class="container">
+            <div class="row">
+                <div id="body_div_kategoriler" class="col-xl-3 col-lg-3 col-md-3 col-sm-3 col-xs-12 float-left">
+                    <div class="single-sidebar">
+                        <div class="sec-title">
+                            <h3>Kategoriler</h3>
+                        </div>
+                        <ul class="categories clearfix">
+                            
+                                    <li><a href="2d-okuyucular.html">2D Okuyucular</a></li>
+                                
+                                    <li><a href="argox-okuyucular.html">Argox Okuyucular</a></li>
+                                
+                                    <li><a href="datalogic-kablolu-okuyucular.html">Datalogic Kablolu Okuyucular</a></li>
+                                
+                                    <li><a href="symbol-kablolu-okuyucular.html">Symbol Kablolu Okuyucular</a></li>
+                                
+                                    <li><a href="symbol-kablosuz-okuyucular.html">Symbol Kablosuz Okuyucular</a></li>
+                                
+                        </ul>
+                    </div>
+                </div>
+                <div id="body_div_urunler" class="col-xl-9 col-lg-9 col-md-9 col-sm-9 float-right">
+                    <div class="shop-content">
+                        <div class="row">
+                            <div id="body_div_mesaj"></div>
+                            
+                                    <div class="col-xl-4 col-lg-4 col-md-6 col-sm-12">
+                                        <div class="single-product-item">
+                                            <div class="img-holder">
+                                                <a href="../urun/gbt4400-2d.html" title="GBT4400 2D">
+                                                    <div class="inner">
+                                                        
+                                                                    <a href="../urun/gbt4400-2d.html" title="GBT4400 2D">
+                                                        <img src="../../Upload/GBT4400-2D.jpg" alt="">
+                                                    
+                                                                    </a>
+
+                                                    </div>
+                                                </a>
+                                            </div>
+                                            <div class="title-holder">
+                                                <div class="top clearfix">
+                                                    <h5><a href="../urun/gbt4400-2d.html">GBT4400 2D</a></h5>
+
+                                                </div>
+
+                                            </div>
+                                        </div>
+                                    </div>
+                                
+                                    <div class="col-xl-4 col-lg-4 col-md-6 col-sm-12">
+                                        <div class="single-product-item">
+                                            <div class="img-holder">
+                                                <a href="../urun/powerscan-7000-2d.html" title="POWERSCAN-7000-2D">
+                                                    <div class="inner">
+                                                        
+                                                                    <a href="../urun/powerscan-7000-2d.html" title="POWERSCAN-7000-2D">
+                                                        <img src="../../Upload/POWERSCAN-7000-2D.jpg" alt="">
+                                                    
+                                                                    </a>
+
+                                                    </div>
+                                                </a>
+                                            </div>
+                                            <div class="title-holder">
+                                                <div class="top clearfix">
+                                                    <h5><a href="../urun/powerscan-7000-2d.html">POWERSCAN-7000-2D</a></h5>
+
+                                                </div>
+
+                                            </div>
+                                        </div>
+                                    </div>
+                                
+                                    <div class="col-xl-4 col-lg-4 col-md-6 col-sm-12">
+                                        <div class="single-product-item">
+                                            <div class="img-holder">
+                                                <a href="../urun/spider-sp-400-2d.html" title="SPİDER SP 400 (2D)">
+                                                    <div class="inner">
+                                                        
+                                                                    <a href="../urun/spider-sp-400-2d.html" title="SPİDER SP 400 (2D)">
+                                                        <img src="../../Upload/SPİDER-SP-400-(2D).jpg" alt="">
+                                                    
+                                                                    </a>
+
+                                                    </div>
+                                                </a>
+                                            </div>
+                                            <div class="title-holder">
+                                                <div class="top clearfix">
+                                                    <h5><a href="../urun/spider-sp-400-2d.html">SPİDER SP 400 (2D)</a></h5>
+
+                                                </div>
+
+                                            </div>
+                                        </div>
+                                    </div>
+                                
+                                    <div class="col-xl-4 col-lg-4 col-md-6 col-sm-12">
+                                        <div class="single-product-item">
+                                            <div class="img-holder">
+                                                <a href="../urun/argox-as-9500h.html" title="ARGOX AS-9500H">
+                                                    <div class="inner">
+                                                        
+                                                                    <a href="../urun/argox-as-9500h.html" title="ARGOX AS-9500H">
+                                                        <img src="../../Upload/ARGOX-AS-9500H.jpg" alt="">
+                                                    
+                                                                    </a>
+
+                                                    </div>
+                                                </a>
+                                            </div>
+                                            <div class="title-holder">
+                                                <div class="top clearfix">
+                                                    <h5><a href="../urun/argox-as-9500h.html">ARGOX AS-9500H</a></h5>
+
+                                                </div>
+
+                                            </div>
+                                        </div>
+                                    </div>
+                                
+                                    <div class="col-xl-4 col-lg-4 col-md-6 col-sm-12">
+                                        <div class="single-product-item">
+                                            <div class="img-holder">
+                                                <a href="../urun/datalogic-grypho-d432-2d.html" title="DATALOGİC GRYPHO D432 2D">
+                                                    <div class="inner">
+                                                        
+                                                                    <a href="../urun/datalogic-grypho-d432-2d.html" title="DATALOGİC GRYPHO D432 2D">
+                                                        <img src="../../Upload/DATALOGİC-GRYPHO-D432%202D.jpg" alt="">
+                                                    
+                                                                    </a>
+
+                                                    </div>
+                                                </a>
+                                            </div>
+                                            <div class="title-holder">
+                                                <div class="top clearfix">
+                                                    <h5><a href="../urun/datalogic-grypho-d432-2d.html">DATALOGİC GRYPHO D432 2D</a></h5>
+
+                                                </div>
+
+                                            </div>
+                                        </div>
+                                    </div>
+                                
+                                    <div class="col-xl-4 col-lg-4 col-md-6 col-sm-12">
+                                        <div class="single-product-item">
+                                            <div class="img-holder">
+                                                <a href="../urun/gbt4400-hc-2d.html" title="GBT4400-HC 2D">
+                                                    <div class="inner">
+                                                        
+                                                                    <a href="../urun/gbt4400-hc-2d.html" title="GBT4400-HC 2D">
+                                                        <img src="../../Upload/GBT4400-HC-2D_n1.jpg" alt="">
+                                                    
+                                                                    </a>
+
+                                                    </div>
+                                                </a>
+                                            </div>
+                                            <div class="title-holder">
+                                                <div class="top clearfix">
+                                                    <h5><a href="../urun/gbt4400-hc-2d.html">GBT4400-HC 2D</a></h5>
+
+                                                </div>
+
+                                            </div>
+                                        </div>
+                                    </div>
+                                
+                                    <div class="col-xl-4 col-lg-4 col-md-6 col-sm-12">
+                                        <div class="single-product-item">
+                                            <div class="img-holder">
+                                                <a href="../urun/argox-8310.html" title="ARGOX 8310">
+                                                    <div class="inner">
+                                                        
+                                                                    <a href="../urun/argox-8310.html" title="ARGOX 8310">
+                                                        <img src="../../Upload/ARGOX-8310_n5.jpg" alt="">
+                                                    
+                                                                    </a>
+
+                                                    </div>
+                                                </a>
+                                            </div>
+                                            <div class="title-holder">
+                                                <div class="top clearfix">
+                                                    <h5><a href="../urun/argox-8310.html">ARGOX 8310</a></h5>
+
+                                                </div>
+
+                                            </div>
+                                        </div>
+                                    </div>
+                                
+                                    <div class="col-xl-4 col-lg-4 col-md-6 col-sm-12">
+                                        <div class="single-product-item">
+                                            <div class="img-holder">
+                                                <a href="../urun/argox-as-8520.html" title="ARGOX AS 8520">
+                                                    <div class="inner">
+                                                        
+                                                                    <a href="../urun/argox-as-8520.html" title="ARGOX AS 8520">
+                                                        <img src="../../Upload/ARGOX-AS-8520.jpg" alt="">
+                                                    
+                                                                    </a>
+
+                                                    </div>
+                                                </a>
+                                            </div>
+                                            <div class="title-holder">
+                                                <div class="top clearfix">
+                                                    <h5><a href="../urun/argox-as-8520.html">ARGOX AS 8520</a></h5>
+
+                                                </div>
+
+                                            </div>
+                                        </div>
+                                    </div>
+                                
+                                    <div class="col-xl-4 col-lg-4 col-md-6 col-sm-12">
+                                        <div class="single-product-item">
+                                            <div class="img-holder">
+                                                <a href="../urun/argox-as-8000.html" title="ARGOX AS-8000">
+                                                    <div class="inner">
+                                                        
+                                                                    <a href="../urun/argox-as-8000.html" title="ARGOX AS-8000">
+                                                        <img src="../../Upload/ARGOX-AS-8000.jpg" alt="">
+                                                    
+                                                                    </a>
+
+                                                    </div>
+                                                </a>
+                                            </div>
+                                            <div class="title-holder">
+                                                <div class="top clearfix">
+                                                    <h5><a href="../urun/argox-as-8000.html">ARGOX AS-8000</a></h5>
+
+                                                </div>
+
+                                            </div>
+                                        </div>
+                                    </div>
+                                
+                                    <div class="col-xl-4 col-lg-4 col-md-6 col-sm-12">
+                                        <div class="single-product-item">
+                                            <div class="img-holder">
+                                                <a href="../urun/argox-as-8150.html" title="ARGOX AS-8150">
+                                                    <div class="inner">
+                                                        
+                                                                    <a href="../urun/argox-as-8150.html" title="ARGOX AS-8150">
+                                                        <img src="../../Upload/ARGOX-AS-85204.jpg" alt="">
+                                                    
+                                                                    </a>
+
+                                                    </div>
+                                                </a>
+                                            </div>
+                                            <div class="title-holder">
+                                                <div class="top clearfix">
+                                                    <h5><a href="../urun/argox-as-8150.html">ARGOX AS-8150</a></h5>
+
+                                                </div>
+
+                                            </div>
+                                        </div>
+                                    </div>
+                                
+                                    <div class="col-xl-4 col-lg-4 col-md-6 col-sm-12">
+                                        <div class="single-product-item">
+                                            <div class="img-holder">
+                                                <a href="../urun/argox-as-9500.html" title="ARGOX AS-9500">
+                                                    <div class="inner">
+                                                        
+                                                                    <a href="../urun/argox-as-9500.html" title="ARGOX AS-9500">
+                                                        <img src="../../Upload/ARGOX-AS-9500.jpg" alt="">
+                                                    
+                                                                    </a>
+
+                                                    </div>
+                                                </a>
+                                            </div>
+                                            <div class="title-holder">
+                                                <div class="top clearfix">
+                                                    <h5><a href="../urun/argox-as-9500.html">ARGOX AS-9500</a></h5>
+
+                                                </div>
+
+                                            </div>
+                                        </div>
+                                    </div>
+                                
+                                    <div class="col-xl-4 col-lg-4 col-md-6 col-sm-12">
+                                        <div class="single-product-item">
+                                            <div class="img-holder">
+                                                <a href="../urun/datalogic-quickscan-qd-2130.html" title="DATALOGIC QUİCKSCAN QD 2130">
+                                                    <div class="inner">
+                                                        
+                                                                    <a href="../urun/datalogic-quickscan-qd-2130.html" title="DATALOGIC QUİCKSCAN QD 2130">
+                                                        <img src="../../Upload/DATALOGIC-QUİCKSCAN-QD-2130.jpg" alt="">
+                                                    
+                                                                    </a>
+
+                                                    </div>
+                                                </a>
+                                            </div>
+                                            <div class="title-holder">
+                                                <div class="top clearfix">
+                                                    <h5><a href="../urun/datalogic-quickscan-qd-2130.html">DATALOGIC QUİCKSCAN QD 2130</a></h5>
+
+                                                </div>
+
+                                            </div>
+                                        </div>
+                                    </div>
+                                
+                                    <div class="col-xl-4 col-lg-4 col-md-6 col-sm-12">
+                                        <div class="single-product-item">
+                                            <div class="img-holder">
+                                                <a href="../urun/powerscan-pbt-8300.html" title="POWERSCAN PBT-8300">
+                                                    <div class="inner">
+                                                        
+                                                                    <a href="../urun/powerscan-pbt-8300.html" title="POWERSCAN PBT-8300">
+                                                        <img src="../../Upload/POWERSCAN-PBT-8300.jpg" alt="">
+                                                    
+                                                                    </a>
+
+                                                    </div>
+                                                </a>
+                                            </div>
+                                            <div class="title-holder">
+                                                <div class="top clearfix">
+                                                    <h5><a href="../urun/powerscan-pbt-8300.html">POWERSCAN PBT-8300</a></h5>
+
+                                                </div>
+
+                                            </div>
+                                        </div>
+                                    </div>
+                                
+                                    <div class="col-xl-4 col-lg-4 col-md-6 col-sm-12">
+                                        <div class="single-product-item">
+                                            <div class="img-holder">
+                                                <a href="../urun/motorola-ls-1203.html" title="MOTOROLA LS 1203">
+                                                    <div class="inner">
+                                                        
+                                                                    <a href="../urun/motorola-ls-1203.html" title="MOTOROLA LS 1203">
+                                                        <img src="../../Upload/MOTOROLA-LS-1203.jpg" alt="">
+                                                    
+                                                                    </a>
+
+                                                    </div>
+                                                </a>
+                                            </div>
+                                            <div class="title-holder">
+                                                <div class="top clearfix">
+                                                    <h5><a href="../urun/motorola-ls-1203.html">MOTOROLA LS 1203</a></h5>
+
+                                                </div>
+
+                                            </div>
+                                        </div>
+                                    </div>
+                                
+                                    <div class="col-xl-4 col-lg-4 col-md-6 col-sm-12">
+                                        <div class="single-product-item">
+                                            <div class="img-holder">
+                                                <a href="../urun/motorola-ls-2208.html" title="MOTOROLA LS 2208">
+                                                    <div class="inner">
+                                                        
+                                                                    <a href="../urun/motorola-ls-2208.html" title="MOTOROLA LS 2208">
+                                                        <img src="../../Upload/MOTOROLA-LS-2208_n5.jpg" alt="">
+                                                    
+                                                                    </a>
+
+                                                    </div>
+                                                </a>
+                                            </div>
+                                            <div class="title-holder">
+                                                <div class="top clearfix">
+                                                    <h5><a href="../urun/motorola-ls-2208.html">MOTOROLA LS 2208</a></h5>
+
+                                                </div>
+
+                                            </div>
+                                        </div>
+                                    </div>
+                                
+                                    <div class="col-xl-4 col-lg-4 col-md-6 col-sm-12">
+                                        <div class="single-product-item">
+                                            <div class="img-holder">
+                                                <a href="../urun/motorola-ls-3578-er.html" title="MOTOROLA LS 3578-ER">
+                                                    <div class="inner">
+                                                        
+                                                                    <a href="../urun/motorola-ls-3578-er.html" title="MOTOROLA LS 3578-ER">
+                                                        <img src="../../Upload/MOTOROLA-LS-3578-ER.jpg" alt="">
+                                                    
+                                                                    </a>
+
+                                                    </div>
+                                                </a>
+                                            </div>
+                                            <div class="title-holder">
+                                                <div class="top clearfix">
+                                                    <h5><a href="../urun/motorola-ls-3578-er.html">MOTOROLA LS 3578-ER</a></h5>
+
+                                                </div>
+
+                                            </div>
+                                        </div>
+                                    </div>
+                                
+                                    <div class="col-xl-4 col-lg-4 col-md-6 col-sm-12">
+                                        <div class="single-product-item">
+                                            <div class="img-holder">
+                                                <a href="../urun/motorola-ls-3578-fz.html" title="MOTOROLA LS 3578-FZ">
+                                                    <div class="inner">
+                                                        
+                                                                    <a href="../urun/motorola-ls-3578-fz.html" title="MOTOROLA LS 3578-FZ">
+                                                        <img src="../../Upload/MOTOROLA-LS-3578-FZ_n1.jpg" alt="">
+                                                    
+                                                                    </a>
+
+                                                    </div>
+                                                </a>
+                                            </div>
+                                            <div class="title-holder">
+                                                <div class="top clearfix">
+                                                    <h5><a href="../urun/motorola-ls-3578-fz.html">MOTOROLA LS 3578-FZ</a></h5>
+
+                                                </div>
+
+                                            </div>
+                                        </div>
+                                    </div>
+                                
+                        </div>
+
+<div class="row"><div class="col-md-12">
+
+</div></div>
+                    </div>
+                </div>
+
+
+            </div>
+        </div>
+    </section>
+
+
+
+            <!--Start footer top area-->
+            <section class="footer-top-area">
+                <div class="container">
+                    <div class="row">
+                        <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12">
+                            <div class="single-box address-box">
+                                <div class="icon"><span class="icon-signs"></span></div>
+                                <div class="title">
+                                    <h3>Adres</h3>
+                                    <p>Merkez Mah. Eskibağlar Caddesi No:22 Halkalı - İstanbul</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12">
+                            <div class="single-box phone-box">
+                                <div class="icon"><span class="icon-technology-1"></span></div>
+                                <div class="title">
+                                    <h3>Telefon</h3>
+                                    <p>Tel: <a href="tel:02125487396">(0212) 548 73 96</a></p>
+                                    <p>Fax: <a href="tel:02124725157">(0212) 472 51 57</a></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12">
+                            <div class="single-box email-box">
+                                <div class="icon"><span class="icon-multimedia"></span></div>
+                                <div class="title">
+                                    <h3>E-posta</h3>
+                                    <p>info@marmaraofis.net</p>
+                                    <p>
+                                        <br />
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </section>
+            <!--End footer top area-->
+
+            <!--Start footer area-->
+            <footer class="footer-area">
+                <div class="container">
+                    <div class="row">
+                        <!--Start single footer widget-->
+                        <div class="col-xl-6 col-lg-10 col-md-12 col-sm-12">
+                            <div class="single-footer-widget">
+                                <div class="our-info">
+                                    <div class="footer-logo">
+                                        <a href="../../tr.html">
+                                            <img src="../../Upload/logo-white.png" alt="Marmara Ofis Beyaz Logo">
+                                        </a>
+                                    </div>
+                                    <div class="text">
+                                        <p>Kaliteli ürünü makul fiyata satmanın gayreti içinde olan firmamız, aynı zamanda sahip olduğu bağımsız lojistik servisleri sayesinde hızlı ve sistemli bir şekilde müşterilerine hizmet vermeyi garanti eder.</p>
+                                        <div class="about-company">
+                                            <a href="barkod-okuyucular.html#">Hakkımızda Daha Fazla Bilgi <span class="icon-arrows"></span></a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!--End single footer widget-->
+                        <!--Start single footer widget-->
+                        <div class="col-xl-3 col-lg-6 col-md-6 col-sm-12">
+                            <div class="single-footer-widget pdtop-50">
+                                <div class="title">
+                                    <h3>Ürünlerimiz</h3>
+                                    <div class="decor thm-bg-clr"></div>
+                                </div>
+                                <ul class="usefull-links">
+                                    
+                                            <li><a href="etiketler.html">Etiketler</a></li>
+                                        
+                                            <li><a href="ribonlar.html">Ribonlar</a></li>
+                                        
+                                            <li><a href="el-terminalleri.html">El Terminalleri</a></li>
+                                        
+                                            <li><a href="barkod-yazicilar.html">Barkod Yazıcılar</a></li>
+                                        
+                                            <li><a href="barkod-okuyucular.html">Barkod Okuyucular</a></li>
+                                        
+                                </ul>
+                            </div>
+                        </div>
+                        <!--End single footer widget-->
+
+                        <!--Start single footer widget-->
+                        <div class="col-xl-3 col-lg-6 col-md-6 col-sm-12">
+                            <div class="single-footer-widget pdtop-50">
+                                <div class="title">
+                                    <h3>Kısayol</h3>
+                                    <div class="decor thm-bg-clr"></div>
+                                </div>
+                                <ul class="usefull-links left">
+                                    
+                                            <li><a href="../hakkimizda.html">Hakkımızda</a></li>
+                                        
+                                            <li><a href="../vizyon-misyon.html">Vizyon & Misyon</a></li>
+                                        
+                                            <li><a href="../kalite-politikamiz.html">Kalite Politikamız</a></li>
+                                        
+                                            <li><a href="../kariyer.html">Kariyer</a></li>
+                                        
+                                    <li><a href="barkod-okuyucular.html#">İletişime Geç</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                        <!--End single footer widget-->
+                    </div>
+                </div>
+            </footer>
+            <!--End footer area-->
+
+            <!--Start footer bottom area-->
+            <section class="footer-bottom-area">
+                <div class="container">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="footer-bottom">
+                                <div class="copyright-text pull-left">
+                                    <p>Copyright © 2018 <a class="thm-clr" href="barkod-okuyucular.html#">Marmara Ofis</a> Web Tasarım & Geliştirme <a class="thm-clr" href="https://www.lisayazilim.com" title="Lisa Yazılım"><img src="../../images/icon/1-06.png" alt="lisa icon" /></a>. All Rights Reserved.</p>
+                                </div>
+                                <div class="footer-social-links pull-right">
+                                    <ul>
+                                        <li><a href="barkod-okuyucular.html"><i class="fa fa-facebook" aria-hidden="true"></i></a></li>
+                                        <li><a href="barkod-okuyucular.html"><i class="fa fa-twitter" aria-hidden="true"></i></a></li>
+                                        <li><a href="barkod-okuyucular.html"><i class="fa fa-instagram" aria-hidden="true"></i></a></li>
+                                        <li><a href="barkod-okuyucular.html"><i class="fa fa-google-plus" aria-hidden="true"></i></a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <!--End footer bottom area-->
+        </div>
+
+        <!--Scroll to top-->
+        <div class="scroll-to-top scroll-to-target thm-bg-clr" data-target="html"><span class="fa fa-angle-up"></span></div>
+
+
+        <!-- main jQuery -->
+        <script src="../../js/jquery.js"></script>
+        <!-- Wow Script -->
+        <script src="../../js/wow.min.js"></script>
+        <!-- bootstrap -->
+        <script src="../../js/bootstrap.min.js"></script>
+        <!-- bx slider -->
+        <script src="../../js/jquery.bxslider.min.js"></script>
+        <!-- count to -->
+        <script src="../../js/jquery.countTo.js"></script>
+        <script src="../../js/jquery.appear.js"></script>
+        <!-- owl carousel -->
+        <script src="../../js/owl.js"></script>
+        <!-- validate -->
+        <script src="../../js/validation.js"></script>
+        <!-- mixit up -->
+        <script src="../../js/jquery.mixitup.min.js"></script>
+        <!-- isotope script-->
+        <script src="../../js/isotope.js"></script>
+        <!-- Easing -->
+        <script src="../../js/jquery.easing.min.js"></script>
+        <!-- Gmap helper -->
+        <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAHzPSV2jshbjI8fqnC_C4L08ffnj5EN3A"></script>
+        <!--Gmap script-->
+        <script src="../../js/gmaps.js"></script>
+        <script src="../../js/map-helper.js"></script>
+        <!-- video responsive script -->
+        <script src="../../js/jquery.fitvids.js"></script>
+        <!-- jQuery ui js -->
+        <script src="../../assets/jquery-ui-1.11.4/jquery-ui.js"></script>
+        <!-- Language Switche  -->
+        <script src="../../assets/language-switcher/jquery.polyglot.language.switcher.js"></script>
+        <!-- jQuery PrettyPhoto js -->
+        <script src="../../js/jquery.prettyPhoto.js"></script>
+        <!-- jQuery timepicker js -->
+        <script src="../../assets/timepicker/timePicker.js"></script>
+        <!-- Bootstrap select picker js -->
+        <script src="../../assets/bootstrap-sl-1.12.1/bootstrap-select.js"></script>
+        <!-- html5lightbox js -->
+        <script src="../../assets/html5lightbox/html5lightbox.js"></script>
+        <!--Color Switcher-->
+        <script src="../../js/color-settings.js"></script>
+        <!--Particles -->
+        <script src="../../js/particles.min.js"></script>
+
+        <!--revolution slider js -->
+        <script src="../../assets/revolution/js/jquery.themepunch.tools.min.js"></script>
+        <script src="../../assets/revolution/js/jquery.themepunch.revolution.min.js"></script>
+        <script src="../../assets/revolution/js/extensions/revolution.extension.actions.min.js"></script>
+        <script src="../../assets/revolution/js/extensions/revolution.extension.carousel.min.js"></script>
+        <script src="../../assets/revolution/js/extensions/revolution.extension.kenburn.min.js"></script>
+        <script src="../../assets/revolution/js/extensions/revolution.extension.layeranimation.min.js"></script>
+        <script src="../../assets/revolution/js/extensions/revolution.extension.migration.min.js"></script>
+        <script src="../../assets/revolution/js/extensions/revolution.extension.navigation.min.js"></script>
+        <script src="../../assets/revolution/js/extensions/revolution.extension.parallax.min.js"></script>
+        <script src="../../assets/revolution/js/extensions/revolution.extension.slideanims.min.js"></script>
+        <script src="../../assets/revolution/js/extensions/revolution.extension.video.min.js"></script>
+
+        <!-- thm custom script -->
+        <script src="../../js/particles-config.js"></script>
+        <script src="../../js/custom.js"></script>
+
+        
+
+    </form>
+</body>
+</html>
