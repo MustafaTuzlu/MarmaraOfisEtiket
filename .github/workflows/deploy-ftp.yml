@@ -15,6 +15,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Write SMTP config (secret'tan)
+        env:
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          SMTP_HOST: ${{ vars.SMTP_HOST || 'mail.marmaraofisetiket.net' }}
+          SMTP_PORT: ${{ vars.SMTP_PORT || '587' }}
+          SMTP_SECURE: ${{ vars.SMTP_SECURE || 'tls' }}
+          SMTP_USER: ${{ vars.SMTP_USER || 'iletisim@marmaraofisetiket.net' }}
+        run: |
+          if [ -z "$SMTP_PASS" ]; then echo "SMTP_PASS secret tanımlı değil; config.local.php üretilmedi (mail() kullanılacak)."; exit 0; fi
+          python3 - <<'PY'
+          import os
+          q = lambda v: "'" + v.replace("\\", "\\\\").replace("'", "\\'") + "'"
+          e = os.environ
+          open('config.local.php', 'w').write(
+              "<?php\n"
+              "$SMTP = ['host' => %s, 'port' => %d, 'secure' => %s, 'user' => %s, 'pass' => %s];\n"
+              "$MAIL_FROM = %s;\n" % (q(e['SMTP_HOST']), int(e['SMTP_PORT']), q(e['SMTP_SECURE']), q(e['SMTP_USER']), q(e['SMTP_PASS']), q(e['SMTP_USER'])))
+          PY
+          php -l config.local.php || true
+
       - name: Upload via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
@@ -31,6 +51,5 @@ jobs:
             **/.git*/**
             .github/**
             orijinal/**
-            config.local.php
             **/.DS_Store
             README.md
