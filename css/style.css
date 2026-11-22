@@ -6957,3 +6957,7 @@ canvas{
 /* SEO: başlık hiyerarşisi düzeltmeleri (h1 -> h2/h1 geçişlerinde görünüm aynı kalsın) */
 .related-product .sec-title h2 { font-size: 36px; }
 .rev_slider_wrapper .slide-content h1.big-title { margin: 0; }
+
+
+/* Performans: width/height öznitelikli görseller orantısını korusun (CLS) */
+:where(img[width][height]) { height: auto; }
