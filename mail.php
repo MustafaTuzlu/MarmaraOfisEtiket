@@ -18,6 +18,51 @@ $T = $MSG[$lang];
 
 function out($ok, $text, $code = 200) { http_response_code($code); echo json_encode(['ok' => $ok, 'message' => $text], JSON_UNESCAPED_UNICODE); exit; }
 function clean($v, $max) { $v = trim((string)$v); $v = str_replace(["\r", "\0"], '', $v); return mb_substr($v, 0, $max, 'UTF-8'); }
+function smtp_read($fp) {
+    $data = '';
+    while (($line = fgets($fp, 515)) !== false) {
+        $data .= $line;
+        if (strlen($line) < 4 || $line[3] === ' ') break;
+    }
+    return $data;
+}
+function smtp_cmd($fp, $cmd, $expect) {
+    if ($cmd !== null) fwrite($fp, $cmd . "\r\n");
+    $r = smtp_read($fp);
+    if (strpos($r, (string)$expect) !== 0) throw new Exception("SMTP '$cmd' -> $r");
+    return $r;
+}
+function smtp_send($c, $from, $to, $subject, $headers, $body) {
+    $host = $c['host']; $port = (int)$c['port']; $sec = $c['secure'];
+    $fp = @stream_socket_client(($sec === 'ssl' ? 'ssl://' : 'tcp://') . "$host:$port", $en, $es, 15);
+    if (!$fp) throw new Exception("SMTP connect failed: $es ($en)");
+    stream_set_timeout($fp, 15);
+    try {
+        smtp_cmd($fp, null, '220');
+        $ehlo = $_SERVER['SERVER_NAME'] ?? 'localhost';
+        smtp_cmd($fp, "EHLO $ehlo", '250');
+        if ($sec === 'tls') {
+            smtp_cmd($fp, 'STARTTLS', '220');
+            if (!stream_socket_enable_crypto($fp, true, STREAM_CRYPTO_METHOD_TLS_CLIENT)) throw new Exception('STARTTLS failed');
+            smtp_cmd($fp, "EHLO $ehlo", '250');
+        }
+        if ($c['user'] !== '') {
+            smtp_cmd($fp, 'AUTH LOGIN', '334');
+            smtp_cmd($fp, base64_encode($c['user']), '334');
+            smtp_cmd($fp, base64_encode($c['pass']), '235');
+        }
+        smtp_cmd($fp, "MAIL FROM:<$from>", '250');
+        smtp_cmd($fp, "RCPT TO:<$to>", '250');
+        smtp_cmd($fp, 'DATA', '354');
+        $msg = "To: <$to>\r\nSubject: $subject\r\nDate: " . date('r') . "\r\n" . $headers . "\r\n\r\n" . $body;
+        $msg = preg_replace('/^\./m', '..', $msg);
+        fwrite($fp, $msg . "\r\n.\r\n");
+        smtp_cmd($fp, null, '250');
+        fwrite($fp, "QUIT\r\n");
+        fclose($fp);
+        return true;
+    } catch (Exception $e) { @fclose($fp); throw $e; }
+}
 function oneline($v) { return trim(preg_replace('/[\r\n]+/', ' ', $v)); }
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') { out(false, $T['err'], 405); }
@@ -55,5 +100,15 @@ $headers = [
   'X-Mailer: PHP/' . phpversion(),
 ];
 
-if (@mail($MAIL_TO, $subject, $body, implode("\r\n", $headers))) { @touch($rl); out(true, $T['ok']); }
+try {
+    if (!empty($SMTP['host'])) {
+        // SMTP'de gönderen adres, kimlik doğrulanan hesapla uyumlu olmalı
+        $envFrom = $MAIL_FROM !== '' ? $MAIL_FROM : ($SMTP['user'] !== '' && strpos($SMTP['user'], '@') !== false ? $SMTP['user'] : $from);
+        $ok = smtp_send($SMTP, $envFrom, $MAIL_TO, $subject, implode("\r\n", $headers), $body);
+    } else {
+        $ok = @mail($MAIL_TO, $subject, $body, implode("\r\n", $headers));
+        if (!$ok) { error_log('mail.php: PHP mail() returned false (hosting mail() kapali olabilir; SMTP ayarlayin)'); }
+    }
+} catch (Exception $e) { $ok = false; error_log('mail.php: ' . $e->getMessage()); }
+if ($ok) { @touch($rl); out(true, $T['ok']); }
 out(false, $T['err'], 500);
