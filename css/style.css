@@ -6965,3 +6965,7 @@ canvas{
 /* Alt iletişim kutuları eşit yükseklikte olsun */
 .footer-top-area .row > [class*="col-"] { display: flex; }
 .footer-top-area .row > [class*="col-"] > .single-box { width: 100%; }
+
+/* Kategori giriş metni (SEO içerik) */
+.category-intro { max-width: 900px; margin: 0 auto 40px; text-align: center; }
+.category-intro p { font-size: 16px; line-height: 28px; margin: 0 0 14px; }
