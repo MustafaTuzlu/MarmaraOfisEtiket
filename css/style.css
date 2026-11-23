@@ -6961,3 +6961,7 @@ canvas{
 
 /* Performans: width/height öznitelikli görseller orantısını korusun (CLS) */
 :where(img[width][height]) { height: auto; }
+
+/* Alt iletişim kutuları eşit yükseklikte olsun */
+.footer-top-area .row > [class*="col-"] { display: flex; }
+.footer-top-area .row > [class*="col-"] > .single-box { width: 100%; }
