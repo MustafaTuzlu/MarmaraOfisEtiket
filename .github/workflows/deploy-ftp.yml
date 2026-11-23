@@ -53,3 +53,4 @@ jobs:
             orijinal/**
             **/.DS_Store
             README.md
+            CLAUDE.md
