@@ -39,7 +39,7 @@ $e = fn($s) => htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
 <html lang="<?= $e($lang) ?>">
 <head>
 <meta charset="UTF-8" />
-<title><?= $e($L['title']) ?> | Marmara Ofis</title>
+<title><?= $e($L['title']) ?> | Marmara Ofis Etiket</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="robots" content="noindex" />
 <link rel="stylesheet" href="css/style.css" />

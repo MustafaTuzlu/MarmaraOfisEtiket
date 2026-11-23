@@ -6969,3 +6969,12 @@ canvas{
 /* Kategori giriş metni (SEO içerik) */
 .category-intro { max-width: 900px; margin: 0 auto 40px; text-align: center; }
 .category-intro p { font-size: 16px; line-height: 28px; margin: 0 0 14px; }
+
+/* Ana sayfa SEO metin bölümü */
+.seo-intro { padding: 60px 0 30px; }
+.seo-intro h2 { font-size: 28px; line-height: 36px; margin: 0 0 18px; }
+.seo-intro p, .seo-intro li { font-size: 16px; line-height: 28px; }
+.seo-intro ul { margin: 0 0 28px 20px; padding: 0; list-style: disc; }
+.seo-intro p { margin: 0 0 22px; }
+/* Sosyal ikonlar kaldırıldı: telif satırı ortada */
+.footer-bottom .copyright-text { float: none; text-align: center; }

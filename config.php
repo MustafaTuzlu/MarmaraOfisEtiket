@@ -4,7 +4,7 @@
 if (basename($_SERVER['SCRIPT_FILENAME'] ?? '') === 'config.php') { http_response_code(403); exit; }
 
 $MAIL_TO   = 'info@marmaraofisetiket.net';   // Formdan gelen mesajların düşeceği adres
-$SITE_NAME = 'Marmara Ofis';
+$SITE_NAME = 'Marmara Ofis Etiket';
 // Gönderen adresi: mümkünse alan adınıza ait bir adres yazın (SPF/spam için). Boşsa no-reply@<alanadı> kullanılır.
 $MAIL_FROM = '';
 
