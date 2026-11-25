@@ -103,6 +103,27 @@
     sec(Number(tr.getAttribute('data-id')), true);
   });
 
+  /* ---------- Yön okları ---------- */
+  var oklar = [];
+  function yon(a, b) { // kuzeyden saat yönünde derece (Mercator'da ekran açısı ile aynı)
+    var r = Math.PI / 180, dl = (b[1] - a[1]) * r, f1 = a[0] * r, f2 = b[0] * r;
+    var y = Math.sin(dl) * Math.cos(f2), x = Math.cos(f1) * Math.sin(f2) - Math.sin(f1) * Math.cos(f2) * Math.cos(dl);
+    return (Math.atan2(y, x) / r + 360) % 360;
+  }
+  function okIcon(deg) {
+    return L.divIcon({
+      className: 'ok', iconSize: [16, 16], iconAnchor: [8, 8],
+      html: '<svg width="16" height="16" viewBox="0 0 16 16" style="transform:rotate(' + deg.toFixed(1) + 'deg)"><path d="M8 1l5.5 13L8 11l-5.5 3z" fill="#1d4ed8" stroke="#fff" stroke-width="1.2" stroke-linejoin="round"/></svg>'
+    });
+  }
+  function oklariGuncelle() { // iki nokta ekranda birbirine çok yakınsa oku gizle (karmaşayı önler)
+    oklar.forEach(function (o) {
+      var el = o.m.getElement(); if (!el) return;
+      el.style.display = harita.latLngToContainerPoint(o.a).distanceTo(harita.latLngToContainerPoint(o.b)) < 22 ? 'none' : '';
+    });
+  }
+  harita.on('zoomend', oklariGuncelle);
+
   /* ---------- Harita noktaları ---------- */
   function noktalariCiz(sigdir) {
     katman.clearLayers();
@@ -114,6 +135,14 @@
         .addTo(katman).on('click', function () { durum.elle = true; sec(k.id, false); });
     });
     if (pts.length > 1) L.polyline(pts, { color: '#2563eb', weight: 2, opacity: .35 }).addTo(katman);
+    oklar = [];
+    for (var i = 1; i < pts.length; i++) {
+      var a = pts[i - 1], b = pts[i];
+      if (a[0] === b[0] && a[1] === b[1]) continue;
+      var m = L.marker([(a[0] + b[0]) / 2, (a[1] + b[1]) / 2], { icon: okIcon(yon(a, b)), interactive: false, keyboard: false, zIndexOffset: -500 }).addTo(katman);
+      oklar.push({ m: m, a: a, b: b });
+    }
+    oklariGuncelle();
     if (sigdir && pts.length > 1) harita.fitBounds(pts, { maxZoom: 16, padding: [30, 30] });
   }
 
