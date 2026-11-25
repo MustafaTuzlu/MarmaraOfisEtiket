@@ -79,6 +79,10 @@ foreach ($liste as $i => $k) {
     }
     $dog = $k['dogruluk'] ?? null;
     if ($dog !== null && (!(is_int($dog) || is_float($dog)) || $dog < 0 || $dog > 1000000)) { $h('dogruluk', '0..1000000 arası sayı (m) veya null'); }
+    $hiz = $k['hizKmh'] ?? null;
+    if ($hiz !== null && (!(is_int($hiz) || is_float($hiz)) || $hiz < 0 || $hiz > 400)) { $h('hizKmh', '0..400 arası sayı (km/h) veya null'); }
+    $yon = $k['yon'] ?? null;
+    if ($yon !== null && (!(is_int($yon) || is_float($yon)) || $yon < 0 || $yon >= 360)) { $h('yon', '0..359.9 arası sayı (derece) veya null'); }
     $pil = $k['pilYuzdesi'] ?? null;
     if ($pil !== null && (!is_int($pil) || $pil < 0 || $pil > 100)) { $h('pilYuzdesi', '0..100 tamsayı veya null'); }
     $sarj = $k['sarjdaMi'] ?? null;
@@ -110,7 +114,9 @@ foreach ($liste as $i => $k) {
     $satirlar[] = [
         strtolower($uuid), $cihaz, $tip,
         $enlem === null ? null : round((float)$enlem, 7), $boylam === null ? null : round((float)$boylam, 7),
-        $dog === null ? null : round((float)$dog, 2), $pil,
+        $dog === null ? null : round((float)$dog, 2),
+        $hiz === null ? null : round((float)$hiz, 1), $yon === null ? null : fmod(round((float)$yon, 1), 360.0),
+        $pil,
         $sarj === null ? null : (int)$sarj, $sic === null ? null : round((float)$sic, 1),
         $hrk === null ? null : (int)$hrk,
         $kz[0], $kz[1], $er, $ky, $duz, $kaynak, gmdate('Y-m-d H:i:s', $simdi),
@@ -124,9 +130,9 @@ if ($hatalar) {
 
 $pdo = db();
 try {
-    $kolon = '(kayit, cihaz_adi, log_tipi, enlem, boylam, dogruluk_m, pil_yuzdesi, sarjda_mi, pil_sicakligi, arac_hareketli, '
+    $kolon = '(kayit, cihaz_adi, log_tipi, enlem, boylam, dogruluk_m, hiz_kmh, yon, pil_yuzdesi, sarjda_mi, pil_sicakligi, arac_hareketli, '
            . 'konum_zamani, konum_zamani_ofset_dk, elapsed_realtime_ms, konum_yasi_ms, duzeltilmis_zaman, zaman_kaynagi, alinma_zamani)';
-    $yer = '(' . implode(',', array_fill(0, 17, '?')) . ')';
+    $yer = '(' . implode(',', array_fill(0, 19, '?')) . ')';
     $sql = 'INSERT IGNORE INTO emekli_log ' . $kolon . ' VALUES ' . implode(',', array_fill(0, count($satirlar), $yer));
     $param = [];
     foreach ($satirlar as $s) { foreach ($s as $v) { $param[] = $v; } }

@@ -64,6 +64,8 @@ Android uygulaması (EmekliRobot, cihaz `EmektarNote9`) ↔ sunucu (`marmaraofis
       "enlem": 41.0082376,
       "boylam": 28.9783589,
       "dogruluk": 6.5,
+      "hizKmh": 42.3,
+      "yon": 187.5,
       "pilYuzdesi": 83,
       "sarjdaMi": true,
       "pilSicakligi": 31.4,
@@ -109,15 +111,17 @@ Android uygulaması (EmekliRobot, cihaz `EmektarNote9`) ↔ sunucu (`marmaraofis
 | `enlem` | sayı | hayır | −90…90. `boylam` ile **birlikte** dolu ya da birlikte `null`. |
 | `boylam` | sayı | hayır | −180…180. |
 | `dogruluk` | sayı (m) | hayır | 0…1 000 000. |
+| `hizKmh` | sayı (km/sa) | hayır | GPS hızı, 0…400, 0.1 hassasiyet (fazlası yuvarlanır). Eski uygulama sürümleri göndermez; `null`/yok kabul. Aralık dışı → 422. |
+| `yon` | sayı (derece) | hayır | Gidiş yönü, 0…359.9 (kuzeyden saat yönünde), 0.1 hassasiyet. Yalnızca `hizKmh > 2` iken anlamlıdır; sunucu yine de saklar. 360 ve üstü → 422. Yok/`null` kabul. |
 | `pilYuzdesi` | tamsayı | hayır | 0…100. |
 | `sarjdaMi` | bool | hayır | `true`/`false` (0/1 **değil**). |
 | `pilSicakligi` | sayı (°C) | hayır | −50…150, 0.1 hassasiyet (fazlası yuvarlanır). |
 | `aracHareketli` | bool | hayır | `true` = hareket, `false` = durağan. |
-| `konumZamani` | string | evet | Saat dilimli ISO 8601, saniye hassasiyeti: `2026-11-25T14:03:07+03:00` (`Z` ve `.123` kesir de kabul; kesir atılır). Saat dilimsiz → 422. Konum alınamayan kayıtlarda da olay zamanı olarak zorunlu. |
+| `konumZamani` | string | evet | `KONUM`/`DURUM` kayıtlarında konum fix'inin kendi zamanı (kayıt oluşturma zamanı değil); diğerlerinde olay zamanı. Saat dilimli ISO 8601, saniye hassasiyeti: `2026-11-25T14:03:07+03:00` (`Z` ve `.123` kesir de kabul; kesir atılır). Saat dilimsiz → 422. Konum alınamayan kayıtlarda da olay zamanı olarak zorunlu. |
 | `elapsedRealtime` | tamsayı (ms) | evet | Kaydın **oluşturulduğu andaki** `SystemClock.elapsedRealtime()`. |
 | `konumYasiMs` | tamsayı (ms) | hayır | Kayıt oluşturulduğunda konum fix'inin yaşı. Konum yoksa `null`. |
 
-Bilinmeyen ek alanlar yok sayılır.
+Bilinmeyen ek alanlar yok sayılır (eski/yeni uygulama sürümleri birlikte çalışır).
 
 ### Başarı — **200**
 
@@ -216,7 +220,7 @@ Telefona düşen kural: `elapsedRealtime` kayıt **oluşturulurken** okunup kay�
 
 ## 8. Veritabanı özeti
 
-MariaDB 5.5.68, veritabanı `marmaraofisetiket_net_emeklirobot`, tablo `emekli_log` (tam şema: `db/emekli-robot.sql`). Telefonun bilmesi gerekmez; JSON alan adları sütunlara şöyle eşlenir: `cihazAdi→cihaz_adi`, `logTipi→log_tipi`, `dogruluk→dogruluk_m`, `pilYuzdesi→pil_yuzdesi`, `sarjdaMi→sarjda_mi`, `pilSicakligi→pil_sicakligi`, `aracHareketli→arac_hareketli`, `konumZamani→konum_zamani (UTC)`, `elapsedRealtime→elapsed_realtime_ms`, `konumYasiMs→konum_yasi_ms`.
+MariaDB 5.5.68, veritabanı `marmaraofisetiket_net_emeklirobot`, tablo `emekli_log` (tam şema: `db/emekli-robot.sql`). Telefonun bilmesi gerekmez; JSON alan adları sütunlara şöyle eşlenir: `cihazAdi→cihaz_adi`, `logTipi→log_tipi`, `dogruluk→dogruluk_m`, `hizKmh→hiz_kmh`, `yon→yon`, `pilYuzdesi→pil_yuzdesi`, `sarjdaMi→sarjda_mi`, `pilSicakligi→pil_sicakligi`, `aracHareketli→arac_hareketli`, `konumZamani→konum_zamani (UTC)`, `elapsedRealtime→elapsed_realtime_ms`, `konumYasiMs→konum_yasi_ms`.
 
 ## 9. Örnek çağrılar
 
@@ -228,6 +232,10 @@ curl -s -X POST https://marmaraofisetiket.net/api/emekli/kayitlar.php \
   -d '{"gonderimElapsedRealtime":86400000,"kayitlar":[{"kayit":"3f2b8c9e-6a1d-4c7e-9b52-0e8a1d4f7c33","cihazAdi":"EmektarNote9","logTipi":"SARJ_BASLADI","konumZamani":"2026-11-25T14:03:07+03:00","elapsedRealtime":85200000}]}'
 ```
 
-## 10. Sürüm notu
+## 10. Değişiklik geçmişi (v1 içinde geriye uyumlu eklemeler)
+
+- 2026-11-25: kayıtlara isteğe bağlı `hizKmh` ve `yon` eklendi. Zorunlu alan değişmedi; yeni log tipi yok. Sunucuda `db/2026-11-25-hiz-yon.sql` migrasyonu gerekir.
+
+## 11. Sürüm notu
 
 Bu sözleşme v1'dir. Geriye dönük uyumsuz değişiklikte yeni yol (`/api/emekli/v2/`) açılır; mevcut telefon uygulaması bozulmaz.

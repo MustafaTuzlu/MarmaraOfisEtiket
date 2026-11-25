@@ -15,6 +15,8 @@ CREATE TABLE IF NOT EXISTS `emekli_log` (
   `enlem`                 DECIMAL(10,7)    NULL,
   `boylam`                DECIMAL(10,7)    NULL,
   `dogruluk_m`            DECIMAL(8,2)     NULL COMMENT 'Konum doğruluğu (metre)',
+  `hiz_kmh`               DECIMAL(4,1)     NULL COMMENT 'GPS hızı km/sa (0..400)',
+  `yon`                   DECIMAL(4,1)     NULL COMMENT 'Gidiş yönü, derece 0..359.9 (hız > 2 iken anlamlı)',
   `pil_yuzdesi`           TINYINT UNSIGNED NULL,
   `sarjda_mi`             TINYINT(1)       NULL,
   `pil_sicakligi`         DECIMAL(4,1)     NULL COMMENT 'Derece C, 0.1 hassasiyet',

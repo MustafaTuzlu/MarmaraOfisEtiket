@@ -70,6 +70,8 @@
       ['Cihaz', esc(k.cihazAdi)],
       ['Konum', konumlu(k) ? k.enlem.toFixed(6) + ', ' + k.boylam.toFixed(6) + ' <a href="https://www.google.com/maps?q=' + k.enlem + ',' + k.boylam + '" target="_blank" rel="noopener noreferrer">Google Maps</a>' : '<span class="rozet yok">Konum yok</span>'],
       ['Doğruluk', k.dogruluk === null ? '—' : k.dogruluk + ' m'],
+      ['Hız', k.hizKmh === null ? '—' : k.hizKmh + ' km/h'],
+      ['Yön', k.yon === null ? '—' : k.yon + '°' + (k.hizKmh !== null && k.hizKmh <= 2 ? ' <small>(düşük hız, anlamsız olabilir)</small>' : '')],
       ['Pil', k.pilYuzdesi === null ? '—' : '%' + k.pilYuzdesi],
       ['Pil sıcaklığı', k.pilSicakligi === null ? '—' : k.pilSicakligi + ' °C'],
       ['Şarj / kontak', evetHayir(k.sarjdaMi, 'Şarjda (kontak açık)', 'Şarjda değil')],

@@ -40,6 +40,8 @@ function satir($r) {
         'enlem' => fl($r['enlem']),
         'boylam' => fl($r['boylam']),
         'dogruluk' => fl($r['dogruluk_m']),
+        'hizKmh' => fl($r['hiz_kmh']),
+        'yon' => fl($r['yon']),
         'pilYuzdesi' => $r['pil_yuzdesi'] === null ? null : (int)$r['pil_yuzdesi'],
         'sarjdaMi' => bo($r['sarjda_mi']),
         'pilSicakligi' => fl($r['pil_sicakligi']),
@@ -72,7 +74,7 @@ foreach ([['pilMin', 'pil_yuzdesi >= ?'], ['pilMax', 'pil_yuzdesi <= ?'], ['sicM
 if (($_GET['konumlu'] ?? '') === '1') { $w[] = 'enlem IS NOT NULL'; }
 
 $kosul = $w ? 'WHERE ' . implode(' AND ', $w) : '';
-$kolon = 'id, kayit, cihaz_adi, log_tipi, enlem, boylam, dogruluk_m, pil_yuzdesi, sarjda_mi, pil_sicakligi, arac_hareketli, '
+$kolon = 'id, kayit, cihaz_adi, log_tipi, enlem, boylam, dogruluk_m, hiz_kmh, yon, pil_yuzdesi, sarjda_mi, pil_sicakligi, arac_hareketli, '
        . 'konum_zamani, konum_zamani_ofset_dk, elapsed_realtime_ms, konum_yasi_ms, duzeltilmis_zaman, zaman_kaynagi, alinma_zamani, ' . $ZAMAN . ' AS zaman';
 
 try {
