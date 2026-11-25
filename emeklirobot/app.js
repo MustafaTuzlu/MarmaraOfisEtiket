@@ -88,14 +88,37 @@
   }
 
   /* ---------- Liste ---------- */
+  function tarih(iso) { if (!iso) return null; var d = new Date(iso); return isNaN(d) ? null : d; }
+  function sayiYaz(v, n) { return v == null ? '—' : (n === undefined ? v : v.toFixed(n)); }
+  function ehx(v, e, h) { return v === null || v === undefined ? null : (v ? e : h); }
+  var COLS = [
+    { b: 'Sıra no', w: 9, html: function (k) { return k.id; }, xl: function (k) { return k.id; } },
+    { b: 'Zaman (düzeltilmiş)', w: 20, html: function (k) { return zaman(k.zaman); }, xl: function (k) { return tarih(k.zaman); } },
+    { b: 'Log tipi', w: 22, html: function (k) { return esc(k.logTipi); }, xl: function (k) { return k.logTipi; } },
+    { b: 'Cihaz', w: 15, html: function (k) { return esc(k.cihazAdi); }, xl: function (k) { return k.cihazAdi; } },
+    { b: 'Enlem', w: 12, html: function (k) { return sayiYaz(k.enlem, 6); }, xl: function (k) { return k.enlem; } },
+    { b: 'Boylam', w: 12, html: function (k) { return sayiYaz(k.boylam, 6); }, xl: function (k) { return k.boylam; } },
+    { b: 'Doğruluk (m)', w: 13, html: function (k) { return sayiYaz(k.dogruluk); }, xl: function (k) { return k.dogruluk; } },
+    { b: 'Hız (km/sa)', w: 12, html: function (k) { return sayiYaz(k.hizKmh); }, xl: function (k) { return k.hizKmh; } },
+    { b: 'Yön (°)', w: 9, html: function (k) { return sayiYaz(k.yon); }, xl: function (k) { return k.yon; } },
+    { b: 'Pil %', w: 8, html: function (k) { return sayiYaz(k.pilYuzdesi); }, xl: function (k) { return k.pilYuzdesi; } },
+    { b: 'Pil sıcaklığı (°C)', w: 16, html: function (k) { return k.pilSicakligi === null ? '—' : '<span class="rozet' + (k.pilSicakligi >= 48 ? ' kritik' : k.pilSicakligi >= 45 ? ' sicak' : '') + '">' + k.pilSicakligi + '</span>'; }, xl: function (k) { return k.pilSicakligi; } },
+    { b: 'Şarj/kontak', w: 12, html: function (k) { return evetHayir(k.sarjdaMi, 'Evet', 'Hayır'); }, xl: function (k) { return ehx(k.sarjdaMi, 'Evet', 'Hayır'); } },
+    { b: 'Araç', w: 11, html: function (k) { return evetHayir(k.aracHareketli, 'Hareketli', 'Durağan'); }, xl: function (k) { return ehx(k.aracHareketli, 'Hareketli', 'Durağan'); } },
+    { b: 'Cihaz saati', w: 20, html: function (k) { return zaman(k.konumZamani); }, xl: function (k) { return tarih(k.konumZamani); } },
+    { b: 'Konum yaşı (sn)', w: 14, html: function (k) { return k.konumYasiMs === null ? '—' : (k.konumYasiMs / 1000).toFixed(1); }, xl: function (k) { return k.konumYasiMs === null ? null : k.konumYasiMs / 1000; } },
+    { b: 'Zaman kaynağı', w: 13, html: function (k) { return esc(k.zamanKaynagi); }, xl: function (k) { return k.zamanKaynagi; } },
+    { b: 'Sunucuya ulaştı', w: 20, html: function (k) { return zaman(k.alinmaZamani); }, xl: function (k) { return tarih(k.alinmaZamani); } },
+    { b: 'elapsedRealtime (ms)', w: 18, html: function (k) { return k.elapsedRealtime; }, xl: function (k) { return k.elapsedRealtime; } },
+    { b: 'Kayıt UUID', w: 38, html: function (k) { return esc(k.kayit); }, xl: function (k) { return k.kayit; } }
+  ];
+  document.querySelector('#liste thead').innerHTML = '<tr>' + COLS.map(function (c) { return '<th>' + esc(c.b) + '</th>'; }).join('') + '</tr>';
+
   function listeYaz() {
     var tb = document.querySelector('#liste tbody');
-    if (!durum.kayitlar.length) { tb.innerHTML = '<tr><td colspan="8" class="bos">Kayıt bulunamadı.</td></tr>'; return; }
+    if (!durum.kayitlar.length) { tb.innerHTML = '<tr><td colspan="' + COLS.length + '" class="bos">Kayıt bulunamadı.</td></tr>'; return; }
     tb.innerHTML = durum.kayitlar.map(function (k) {
-      var sicakRozet = k.pilSicakligi === null ? '—' : '<span class="rozet' + (k.pilSicakligi >= 48 ? ' kritik' : k.pilSicakligi >= 45 ? ' sicak' : '') + '">' + k.pilSicakligi + '°C</span>';
-      return '<tr data-id="' + k.id + '"' + (k.id === durum.secili ? ' class="secili"' : '') + '><td>' + zaman(k.zaman) + '</td><td>' + esc(k.logTipi) + '</td><td>' + esc(k.cihazAdi) +
-        '</td><td>' + (konumlu(k) ? '<span class="rozet konum">var</span>' : '<span class="rozet yok">yok</span>') + '</td><td>' + (k.pilYuzdesi === null ? '—' : k.pilYuzdesi) +
-        '</td><td>' + sicakRozet + '</td><td>' + evetHayir(k.aracHareketli, 'Hareketli', 'Durağan') + '</td><td>' + evetHayir(k.sarjdaMi, 'Evet', 'Hayır') + '</td></tr>';
+      return '<tr data-id="' + k.id + '"' + (k.id === durum.secili ? ' class="secili"' : '') + '>' + COLS.map(function (c) { return '<td>' + c.html(k) + '</td>'; }).join('') + '</tr>';
     }).join('');
   }
   document.querySelector('#liste tbody').addEventListener('click', function (e) {
@@ -170,6 +193,7 @@
     var c = secilenler('f-cihazlar'); if (c.length) q.set('cihaz', c.join(','));
     ['hareket', 'sarj', 'pilMin', 'pilMax', 'sicMin', 'sicMax', 'dogMax'].forEach(function (a) { var v = $('f-' + a).value; if (v !== '') q.set(a, v); });
     if ($('f-konumlu').checked) q.set('konumlu', '1');
+    q.set('limit', $('f-limit').value);
     if (secenek) q.set('secenek', '1');
     return q.toString();
   }
@@ -231,6 +255,19 @@
     [].forEach.call(document.querySelectorAll('#f-tipler input, #f-cihazlar input'), function (i) { i.checked = false; i.closest('.cip').classList.remove('acik'); });
     clearTimeout(zamanlayici);
     yukle({ sifirla: true, sigdir: false });
+  });
+
+  $('f-limit').addEventListener('change', function () { yukle({}); });
+
+  $('b-excel').addEventListener('click', function (e) {
+    e.preventDefault();
+    if (!durum.kayitlar.length) { alert('İndirilecek kayıt yok.'); return; }
+    var blob = Xlsx.blob(COLS.map(function (c) { return c.b; }), durum.kayitlar.map(function (k) { return COLS.map(function (c) { return c.xl(k); }); }), COLS.map(function (c) { return c.w; }), 'Loglar');
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'emekli-robot-' + istYerel(Date.now()).replace(/[-:T]/g, '').slice(0, 12) + '.xlsx';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1500);
   });
 
   var oto = null;

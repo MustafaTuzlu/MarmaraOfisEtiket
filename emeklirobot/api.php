@@ -73,13 +73,16 @@ foreach ([['pilMin', 'pil_yuzdesi >= ?'], ['pilMax', 'pil_yuzdesi <= ?'], ['sicM
 }
 if (($_GET['konumlu'] ?? '') === '1') { $w[] = 'enlem IS NOT NULL'; }
 
+$limit = (int)($_GET['limit'] ?? 250);
+if (!in_array($limit, [100, 250, 500, 1000], true)) { $limit = 250; }
+
 $kosul = $w ? 'WHERE ' . implode(' AND ', $w) : '';
 $kolon = 'id, kayit, cihaz_adi, log_tipi, enlem, boylam, dogruluk_m, hiz_kmh, yon, pil_yuzdesi, sarjda_mi, pil_sicakligi, arac_hareketli, '
        . 'konum_zamani, konum_zamani_ofset_dk, elapsed_realtime_ms, konum_yasi_ms, duzeltilmis_zaman, zaman_kaynagi, alinma_zamani, ' . $ZAMAN . ' AS zaman';
 
 try {
     $pdo = db();
-    $st = $pdo->prepare("SELECT $kolon FROM emekli_log $kosul ORDER BY zaman DESC, id DESC LIMIT 100");
+    $st = $pdo->prepare("SELECT $kolon FROM emekli_log $kosul ORDER BY zaman DESC, id DESC LIMIT $limit");
     $st->execute($p);
     $kayitlar = array_map('satir', $st->fetchAll(PDO::FETCH_ASSOC));
 

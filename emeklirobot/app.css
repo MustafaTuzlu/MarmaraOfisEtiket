@@ -30,9 +30,14 @@ label.onay{flex-direction:row;align-items:center;gap:6px;padding-bottom:8px}
 #detay dd{margin:0;word-break:break-word}
 #detay h3{margin:0 0 8px;font-size:15px}
 .bos{color:#94a3b8}
-.tablo-kap{max-height:420px;overflow:auto}
+.liste-ust{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px}
+.liste-ust h2{margin:0}
+.liste-ust select{font-size:14px;padding:3px 6px;border:1px solid #cbd5e1;border-radius:6px}
+.excel{font-size:13px;color:#1d4ed8;text-decoration:none;border:1px solid #bfdbfe;background:#eff6ff;padding:6px 12px;border-radius:6px;white-space:nowrap}
+.excel:hover{background:#dbeafe}
+.tablo-kap{max-height:560px;overflow:auto}
 table{border-collapse:collapse;width:100%;font-size:13px}
-th{position:sticky;top:0;background:#f1f5f9;text-align:left;padding:6px 8px}
+th{position:sticky;top:0;background:#f1f5f9;text-align:left;padding:6px 8px;white-space:nowrap}
 td{padding:6px 8px;border-top:1px solid #e2e8f0;white-space:nowrap}
 tbody tr{cursor:pointer}tbody tr:hover{background:#f8fafc}
 tbody tr.secili{background:#dbeafe}

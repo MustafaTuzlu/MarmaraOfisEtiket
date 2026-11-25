@@ -56,16 +56,19 @@
 </section>
 
 <section class="kart">
-  <h2>Son 100 kayıt</h2>
+  <div class="liste-ust">
+    <h2>Son
+      <select id="f-limit"><option value="100">100</option><option value="250" selected>250</option><option value="500">500</option><option value="1000">1000</option></select>
+      kayıt</h2>
+    <a href="#" id="b-excel" class="excel">Excel indir (.xlsx)</a>
+  </div>
   <div class="tablo-kap">
-    <table id="liste">
-      <thead><tr><th>Zaman</th><th>Tip</th><th>Cihaz</th><th>Konum</th><th>Pil %</th><th>Sıcaklık</th><th>Araç</th><th>Şarj</th></tr></thead>
-      <tbody></tbody>
-    </table>
+    <table id="liste"><thead></thead><tbody></tbody></table>
   </div>
 </section>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="/emeklirobot/xlsx.js"></script>
 <script src="/emeklirobot/app.js"></script>
 </body>
 </html>
