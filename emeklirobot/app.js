@@ -135,10 +135,10 @@
     var y = Math.sin(dl) * Math.cos(f2), x = Math.cos(f1) * Math.sin(f2) - Math.sin(f1) * Math.cos(f2) * Math.cos(dl);
     return (Math.atan2(y, x) / r + 360) % 360;
   }
-  function okIcon(deg) {
+  function okIcon(deg, renk) {
     return L.divIcon({
       className: 'ok', iconSize: [16, 16], iconAnchor: [8, 8],
-      html: '<svg width="16" height="16" viewBox="0 0 16 16" style="transform:rotate(' + deg.toFixed(1) + 'deg)"><path d="M8 1l5.5 13L8 11l-5.5 3z" fill="#1d4ed8" stroke="#fff" stroke-width="1.2" stroke-linejoin="round"/></svg>'
+      html: '<svg width="16" height="16" viewBox="0 0 16 16" style="transform:rotate(' + deg.toFixed(1) + 'deg)"><path d="M8 1l5.5 13L8 11l-5.5 3z" fill="' + renk + '" stroke="#fff" stroke-width="1.2" stroke-linejoin="round"/></svg>'
     });
   }
   function oklariGuncelle() { // iki nokta ekranda birbirine çok yakınsa oku gizle (karmaşayı önler)
@@ -149,26 +149,64 @@
   }
   harita.on('zoomend', oklariGuncelle);
 
+  /* ---------- Cihaz kutusu (haritada sağ üst) ---------- */
+  var PALET = ['#2563eb', '#f59e0b', '#16a34a', '#9333ea', '#0d9488', '#db2777', '#92400e', '#475569', '#65a30d', '#0891b2'];
+  var renkler = {}, gorunur = {};
+  function renkOf(ad) { if (!renkler[ad]) renkler[ad] = PALET[Object.keys(renkler).length % PALET.length]; return renkler[ad]; }
+  var CihazKutusu = L.Control.extend({
+    options: { position: 'topright' },
+    onAdd: function () {
+      var d = L.DomUtil.create('div', 'cihaz-kutu');
+      d.id = 'cihaz-kutu';
+      L.DomEvent.disableClickPropagation(d); L.DomEvent.disableScrollPropagation(d);
+      d.addEventListener('change', function (e) {
+        var i = e.target.closest ? e.target.closest('input[data-cihaz]') : null;
+        if (!i) return;
+        gorunur[i.getAttribute('data-cihaz')] = i.checked;
+        noktalariCiz(false);
+      });
+      return d;
+    }
+  });
+  new CihazKutusu().addTo(harita);
+
+  function cihazKutusuYaz() {
+    var adlar = birlestir(durum.cihazlar || [], durum.kayitlar.map(function (k) { return k.cihazAdi; }));
+    adlar.sort(function (x, y) { return x < y ? -1 : x > y ? 1 : 0; }); // asc, distinct
+    adlar.forEach(function (ad) { renkOf(ad); if (gorunur[ad] === undefined) gorunur[ad] = true; });
+    $('cihaz-kutu').innerHTML = '<div class="cihaz-baslik">Cihazlar</div>' + (adlar.length ? adlar.map(function (ad) {
+      return '<label class="cihaz-satir"><span class="cihaz-nokta" style="background:' + renkler[ad] + '"></span><span class="cihaz-ad">' + esc(ad) +
+        '</span><input type="checkbox" class="anahtar" data-cihaz="' + esc(ad) + '"' + (gorunur[ad] ? ' checked' : '') + '><i></i></label>';
+    }).join('') : '<div class="cihaz-bos">Cihaz yok</div>');
+  }
+
   /* ---------- Harita noktaları ---------- */
   function noktalariCiz(sigdir) {
     katman.clearLayers();
-    var pts = [];
-    durum.kayitlar.slice().reverse().forEach(function (k) {
-      if (!konumlu(k)) return;
-      pts.push([k.enlem, k.boylam]);
-      L.circleMarker([k.enlem, k.boylam], { radius: 5, weight: 1, color: '#fff', fillColor: '#2563eb', fillOpacity: .85 })
-        .addTo(katman).on('click', function () { durum.elle = true; sec(k.id, false); });
+    cihazKutusuYaz();
+    var gruplar = {}, tum = [];
+    durum.kayitlar.slice().reverse().forEach(function (k) { // eskiden yeniye
+      if (!konumlu(k) || gorunur[k.cihazAdi] === false) return;
+      (gruplar[k.cihazAdi] = gruplar[k.cihazAdi] || []).push(k);
     });
-    if (pts.length > 1) L.polyline(pts, { color: '#2563eb', weight: 2, opacity: .35 }).addTo(katman);
     oklar = [];
-    for (var i = 1; i < pts.length; i++) {
-      var a = pts[i - 1], b = pts[i];
-      if (a[0] === b[0] && a[1] === b[1]) continue;
-      var m = L.marker([(a[0] + b[0]) / 2, (a[1] + b[1]) / 2], { icon: okIcon(yon(a, b)), interactive: false, keyboard: false, zIndexOffset: -500 }).addTo(katman);
-      oklar.push({ m: m, a: a, b: b });
-    }
+    Object.keys(gruplar).sort().forEach(function (ad) {
+      var renk = renkler[ad], pts = [];
+      gruplar[ad].forEach(function (k) {
+        pts.push([k.enlem, k.boylam]); tum.push([k.enlem, k.boylam]);
+        L.circleMarker([k.enlem, k.boylam], { radius: 5, weight: 1, color: '#fff', fillColor: renk, fillOpacity: .9 })
+          .addTo(katman).on('click', function () { durum.elle = true; sec(k.id, false); });
+      });
+      if (pts.length > 1) L.polyline(pts, { color: renk, weight: 2, opacity: .45 }).addTo(katman);
+      for (var i = 1; i < pts.length; i++) {
+        var a = pts[i - 1], b = pts[i];
+        if (a[0] === b[0] && a[1] === b[1]) continue;
+        var m = L.marker([(a[0] + b[0]) / 2, (a[1] + b[1]) / 2], { icon: okIcon(yon(a, b), renk), interactive: false, keyboard: false, zIndexOffset: -500 }).addTo(katman);
+        oklar.push({ m: m, a: a, b: b });
+      }
+    });
     oklariGuncelle();
-    if (sigdir && pts.length > 1) harita.fitBounds(pts, { maxZoom: 16, padding: [30, 30] });
+    if (sigdir && tum.length > 1) harita.fitBounds(tum, { maxZoom: 16, padding: [30, 30] });
   }
 
   /* ---------- Filtreler ---------- */
