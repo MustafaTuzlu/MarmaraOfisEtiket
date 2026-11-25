@@ -9,11 +9,12 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <link rel="stylesheet" href="/emeklirobot/app.css">
 </head>
-<body>
+<body data-csrf="<?= htmlspecialchars(csrf(), ENT_QUOTES, 'UTF-8') ?>">
 <header class="ust">
   <strong>Emekli Robot</strong>
   <span id="durum" class="durum"></span>
   <label class="oto"><input type="checkbox" id="f-oto"> 15 sn'de bir yenile</label>
+  <button type="button" id="b-db" class="dbbtn">DB Ayarları</button>
   <form method="post" action="/emeklirobot/" class="cikis">
     <input type="hidden" name="islem" value="cikis">
     <input type="hidden" name="csrf" value="<?= htmlspecialchars(csrf(), ENT_QUOTES, 'UTF-8') ?>">
@@ -66,6 +67,37 @@
     <table id="liste"><thead></thead><tbody></tbody></table>
   </div>
 </section>
+
+<div id="dbmodal" class="modal" hidden>
+  <div class="modal-kutu" role="dialog" aria-modal="true" aria-labelledby="dbbaslik">
+    <button type="button" class="modal-kapat" id="dbkapat" aria-label="Kapat">×</button>
+    <h2 id="dbbaslik">Veritabanı Ayarları</h2>
+    <div class="istat">
+      <div><span>Toplam kayıt</span><strong id="db-toplam">…</strong></div>
+      <div><span>Tablo boyutu</span><strong id="db-boyut">…</strong></div>
+      <div><span>En eski</span><strong id="db-eski">…</strong></div>
+      <div><span>En yeni</span><strong id="db-yeni">…</strong></div>
+    </div>
+    <div id="db-ana">
+      <p class="not">Kayıt silmek için bir seçenek seçin. Silinen kayıtlar geri getirilemez.</p>
+      <div class="sil-butonlar">
+        <button type="button" data-kural="bugun">Bugüne ait olanları sil</button>
+        <button type="button" data-kural="hafta">1 haftadan eski olanları sil</button>
+        <button type="button" data-kural="ay">1 aydan eski olanları sil</button>
+        <button type="button" data-kural="hepsi" class="tehlike">Hepsini sil</button>
+      </div>
+      <p class="alt"><a href="#" id="db-optimize">Alanı geri kazan (OPTIMIZE)</a> <small>— silmeden sonra tablo boyutu küçülmezse</small></p>
+    </div>
+    <div id="db-onay" hidden>
+      <p id="db-onay-metin" class="onay-metin"></p>
+      <div class="onay-butonlar">
+        <button type="button" id="db-vazgec">Vazgeç</button>
+        <button type="button" id="db-evet" class="tehlike">Evet, sil</button>
+      </div>
+    </div>
+    <p id="db-mesaj" class="mesaj" role="status"></p>
+  </div>
+</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="/emeklirobot/xlsx.js"></script>

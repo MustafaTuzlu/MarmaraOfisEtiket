@@ -270,6 +270,79 @@
     setTimeout(function () { URL.revokeObjectURL(a.href); }, 1500);
   });
 
+
+  /* ---------- DB Ayarları (silme) ---------- */
+  var KURAL_AD = { bugun: 'Bugüne ait', hafta: '1 haftadan eski', ay: '1 aydan eski', hepsi: 'TÜM' };
+  var bekleyen = null, mesgul = false;
+  function bayt(n) {
+    if (n < 1024) return n + ' B';
+    var b = ['KB', 'MB', 'GB', 'TB'], i = -1;
+    do { n /= 1024; i++; } while (n >= 1024 && i < b.length - 1);
+    return n.toFixed(n >= 100 ? 0 : n >= 10 ? 1 : 2) + ' ' + b[i];
+  }
+  function dbMesaj(t, tur) { var m = $('db-mesaj'); m.textContent = t || ''; m.className = 'mesaj' + (tur ? ' ' + tur : ''); }
+  function dbIstek(url, govde) {
+    var o = { credentials: 'same-origin', cache: 'no-store' };
+    if (govde) { o.method = 'POST'; o.headers = { 'Content-Type': 'application/json', 'X-CSRF-Token': document.body.getAttribute('data-csrf') }; o.body = JSON.stringify(govde); }
+    return fetch(url, o).then(function (r) {
+      if (r.status === 401) { location.reload(); throw new Error('oturum'); }
+      return r.json();
+    });
+  }
+  function dbBilgi() {
+    return dbIstek('/emeklirobot/db.php?islem=bilgi').then(function (v) {
+      if (!v.ok) throw new Error('bilgi');
+      $('db-toplam').textContent = v.toplam.toLocaleString('tr-TR');
+      $('db-boyut').textContent = bayt(v.boyutBayt);
+      $('db-boyut').title = 'Veri: ' + bayt(v.veriBayt) + ' · İndeks: ' + bayt(v.indeksBayt);
+      $('db-eski').textContent = zaman(v.enEski);
+      $('db-yeni').textContent = zaman(v.enYeni);
+    }).catch(function (e) { if (e.message !== 'oturum') dbMesaj('İstatistik alınamadı.', 'hata'); });
+  }
+  function dbAna() { $('db-ana').hidden = false; $('db-onay').hidden = true; bekleyen = null; }
+  function dbAc() { $('dbmodal').hidden = false; dbMesaj(''); dbAna(); ['db-toplam', 'db-boyut', 'db-eski', 'db-yeni'].forEach(function (i) { $(i).textContent = '…'; }); dbBilgi(); }
+  function dbKapat() { if (!mesgul) $('dbmodal').hidden = true; }
+  function butonlar(kilit) { mesgul = kilit; [].forEach.call($('dbmodal').querySelectorAll('button'), function (b) { if (b.id !== 'dbkapat') b.disabled = kilit; }); }
+
+  $('b-db').addEventListener('click', dbAc);
+  $('dbkapat').addEventListener('click', dbKapat);
+  $('dbmodal').addEventListener('mousedown', function (e) { if (e.target === this) dbKapat(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !$('dbmodal').hidden) dbKapat(); });
+
+  document.querySelector('.sil-butonlar').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-kural]'); if (!b || mesgul) return;
+    var kural = b.getAttribute('data-kural');
+    dbMesaj(''); butonlar(true);
+    dbIstek('/emeklirobot/db.php?islem=onizle&kural=' + kural).then(function (v) {
+      if (!v.ok) throw new Error('onizle');
+      if (v.adet === 0) { dbMesaj('Bu seçenekle silinecek kayıt yok.'); return; }
+      bekleyen = kural;
+      $('db-onay-metin').innerHTML = '<strong>' + esc(KURAL_AD[kural]) + '</strong> ' + (kural === 'hepsi' ? 'kayıtlar' : 'kayıtlar') + ' silinecek: <strong>' + v.adet.toLocaleString('tr-TR') + ' kayıt</strong>.<br>Bu işlem <strong>geri alınamaz</strong>. Emin misiniz?';
+      $('db-ana').hidden = true; $('db-onay').hidden = false;
+    }).catch(function (e) { if (e.message !== 'oturum') dbMesaj('Sayım alınamadı.', 'hata'); })
+      .then(function () { butonlar(false); });
+  });
+  $('db-vazgec').addEventListener('click', function () { if (!mesgul) { dbAna(); dbMesaj('Vazgeçildi.'); } });
+  $('db-evet').addEventListener('click', function () {
+    if (!bekleyen || mesgul) return;
+    var kural = bekleyen; butonlar(true); dbMesaj('Siliniyor…');
+    dbIstek('/emeklirobot/db.php', { islem: 'sil', kural: kural }).then(function (v) {
+      if (!v.ok) throw new Error('sil');
+      dbAna();
+      dbMesaj(v.silinen.toLocaleString('tr-TR') + ' kayıt silindi.' + (v.bitti ? '' : ' Süre doldu, kalanlar için işlemi tekrarlayın.'), 'ok');
+      dbBilgi(); yukle({ sifirla: true });
+    }).catch(function (e) { if (e.message !== 'oturum') { dbAna(); dbMesaj('Silme başarısız.', 'hata'); } })
+      .then(function () { butonlar(false); });
+  });
+  $('db-optimize').addEventListener('click', function (e) {
+    e.preventDefault(); if (mesgul) return;
+    butonlar(true); dbMesaj('Optimize ediliyor…');
+    dbIstek('/emeklirobot/db.php', { islem: 'optimize' }).then(function (v) {
+      if (!v.ok) throw new Error('opt'); dbMesaj('Tablo optimize edildi.', 'ok'); dbBilgi();
+    }).catch(function (e) { if (e.message !== 'oturum') dbMesaj('Optimize başarısız.', 'hata'); })
+      .then(function () { butonlar(false); });
+  });
+
   var oto = null;
   $('f-oto').addEventListener('change', function () {
     clearInterval(oto);

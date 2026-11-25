@@ -50,3 +50,29 @@ tbody tr.secili{background:#dbeafe}
   #detay{max-height:none}
   .ust{flex-wrap:wrap}
 }
+
+.ust .dbbtn{background:#334155;color:#fff;border:0;border-radius:6px;padding:6px 12px;cursor:pointer}
+.ust .dbbtn:hover{background:#475569}
+.modal{position:fixed;inset:0;background:rgba(15,23,42,.6);display:flex;align-items:center;justify-content:center;z-index:5000;padding:16px}
+.modal[hidden]{display:none}
+.modal-kutu{position:relative;background:#fff;border-radius:14px;width:min(520px,100%);padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.4);max-height:94vh;overflow:auto}
+.modal-kutu h2{margin:0 0 14px;font-size:18px}
+.modal-kapat{position:absolute;top:10px;right:12px;border:0;background:none;font-size:26px;line-height:1;cursor:pointer;color:#64748b}
+.istat{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.istat div{background:#f1f5f9;border-radius:10px;padding:10px 12px}
+.istat span{display:block;font-size:12px;color:#64748b}
+.istat strong{font-size:17px}
+.istat div:nth-child(n+3) strong{font-size:13px}
+.not{color:#475569;font-size:13px;margin:0 0 10px}
+.sil-butonlar{display:grid;gap:8px}
+.sil-butonlar button,.onay-butonlar button{padding:11px;border-radius:8px;border:1px solid #cbd5e1;background:#f8fafc;font-size:14px;cursor:pointer}
+.sil-butonlar button:hover{background:#f1f5f9}
+button.tehlike{background:#dc2626!important;color:#fff;border-color:#dc2626!important}
+button.tehlike:hover{background:#b91c1c!important}
+.sil-butonlar button:disabled,.onay-butonlar button:disabled{opacity:.5;cursor:default}
+.alt{margin:14px 0 0;font-size:12px;color:#64748b}
+.alt a{color:#1d4ed8}
+.onay-metin{font-size:15px;background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:14px;margin:0 0 12px}
+.onay-butonlar{display:flex;gap:10px;justify-content:flex-end}
+.mesaj{min-height:20px;margin:12px 0 0;font-size:13px}
+.mesaj.ok{color:#15803d}.mesaj.hata{color:#b91c1c}
