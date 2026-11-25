@@ -14,6 +14,13 @@
   <strong>Emekli Robot</strong>
   <span id="durum" class="durum"></span>
   <label class="oto"><input type="checkbox" id="f-oto"> 15 sn'de bir yenile</label>
+  <button type="button" id="b-ses" class="sesbtn" aria-pressed="false" title="Bildirim sesi: kapalı (açmak için tıkla)">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M11 5 6 9H3v6h3l5 4z" fill="currentColor"/>
+      <g class="dalga"><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></g>
+      <path class="cizgi" d="m16 9 5 6m0-6-5 6"/>
+    </svg>
+  </button>
   <button type="button" id="b-db" class="dbbtn">DB Ayarları</button>
   <form method="post" action="/emeklirobot/" class="cikis">
     <input type="hidden" name="islem" value="cikis">

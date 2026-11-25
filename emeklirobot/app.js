@@ -8,7 +8,7 @@
     CIHAZ_KRITIK_ISINDI: 'Cihaz kritik ısındı (≥48°C)', CIHAZ_SOGUDU: 'Cihaz soğudu'
   };
   var $ = function (id) { return document.getElementById(id); };
-  var durum = { kayitlar: [], sonKonum: null, secili: null, elle: false, secenekGeldi: false, tipler: Object.keys(TIP), cihazlar: [] };
+  var durum = { sonId: null, kayitlar: [], sonKonum: null, secili: null, elle: false, secenekGeldi: false, tipler: Object.keys(TIP), cihazlar: [] };
 
   function esc(s) {
     return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; });
@@ -209,9 +209,15 @@
         if (no !== istek) return;
         if (!v.ok) throw new Error('sunucu');
         if (v.tipler) { durum.secenekGeldi = true; durum.tipler = birlestir(Object.keys(TIP), v.tipler); durum.cihazlar = v.cihazlar; cipler('f-tipler', durum.tipler, TIP); cipler('f-cihazlar', durum.cihazlar); }
+        var maxId = v.kayitlar.reduce(function (m, k) { return k.id > m ? k.id : m; }, 0), yeni = 0;
+        if (opts.oto && durum.sonId !== null) {
+          v.kayitlar.forEach(function (k) { if (k.id > durum.sonId) yeni++; });
+          if (yeni > 0) ses();
+          durum.sonId = Math.max(durum.sonId, maxId);
+        } else { durum.sonId = maxId; }
         durum.kayitlar = v.kayitlar; durum.sonKonum = v.sonKonum;
         $('sayac').textContent = v.toplam + ' kayıt eşleşti, ilk ' + v.kayitlar.length + ' tanesi listeleniyor';
-        $('durum').textContent = 'Güncellendi: ' + zaman(v.sunucuZamani);
+        $('durum').textContent = 'Güncellendi: ' + zaman(v.sunucuZamani) + (yeni ? ' · ' + yeni + ' yeni kayıt' : '');
         // seçili kayıt yeni listede yoksa ya da kullanıcı seçim yapmadıysa en son konuma dön
         var hedef = (opts.sifirla || !durum.elle || !kayitBul(durum.secili)) ? (v.sonKonum ? v.sonKonum.id : (v.kayitlar[0] ? v.kayitlar[0].id : null)) : durum.secili;
         if (opts.sifirla) durum.elle = false;
@@ -343,10 +349,38 @@
       .then(function () { butonlar(false); });
   });
 
+
+  /* ---------- Bildirim sesi (varsayılan kapalı) ---------- */
+  var sesAcik = false, sesCtx = null;
+  function ses() {
+    if (!sesAcik) return;
+    try {
+      if (!sesCtx) sesCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (sesCtx.state === 'suspended') sesCtx.resume();
+      var t = sesCtx.currentTime;
+      [[880, 0], [1318.5, 0.16]].forEach(function (n) { // yumuşak iki notalı "ding"
+        var o = sesCtx.createOscillator(), g = sesCtx.createGain(), b = t + n[1];
+        o.type = 'sine'; o.frequency.value = n[0];
+        g.gain.setValueAtTime(0.0001, b);
+        g.gain.exponentialRampToValueAtTime(0.18, b + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, b + 0.5);
+        o.connect(g); g.connect(sesCtx.destination);
+        o.start(b); o.stop(b + 0.55);
+      });
+    } catch (e) { /* ses desteklenmiyorsa sessizce geç */ }
+  }
+  $('b-ses').addEventListener('click', function () {
+    sesAcik = !sesAcik;
+    this.classList.toggle('acik', sesAcik);
+    this.setAttribute('aria-pressed', sesAcik ? 'true' : 'false');
+    this.title = 'Bildirim sesi: ' + (sesAcik ? 'açık (kapatmak için tıkla)' : 'kapalı (açmak için tıkla)');
+    if (sesAcik) ses(); // tıklama kullanıcı etkileşimi olduğu için ses motoru burada açılır; aynı zamanda önizleme
+  });
+
   var oto = null;
   $('f-oto').addEventListener('change', function () {
     clearInterval(oto);
-    if (this.checked) oto = setInterval(function () { yukle({}); }, 15000);
+    if (this.checked) oto = setInterval(function () { yukle({ oto: true }); }, 15000);
   });
 
   cipler('f-tipler', durum.tipler, TIP);

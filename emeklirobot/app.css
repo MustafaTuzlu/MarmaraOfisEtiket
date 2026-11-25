@@ -76,3 +76,9 @@ button.tehlike:hover{background:#b91c1c!important}
 .onay-butonlar{display:flex;gap:10px;justify-content:flex-end}
 .mesaj{min-height:20px;margin:12px 0 0;font-size:13px}
 .mesaj.ok{color:#15803d}.mesaj.hata{color:#b91c1c}
+
+.ust .sesbtn{background:none;border:0;padding:4px;border-radius:6px;cursor:pointer;color:#94a3b8;display:flex;align-items:center}
+.ust .sesbtn:hover{background:rgba(255,255,255,.08)}
+.ust .sesbtn.acik{color:#22c55e}
+.sesbtn .dalga{display:none}.sesbtn .cizgi{display:block}
+.sesbtn.acik .dalga{display:block}.sesbtn.acik .cizgi{display:none}
