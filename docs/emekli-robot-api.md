@@ -117,7 +117,7 @@ Android uygulaması (EmekliRobot, cihaz `EmektarNote9`) ↔ sunucu (`marmaraofis
 | `sarjdaMi` | bool | hayır | `true`/`false` (0/1 **değil**). |
 | `pilSicakligi` | sayı (°C) | hayır | −50…150, 0.1 hassasiyet (fazlası yuvarlanır). |
 | `aracHareketli` | bool | hayır | `true` = hareket, `false` = durağan. |
-| `konumZamani` | string | evet | `KONUM`/`DURUM` kayıtlarında konum fix'inin kendi zamanı (kayıt oluşturma zamanı değil); diğerlerinde olay zamanı. Saat dilimli ISO 8601, saniye hassasiyeti: `2026-11-25T14:03:07+03:00` (`Z` ve `.123` kesir de kabul; kesir atılır). Saat dilimsiz → 422. Konum alınamayan kayıtlarda da olay zamanı olarak zorunlu. |
+| `konumZamani` | string | evet | `KONUM`, `ARAC_HAREKET`, `ARAC_DURUYOR` kayıtlarında konum fix'inin kendi zamanı (`konumYasiMs` ≈ 0); `DURUM`, `SARJ_*`, `CIHAZ_*` ve `KONUM_ALINAMADI` kayıtlarında kayıt oluşturma zamanı (`DURUM` konumu son fix'lerin medyanıdır, `konumYasiMs` büyük olabilir). Saat dilimli ISO 8601, saniye hassasiyeti: `2026-11-25T14:03:07+03:00` (`Z` ve `.123` kesir de kabul; kesir atılır). Saat dilimsiz → 422. Konum alınamayan kayıtlarda da olay zamanı olarak zorunlu. |
 | `elapsedRealtime` | tamsayı (ms) | evet | Kaydın **oluşturulduğu andaki** `SystemClock.elapsedRealtime()`. |
 | `konumYasiMs` | tamsayı (ms) | hayır | Kayıt oluşturulduğunda konum fix'inin yaşı. Konum yoksa `null`. |
 
@@ -234,7 +234,7 @@ curl -s -X POST https://marmaraofisetiket.net/api/emekli/kayitlar.php \
 
 ## 10. Değişiklik geçmişi (v1 içinde geriye uyumlu eklemeler)
 
-- 2026-11-25: kayıtlara isteğe bağlı `hizKmh` ve `yon` eklendi. Zorunlu alan değişmedi; yeni log tipi yok. Sunucuda `db/2026-11-25-hiz-yon.sql` migrasyonu gerekir.
+- 2026-11-25: kayıtlara isteğe bağlı `hizKmh` ve `yon` eklendi. Zorunlu alan değişmedi; yeni log tipi yok. `hizKmh`/`yon` yalnızca taze fix'li kayıtlarda (`KONUM`, `ARAC_*`) dolu, diğerlerinde `null`. Sunucuda `db/2026-11-25-hiz-yon.sql` migrasyonu gerekir.
 
 ## 11. Sürüm notu
 
