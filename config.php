@@ -17,4 +17,8 @@ $MAIL_FROM = '';
 // host boşsa PHP mail() denenir.
 $SMTP = ['host' => '', 'port' => 587, 'secure' => 'tls', 'user' => '', 'pass' => ''];
 
+// EmekliRobot API (api/emekli/). Gerçek değerler config.local.php'de (workflow üretir); buraya YAZMAYIN.
+$DB = ['host' => 'localhost', 'port' => 3306, 'name' => '', 'user' => '', 'pass' => ''];
+$EMEKLI_API_KEY = '';
+
 if (is_file(__DIR__ . '/config.local.php')) { require __DIR__ . '/config.local.php'; }

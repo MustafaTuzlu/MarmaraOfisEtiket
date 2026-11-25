@@ -3,6 +3,7 @@ Allow: /
 Disallow: /arama.php
 Disallow: /mail.php
 Disallow: /config.php
+Disallow: /api/
 Disallow: /orijinal/
 
 Sitemap: https://marmaraofisetiket.net/sitemap.xml

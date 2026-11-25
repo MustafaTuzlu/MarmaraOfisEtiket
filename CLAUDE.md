@@ -26,6 +26,10 @@ Bu dosya, projede çalışan yapay zekâ (Claude) ve geliştiriciler için kalı
 - Bu makinede `gh` girişsiz, PR açılamaz; değişiklikler doğrudan `main`'e gider. Kullanıcı "push" ya da "deploy" demedikçe **push etme**; commit mesajlarında Claude ortak yazar satırı kullanılır.
 - Deploy sonrası kontrol: `https://marmaraofisetiket.net/robots.txt`, `/sitemap.xml`, http→https ve www→non-www yönlendirmesi.
 
+## 3b. EmekliRobot API (araç takip)
+- Sözleşme: `docs/emekli-robot-api.md`. Uç noktalar: `api/emekli/ping.php` (GET), `api/emekli/kayitlar.php` (POST, toplu, idempotent). Şema: `db/emekli-robot.sql` (MariaDB 5.5, phpMyAdmin'den elle çalıştırılır; deploy'a girmez).
+- Gizli bilgiler yalnızca GitHub secret/variable → `config.local.php`: secret `EMEKLI_DB_PASS`, `EMEKLI_API_KEY`; variable (opsiyonel) `EMEKLI_DB_HOST/PORT/NAME/USER`. Repoya yazma.
+
 ## 4. SEO kuralları (mevcut durum – bozma)
 - **Her sayfada:** benzersiz `<title>` (sonu `| Marmara Ofis Etiket`), `meta description` (≤160 karakter), `robots`, `canonical` (tam https URL), `hreflang` (tr / en / de + `x-default` → TR), Open Graph + Twitter Card, JSON-LD, tek `<h1>`, tüm `<img>` için `alt`.
 - **hreflang eşleşmesi:** TR ve EN ürün sayfaları ana ürün görselinin dosya adı üzerinden eşlenir. DE'de yalnızca ana sayfa ve iletişim eşleşir.
