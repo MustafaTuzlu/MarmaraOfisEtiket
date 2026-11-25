@@ -32,6 +32,11 @@ Bu dosya, projede çalışan yapay zekâ (Claude) ve geliştiriciler için kalı
 - **İndekslenmemeli:** `/api/` hiçbir zaman sitemap'e, sayfa bağlantılarına girmez. Korumalar: `robots.txt` `Disallow: /api/`, `api/emekli/.htaccess` ve PHP yanıtlarında `X-Robots-Tag: noindex, nofollow`. Bunları kaldırma.
 - Durum: sunucu canlı ve test edildi (ping, kayıt ekleme, mükerrer atlama). Açık karar: geçersiz kayıtta tüm parti 422 ile reddedilir (alternatif: geçerlileri yaz, hatalıları raporla).
 
+## 3c. Gizli panel `/emeklirobot/`
+- Giriş + harita paneli (Leaflet/OSM): `emeklirobot/` (`index.php`, `api.php`, `_panel.php`, `app.js`, `app.css`). Son 100 log, çoklu filtre, pin, detay paneli.
+- **Hiçbir yerde görünmez:** `robots.txt`'e **eklenmez** (yoksa adresi ele verir), sitemap'e/sayfalara bağlanmaz; yalnızca `X-Robots-Tag: noindex` + meta robots. Adres dışarıya söylenmez.
+- Giriş: kullanıcı `EMEKLI_DASH_USER` variable'ı (varsayılan `mustafa`), şifre GitHub secret `EMEKLI_DASH_PASS`; workflow `password_hash` ile `config.local.php`'ye `$DASH` yazar. Şifre repoda yok. IP başına 5 hatalı denemede 15 dk kilit.
+
 ## 4. SEO kuralları (mevcut durum – bozma)
 - **Her sayfada:** benzersiz `<title>` (sonu `| Marmara Ofis Etiket`), `meta description` (≤160 karakter), `robots`, `canonical` (tam https URL), `hreflang` (tr / en / de + `x-default` → TR), Open Graph + Twitter Card, JSON-LD, tek `<h1>`, tüm `<img>` için `alt`.
 - **hreflang eşleşmesi:** TR ve EN ürün sayfaları ana ürün görselinin dosya adı üzerinden eşlenir. DE'de yalnızca ana sayfa ve iletişim eşleşir.

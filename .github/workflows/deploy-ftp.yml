@@ -28,6 +28,8 @@ jobs:
           DB_NAME: ${{ vars.EMEKLI_DB_NAME || 'marmaraofisetiket_net_emeklirobot' }}
           DB_USER: ${{ vars.EMEKLI_DB_USER || 'marma_emekli' }}
           EMEKLI_API_KEY: ${{ secrets.EMEKLI_API_KEY }}
+          DASH_PASS: ${{ secrets.EMEKLI_DASH_PASS }}
+          DASH_USER: ${{ vars.EMEKLI_DASH_USER || 'mustafa' }}
         run: |
           python3 - <<'PY'
           import os
@@ -47,6 +49,12 @@ jobs:
               out += "$EMEKLI_API_KEY = %s;\n" % q(e['EMEKLI_API_KEY'])
           else:
               print("EMEKLI_API_KEY secret tanımlı değil; API 503 dönecek.")
+          if e.get('DASH_PASS'):
+              import subprocess
+              h = subprocess.check_output(['php', '-r', 'echo password_hash(getenv("DASH_PASS"), PASSWORD_DEFAULT);'], env=dict(e)).decode().strip()
+              out += "$DASH = ['user' => %s, 'hash' => %s];\n" % (q(e['DASH_USER']), q(h))
+          else:
+              print("EMEKLI_DASH_PASS secret tanımlı değil; panel girişi kapalı.")
           open('config.local.php', 'w').write(out)
           PY
           php -l config.local.php || true

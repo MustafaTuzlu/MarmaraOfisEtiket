@@ -20,5 +20,7 @@ $SMTP = ['host' => '', 'port' => 587, 'secure' => 'tls', 'user' => '', 'pass' =>
 // EmekliRobot API (api/emekli/). Gerçek değerler config.local.php'de (workflow üretir); buraya YAZMAYIN.
 $DB = ['host' => 'localhost', 'port' => 3306, 'name' => '', 'user' => '', 'pass' => ''];
 $EMEKLI_API_KEY = '';
+// Gizli panel (/emeklirobot/) girişi: kullanıcı + bcrypt hash. Değerleri workflow üretir; buraya YAZMAYIN.
+$DASH = ['user' => '', 'hash' => ''];
 
 if (is_file(__DIR__ . '/config.local.php')) { require __DIR__ . '/config.local.php'; }
