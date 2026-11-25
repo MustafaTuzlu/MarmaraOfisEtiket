@@ -3,3 +3,8 @@
   Require all denied
 </FilesMatch>
 Options -Indexes
+
+# Arama motorları: hiçbir yanıt (401/403/404 dahil) indekslenmesin
+<IfModule mod_headers.c>
+  Header always set X-Robots-Tag "noindex, nofollow, noarchive, nosnippet"
+</IfModule>

@@ -29,6 +29,8 @@ Bu dosya, projede çalışan yapay zekâ (Claude) ve geliştiriciler için kalı
 ## 3b. EmekliRobot API (araç takip)
 - Sözleşme: `docs/emekli-robot-api.md`. Uç noktalar: `api/emekli/ping.php` (GET), `api/emekli/kayitlar.php` (POST, toplu, idempotent). Şema: `db/emekli-robot.sql` (MariaDB 5.5, phpMyAdmin'den elle çalıştırılır; deploy'a girmez).
 - Gizli bilgiler yalnızca GitHub secret/variable → `config.local.php`: secret `EMEKLI_DB_PASS`, `EMEKLI_API_KEY`; variable (opsiyonel) `EMEKLI_DB_HOST/PORT/NAME/USER`. Repoya yazma.
+- **İndekslenmemeli:** `/api/` hiçbir zaman sitemap'e, sayfa bağlantılarına girmez. Korumalar: `robots.txt` `Disallow: /api/`, `api/emekli/.htaccess` ve PHP yanıtlarında `X-Robots-Tag: noindex, nofollow`. Bunları kaldırma.
+- Durum: sunucu canlı ve test edildi (ping, kayıt ekleme, mükerrer atlama). Açık karar: geçersiz kayıtta tüm parti 422 ile reddedilir (alternatif: geçerlileri yaz, hatalıları raporla).
 
 ## 4. SEO kuralları (mevcut durum – bozma)
 - **Her sayfada:** benzersiz `<title>` (sonu `| Marmara Ofis Etiket`), `meta description` (≤160 karakter), `robots`, `canonical` (tam https URL), `hreflang` (tr / en / de + `x-default` → TR), Open Graph + Twitter Card, JSON-LD, tek `<h1>`, tüm `<img>` için `alt`.
