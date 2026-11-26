@@ -276,7 +276,7 @@
   }
   function animAdim(t) {
     if (!anim.oynuyor) return;
-    anim.pos += (t - anim.son) / 1000 * Number($('a-hiz').value); anim.son = t;
+    anim.pos += Math.max(0, t - anim.son) / 1000 * Number($('a-hiz').value); anim.son = t;
     if (anim.pos >= anim.max) { anim.pos = anim.max; animDurdur(); }
     animCiz();
     if (anim.oynuyor) requestAnimationFrame(animAdim);
