@@ -148,15 +148,29 @@
   harita.on('zoomend', oklariGuncelle);
 
   /* ---------- Cihaz kutusu (haritada sağ üst) ---------- */
-  var PALET = ['#2563eb', '#f59e0b', '#16a34a', '#9333ea', '#0d9488', '#db2777', '#92400e', '#475569', '#65a30d', '#0891b2'];
-  var renkler = {}, gorunur = {};
+  var PALET = ['#2563eb', '#f59e0b', '#16a34a', '#9333ea', '#0d9488', '#db2777', '#92400e', '#475569'];
+  var renkler = {}, gorunur = {}, paletAcik = null;
+  try { renkler = JSON.parse(localStorage.getItem('er_renkler') || '{}') || {}; } catch (e) { renkler = {}; }
+  function renkKaydet() { try { localStorage.setItem('er_renkler', JSON.stringify(renkler)); } catch (e) {} }
   function renkOf(ad) { if (!renkler[ad]) renkler[ad] = PALET[Object.keys(renkler).length % PALET.length]; return renkler[ad]; }
+  var HEX = /^#[0-9a-f]{6}$/i;
   var CihazKutusu = L.Control.extend({
     options: { position: 'topright' },
     onAdd: function () {
       var d = L.DomUtil.create('div', 'cihaz-kutu');
       d.id = 'cihaz-kutu';
       L.DomEvent.disableClickPropagation(d); L.DomEvent.disableScrollPropagation(d);
+      d.addEventListener('click', function (e) {
+        var t = e.target.closest ? e.target.closest('[data-nokta],[data-renk]') : null;
+        if (!t) return;
+        e.preventDefault();
+        if (t.hasAttribute('data-nokta')) { var ad = t.getAttribute('data-nokta'); paletAcik = paletAcik === ad ? null : ad; cihazKutusuYaz(); return; }
+        var c = t.getAttribute('data-renk'), cad = t.getAttribute('data-cihaz');
+        if (!HEX.test(c)) return;
+        renkler[cad] = c; renkKaydet(); paletAcik = null;
+        if (anim.araclar[cad]) { anim.katman.removeLayer(anim.araclar[cad]); delete anim.araclar[cad]; }
+        noktalariCiz(false);
+      });
       d.addEventListener('change', function (e) {
         var i = e.target.closest ? e.target.closest('input[data-cihaz]') : null;
         if (!i) return;
@@ -171,10 +185,13 @@
   function cihazKutusuYaz() {
     var adlar = birlestir(durum.cihazlar || [], durum.kayitlar.map(function (k) { return k.cihazAdi; }));
     adlar.sort(function (x, y) { return x < y ? -1 : x > y ? 1 : 0; }); // asc, distinct
-    adlar.forEach(function (ad) { renkOf(ad); if (gorunur[ad] === undefined) gorunur[ad] = true; });
+    adlar.forEach(function (ad) { if (!HEX.test(renkler[ad] || '')) delete renkler[ad]; renkOf(ad); if (gorunur[ad] === undefined) gorunur[ad] = true; });
     $('cihaz-kutu').innerHTML = '<div class="cihaz-baslik">Cihazlar</div>' + (adlar.length ? adlar.map(function (ad) {
-      return '<label class="cihaz-satir"><span class="cihaz-nokta" style="background:' + renkler[ad] + '"></span><span class="cihaz-ad">' + esc(ad) +
-        '</span><input type="checkbox" class="anahtar" data-cihaz="' + esc(ad) + '"' + (gorunur[ad] ? ' checked' : '') + '><i></i></label>';
+      var palet = paletAcik === ad ? '<div class="cihaz-palet">' + PALET.map(function (c) {
+        return '<button type="button" class="renk' + (c.toLowerCase() === String(renkler[ad]).toLowerCase() ? ' sec' : '') + '" data-renk="' + c + '" data-cihaz="' + esc(ad) + '" style="background:' + c + '" title="' + c + '"></button>';
+      }).join('') + '</div>' : '';
+      return '<label class="cihaz-satir"><button type="button" class="cihaz-nokta" data-nokta="' + esc(ad) + '" style="background:' + renkler[ad] + '" title="Rengi değiştir"></button><span class="cihaz-ad">' + esc(ad) +
+        '</span><input type="checkbox" class="anahtar" data-cihaz="' + esc(ad) + '"' + (gorunur[ad] ? ' checked' : '') + '><i></i></label>' + palet;
     }).join('') : '<div class="cihaz-bos">Cihaz yok</div>');
   }
 

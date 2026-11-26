@@ -101,3 +101,6 @@ button.tehlike:hover{background:#b91c1c!important}
 .anim-satir .btn:disabled,#a-kaydir:disabled{opacity:.45;cursor:not-allowed}
 #a-kaydir{flex:1;min-width:160px}.anim-bilgi{color:#475569;font-variant-numeric:tabular-nums}
 .arac{background:none;border:0}.arac-i{width:30px;height:30px;filter:drop-shadow(0 1px 3px rgba(0,0,0,.5))}
+.cihaz-nokta{padding:0;cursor:pointer}.cihaz-nokta:hover{box-shadow:0 0 0 2px #475569}
+.cihaz-palet{display:grid;grid-template-columns:repeat(4,24px);gap:6px;padding:4px 0 8px 20px}
+.cihaz-palet .renk{width:24px;height:24px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px #94a3b8;padding:0;cursor:pointer}.cihaz-palet .renk.sec{box-shadow:0 0 0 2px #0f172a}
