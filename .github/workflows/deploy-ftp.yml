@@ -80,3 +80,5 @@ jobs:
             CLAUDE.md
             db/**
             docs/**
+            api/emekli/yayin/*.apk
+            api/emekli/yayin/surum.json

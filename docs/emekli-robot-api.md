@@ -7,7 +7,7 @@ Android uygulaması (EmekliRobot, cihaz `EmektarNote9`) ↔ sunucu (`marmaraofis
 | | |
 |---|---|
 | Taban adres | `https://marmaraofisetiket.net/api/emekli/` |
-| Uç noktalar | `GET ping.php`, `POST kayitlar.php`, `GET komut.php`, `POST anlik.php` (v1.1) |
+| Uç noktalar | `GET ping.php`, `POST kayitlar.php`, `GET komut.php`, `POST anlik.php` (v1.1), `GET surum.php`, `GET|HEAD indir.php` (v1.2) |
 | Protokol | **Yalnızca HTTPS.** `http://` istekleri 301 ile yönlendirilir ve POST gövdesi kaybolur; telefon doğrudan `https://` kullanmalı. Yönlendirmeyi (3xx) başarı sayma. |
 | Alan adı | `www` **yok**: `marmaraofisetiket.net` |
 | Gövde | UTF-8 JSON, `Content-Type: application/json` |
@@ -235,6 +235,7 @@ curl -s -X POST https://marmaraofisetiket.net/api/emekli/kayitlar.php \
 ## 10. Değişiklik geçmişi (v1 içinde geriye uyumlu eklemeler)
 
 - 2026-11-25: kayıtlara isteğe bağlı `hizKmh` ve `yon` eklendi. Zorunlu alan değişmedi; yeni log tipi yok. `hizKmh`/`yon` yalnızca taze fix'li kayıtlarda (`KONUM`, `ARAC_*`) dolu, diğerlerinde `null`. Sunucuda `db/2026-11-25-hiz-yon.sql` migrasyonu gerekir.
+- 2026-11-27 (v1.2): `GET surum.php` ve `GET|HEAD indir.php` eklendi (§13). Mevcut uç noktalar değişmedi.
 - 2026-11-26 (v1.1): `GET komut.php` ve `POST anlik.php` eklendi (§12). Mevcut uç noktalar değişmedi. Sunucuda `db/2026-11-26-anlik.sql` migrasyonu gerekir.
 
 ## 12. Anlık durum komutu (v1.1) — "Bana son durumu göster"
@@ -268,6 +269,33 @@ Sitedeki panelden bir cihaz için anlık durum istenir. Akış: panel komut aça
 - Geçerlilik 30 dk (son basıştan itibaren). Zaman aşımına uğrayan komuta geç cevap verilse de panelde "zaman aşımı" görünür; veri yine son durum olarak saklanır.
 - Telefon önerisi: internet varken ve uygulama çalışırken ~1 dk'da bir `komut.php`'yi yokla (SIM yok; Wi-Fi bağlıyken gecikme ≈ 1 dk). Komut gelince tek `anlik.php` gönder; 200 alınca bırak. 5xx/ağ hatasında aynı komutla yeniden dene.
 
-## 13. Sürüm notu
+## 13. Uygulama güncelleme dağıtımı (v1.2)
+
+Telefondaki "Güncellemeyi kontrol et" için: sunucu yalnızca yayındaki sürümü bildirir ve APK'yı akıtır. Yükleme ve imza doğrulaması telefonda yapılır.
+
+### 13.1 `GET /api/emekli/surum.php`
+`X-Api-Key` gerekir; yalnızca GET (aksi 405, `Allow: GET`).
+```json
+{"ok":true,"versionCode":107,"versionName":"1.0.7","sha256":"<64 hex küçük harf>","boyut":16644129,"notlar":"..."}
+```
+- Kaynak `api/emekli/yayin/surum.json`. Doğrulama: `versionCode` tamsayı > 0, `versionName` 1-20 karakter, `sha256` tam 64 hex (küçük harfe çevrilir), `boyut` tamsayı > 0, `notlar` en çok 500 karakter (yoksa `""`).
+- Dosya yok ya da geçersiz → **404** `surum_yok` (geçersizse sunucu günlüğüne `error_log`). 401 anahtar yanlış.
+- Telefon önerisi: `versionCode` kendi sürümünden büyükse güncelleme vardır.
+
+### 13.2 `GET|HEAD /api/emekli/indir.php`
+`X-Api-Key` gerekir. `api/emekli/yayin/emekli.apk` dosyasını akıtır: `Content-Type: application/vnd.android.package-archive`, `Content-Length`, `Content-Disposition: attachment; filename="emekli.apk"`, `Cache-Control: no-store`. HEAD yalnızca başlıkları döner. Dosya yok → **404** `apk_yok`. Range desteklenmez (`Accept-Ranges: none`); kesilen indirme baştan alınır.
+- Telefon indirdikten sonra dosyanın SHA-256'sını hesaplayıp `surum.php`'deki `sha256` ile karşılaştırmalı; uyuşmazsa APK'yı silmeli ve kurmamalı.
+
+### 13.3 Yayın klasörü ve elle yayınlama
+- Klasör: `api/emekli/yayin/` (sunucuda). İçine **FTP ile elle** `emekli.apk` ve `surum.json` atılır. APK repoya girmez (`.gitignore`), GitHub Actions bunları ne yükler ne siler.
+- Klasöre doğrudan web erişimi kapalıdır (`.htaccess`: `Require all denied` + eski Apache için `Deny from all`); dosyalara yalnızca `surum.php` / `indir.php` erişir.
+- SHA-256 üretmek: `shasum -a 256 emekli.apk` (macOS) / `sha256sum emekli.apk` (Linux). Boyut: `stat -f%z emekli.apk` (macOS) / `stat -c%s emekli.apk` (Linux).
+- Örnek `surum.json`:
+```json
+{"versionCode":107,"versionName":"1.0.7","sha256":"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef","boyut":16644129,"notlar":"Konum doğruluğu iyileştirmeleri."}
+```
+- Sıra: önce `emekli.apk`, **sonra** `surum.json` yüklenir (telefon yeni sürümü görünce APK hazır olsun). Yeni sürümde ikisi de üzerine yazılır.
+
+## 14. Sürüm notu
 
 Bu sözleşme v1'dir. Geriye dönük uyumsuz değişiklikte yeni yol (`/api/emekli/v2/`) açılır; mevcut telefon uygulaması bozulmaz.
