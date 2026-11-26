@@ -94,7 +94,7 @@
 </section>
 
 <div id="anmodal" class="modal" hidden>
-  <div class="modal-kutu" role="dialog" aria-modal="true" aria-labelledby="anbaslik">
+  <div class="modal-kutu genis" role="dialog" aria-modal="true" aria-labelledby="anbaslik">
     <button type="button" class="modal-kapat" id="ankapat" aria-label="Kapat">×</button>
     <h2 id="anbaslik">Anlık durum</h2>
     <div class="bilgi-kutu" role="note">

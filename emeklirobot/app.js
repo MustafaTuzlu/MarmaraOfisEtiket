@@ -510,14 +510,6 @@
 
   /* ---------- Bana son durumu göster (anlık durum komutu) ---------- */
   var AN_ARALIK = 3, an = { cihaz: null, komutId: null, tm: null, t0: 0, geri: null };
-  var AN_ETIKET = [
-    ['anlikZamani', 'Anlık zamanı', 'z'], ['surum', 'Uygulama sürümü'], ['konum', 'Konum', 'k'],
-    ['dogruluk', 'Doğruluk', 'm'], ['konumYasiMs', 'Konum yaşı', 's'], ['hizKmh', 'Hız', 'h'], ['yon', 'Yön', 'd'],
-    ['pilYuzdesi', 'Pil', 'p'], ['sarjdaMi', 'Şarjda mı', 'e'], ['pilSicakligi', 'Pil sıcaklığı', 'c'],
-    ['aracHareketli', 'Araç hareketli mi', 'e'], ['termal', 'Isı durumu', 't'], ['gpsModu', 'GPS modu'],
-    ['bekleyenKayit', 'Bekleyen kayıt'], ['sonGonderimZamani', 'Son gönderim', 'z'], ['hareketSensoru', 'Hareket sensörü', 'e'],
-    ['sensorTetiklenme', 'Sensör tetiklenme'], ['reddedilenKonum', 'Reddedilen konum'], ['sonCokme', 'Son çökme']
-  ];
   var TERMAL = { NORMAL: 'Normal', ISINMIS: 'Isınmış', KRITIK: 'Kritik' };
   function anIstek(url, govde) { return dbIstek(url, govde); }
   function anDur() { if (an.tm) { clearTimeout(an.tm); an.tm = null; } if (an.geri) { clearInterval(an.geri); an.geri = null; } an.komutId = null; $('an-geri').textContent = ''; $('an-not').hidden = true; }
@@ -530,34 +522,53 @@
   }
   function anBekle() { an.tm = setTimeout(anYokla, AN_ARALIK * 1000); }
   function anMesaj(t, tur) { var m = $('an-mesaj'); m.textContent = t || ''; m.className = 'mesaj' + (tur ? ' ' + tur : ''); }
-  function anDeger(a, k, tip) {
-    var v = a[k];
-    if (v === null || v === undefined || v === '') return '—';
-    switch (tip) {
-      case 'z': return zaman(v);
-      case 'e': return v ? 'Evet' : 'Hayır';
-      case 'p': return '%' + v;
-      case 'c': return v + ' °C';
-      case 'm': return v + ' m';
-      case 'h': return v + ' km/sa';
-      case 'd': return v + '°';
-      case 's': return sureYaz(v);
-      case 't': return TERMAL[v] || esc(v);
-    }
-    return esc(v);
-  }
+  var anHarita = null;
+  function anHaritaSil() { if (anHarita) { anHarita.remove(); anHarita = null; } }
+  function bos(v) { return v === null || v === undefined || v === ''; }
+  function sat(e, d) { return '<div class="an-s"><span>' + e + '</span><b>' + d + '</b></div>'; }
+  function chip(t, tur) { return '<span class="chip ' + (tur || '') + '">' + t + '</span>'; }
   function anGoster(a, alinma) {
-    var h = '<h3>' + esc(an.cihaz) + '</h3><dl>';
-    AN_ETIKET.forEach(function (e) {
-      if (e[2] === 'k') {
-        h += '<dt>Konum</dt><dd>' + (a.enlem === null || a.boylam === null || a.enlem === undefined ? '—' :
-          a.enlem.toFixed(6) + ', ' + a.boylam.toFixed(6) + ' · <a href="https://www.openstreetmap.org/?mlat=' + a.enlem + '&amp;mlon=' + a.boylam + '#map=17/' + a.enlem + '/' + a.boylam + '" target="_blank" rel="noopener noreferrer">Haritada aç</a>') + '</dd>';
-        return;
-      }
-      h += '<dt>' + e[1] + '</dt><dd>' + anDeger(a, e[0], e[2]) + '</dd>';
-    });
-    h += '<dt>Sunucuya ulaştı</dt><dd>' + zaman(alinma) + '</dd></dl>';
+    anHaritaSil();
+    var konum = !bos(a.enlem) && !bos(a.boylam);
+    var pil = bos(a.pilYuzdesi) ? null : a.pilYuzdesi, pTur = pil === null ? '' : pil <= 15 ? 'kr' : pil <= 35 ? 'uy' : 'ok';
+    var h = '<div class="an-kart">';
+    h += '<div class="an-baslik"><div><h3>' + esc(an.cihaz) + '</h3><small>Anlık durum · ' + zaman(a.anlikZamani) + '</small></div>';
+    h += '<div class="an-chips">' + (bos(a.sarjdaMi) ? '' : chip(a.sarjdaMi ? '⚡ Şarjda' : 'Şarjda değil', a.sarjdaMi ? 'ok' : '')) +
+      (bos(a.aracHareketli) ? '' : chip(a.aracHareketli ? 'Araç hareketli' : 'Araç durağan', a.aracHareketli ? 'uy' : '')) +
+      (bos(a.termal) ? '' : chip('Isı: ' + (TERMAL[a.termal] || esc(a.termal)), a.termal === 'KRITIK' ? 'kr' : a.termal === 'ISINMIS' ? 'uy' : 'ok')) + '</div></div>';
+    if (pil !== null) {
+      h += '<div class="an-pil"><div class="an-pil-bar"><i class="' + pTur + '" style="width:' + Math.max(2, Math.min(100, pil)) + '%"></i></div><strong>%' + pil + '</strong>' +
+        (bos(a.pilSicakligi) ? '' : '<span>' + a.pilSicakligi + ' °C</span>') + '</div>';
+    }
+    h += '<div class="an-bolum"><h4>Konum</h4>';
+    if (konum) {
+      h += '<div id="an-harita"></div>';
+      h += sat('Koordinat', a.enlem.toFixed(6) + ', ' + a.boylam.toFixed(6) + ' · <a href="https://www.openstreetmap.org/?mlat=' + a.enlem + '&amp;mlon=' + a.boylam + '#map=17/' + a.enlem + '/' + a.boylam + '" target="_blank" rel="noopener noreferrer">Haritada aç ↗</a>');
+    } else { h += sat('Koordinat', 'Konum alınamadı'); }
+    h += sat('Doğruluk', bos(a.dogruluk) ? '—' : '±' + (Math.round(a.dogruluk * 10) / 10).toString().replace('.', ',') + ' m');
+    h += sat('Konum yaşı', bos(a.konumYasiMs) ? '—' : sureYaz(a.konumYasiMs));
+    h += sat('Hız', bos(a.hizKmh) ? '—' : (Math.round(a.hizKmh * 10) / 10).toString().replace('.', ',') + ' km/sa');
+    h += sat('Yön', bos(a.yon) ? '—' : '<span class="ok-yon" style="transform:rotate(' + a.yon + 'deg)">↑</span> ' + Math.round(a.yon) + '°');
+    h += '</div>';
+    h += '<div class="an-bolum"><h4>Uygulama</h4>';
+    h += sat('Sürüm', bos(a.surum) ? '—' : esc(a.surum));
+    h += sat('GPS modu', bos(a.gpsModu) ? '—' : esc(a.gpsModu));
+    h += sat('Bekleyen kayıt', bos(a.bekleyenKayit) ? '—' : a.bekleyenKayit);
+    h += sat('Son gönderim', zaman(a.sonGonderimZamani));
+    h += sat('Hareket sensörü', bos(a.hareketSensoru) ? '—' : a.hareketSensoru ? 'Evet' : 'Hayır');
+    h += sat('Sensör tetiklenme', bos(a.sensorTetiklenme) ? '—' : a.sensorTetiklenme);
+    h += sat('Reddedilen konum', bos(a.reddedilenKonum) ? '—' : a.reddedilenKonum);
+    h += sat('Son çökme', bos(a.sonCokme) ? '—' : '<span class="cokme">' + esc(a.sonCokme) + '</span>');
+    h += '</div>';
+    h += '<div class="an-alt">Sunucuya ulaştı: ' + zaman(alinma) + '</div></div>';
     $('an-sonuc').innerHTML = h; $('an-sonuc').hidden = false;
+    if (konum) {
+      anHarita = L.map('an-harita', { zoomControl: true, attributionControl: false }).setView([a.enlem, a.boylam], 16);
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(anHarita);
+      if (!bos(a.dogruluk)) L.circle([a.enlem, a.boylam], { radius: a.dogruluk, color: '#2563eb', weight: 1, fillOpacity: .12 }).addTo(anHarita);
+      L.marker([a.enlem, a.boylam], { icon: pinIcon }).addTo(anHarita);
+      setTimeout(function () { if (anHarita) anHarita.invalidateSize(); }, 50);
+    }
   }
   function anYokla() {
     if (!an.komutId) return;
@@ -584,7 +595,7 @@
     n.textContent = s; n.hidden = false;
   }
   function anSec(cihaz) {
-    anDur(); an.cihaz = cihaz; an.t0 = Date.now();
+    anDur(); anHaritaSil(); an.cihaz = cihaz; an.t0 = Date.now();
     try { if (!sesCtx) sesCtx = new (window.AudioContext || window.webkitAudioContext)(); if (sesCtx.state === 'suspended') sesCtx.resume(); } catch (e) { /* ses yok */ } $('an-sonuc').hidden = true;
     [].forEach.call($('an-liste').querySelectorAll('button'), function (b) { b.classList.toggle('sec', b.getAttribute('data-cihaz') === cihaz); });
     anMesaj('İstek gönderiliyor…');
@@ -604,7 +615,7 @@
       }).join('');
     }).catch(function (e) { if (e.message !== 'oturum') anMesaj('Cihaz listesi alınamadı.', 'hata'); });
   }
-  function anKapat() { anDur(); $('anmodal').hidden = true; }
+  function anKapat() { anDur(); anHaritaSil(); $('anmodal').hidden = true; }
   $('b-anlik').addEventListener('click', anAc);
   $('ankapat').addEventListener('click', anKapat);
   $('anmodal').addEventListener('mousedown', function (e) { if (e.target === this) anKapat(); });

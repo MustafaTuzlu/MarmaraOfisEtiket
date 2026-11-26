@@ -133,3 +133,26 @@ button.tehlike:hover{background:#b91c1c!important}
 .an-sonuc dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:4px 12px}
 .an-sonuc dt{color:#64748b;font-size:12px}.an-sonuc dd{margin:0;word-break:break-word}
 .an-sonuc h3{margin:0 0 8px;font-size:15px}
+
+.modal-kutu.genis{width:min(640px,100%)}
+.an-sonuc{max-height:62vh}
+.an-kart{display:grid;gap:12px}
+.an-baslik{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start}
+.an-baslik h3{margin:0;font-size:18px}.an-baslik small{color:#64748b}
+.an-chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;background:#e2e8f0;color:#334155;white-space:nowrap}
+.chip.ok{background:#dcfce7;color:#166534}.chip.uy{background:#fef3c7;color:#92400e}.chip.kr{background:#fee2e2;color:#991b1b}
+.an-pil{display:flex;align-items:center;gap:10px}
+.an-pil-bar{flex:1;height:10px;background:#e2e8f0;border-radius:999px;overflow:hidden}
+.an-pil-bar i{display:block;height:100%;border-radius:999px;background:#22c55e}
+.an-pil-bar i.uy{background:#f59e0b}.an-pil-bar i.kr{background:#ef4444}
+.an-pil span{color:#64748b;font-size:13px}
+.an-bolum{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:10px 14px}
+.an-bolum h4{margin:0 0 6px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#64748b}
+#an-harita{height:170px;border-radius:10px;margin:0 0 8px;z-index:1}
+.an-s{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-top:1px solid #eef2f6;font-size:13px}
+.an-bolum h4+.an-s,#an-harita+.an-s{border-top:0}
+.an-s span{color:#64748b}.an-s b{font-weight:600;text-align:right;word-break:break-word}
+.an-s a{color:#1d4ed8;font-weight:500}
+.ok-yon{display:inline-block}.cokme{font-weight:400;color:#b91c1c;font-size:12px}
+.an-alt{font-size:12px;color:#64748b;text-align:right}
