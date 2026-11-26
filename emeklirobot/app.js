@@ -77,7 +77,7 @@
       ['Şarj / kontak', evetHayir(k.sarjdaMi, 'Şarjda (kontak açık)', 'Şarjda değil')],
       ['Araç', evetHayir(k.aracHareketli, 'Hareketli', 'Durağan')],
       ['Cihaz saati', zaman(k.konumZamani)],
-      ['Konum yaşı', k.konumYasiMs === null ? '—' : (k.konumYasiMs / 1000).toFixed(1) + ' sn'],
+      ['Konum süresi', sureYaz(k.konumYasiMs)],
       ['Zaman kaynağı', esc(k.zamanKaynagi) + ' <small>(ELAPSED: sunucuya göre düzeltildi, CIHAZ: yedek, YOK: düzeltme yok)</small>'],
       ['Sunucuya ulaştı', zaman(k.alinmaZamani)],
       ['elapsedRealtime', k.elapsedRealtime + ' ms'],
@@ -91,6 +91,7 @@
   function tarih(iso) { if (!iso) return null; var d = new Date(iso); return isNaN(d) ? null : d; }
   function sayiYaz(v, n) { return v == null ? '—' : (n === undefined ? v : v.toFixed(n)); }
   function ehx(v, e, h) { return v === null || v === undefined ? null : (v ? e : h); }
+  function sureYaz(ms) { if (ms === null || ms === undefined) return '—'; var t = Math.floor(ms / 1000), p = function (n) { return (n < 10 ? '0' : '') + n; }; return p(Math.floor(t / 3600)) + ':' + p(Math.floor(t % 3600 / 60)) + ':' + p(t % 60); }
   var COLS = [
     { b: 'Sıra no', w: 9, html: function (k) { return k.id; }, xl: function (k) { return k.id; } },
     { b: 'Zaman (düzeltilmiş)', w: 20, html: function (k) { return zaman(k.zaman); }, xl: function (k) { return tarih(k.zaman); } },
@@ -106,11 +107,8 @@
     { b: 'Şarj/kontak', w: 12, html: function (k) { return evetHayir(k.sarjdaMi, 'Evet', 'Hayır'); }, xl: function (k) { return ehx(k.sarjdaMi, 'Evet', 'Hayır'); } },
     { b: 'Araç', w: 11, html: function (k) { return evetHayir(k.aracHareketli, 'Hareketli', 'Durağan'); }, xl: function (k) { return ehx(k.aracHareketli, 'Hareketli', 'Durağan'); } },
     { b: 'Cihaz saati', w: 20, html: function (k) { return zaman(k.konumZamani); }, xl: function (k) { return tarih(k.konumZamani); } },
-    { b: 'Konum yaşı (sn)', w: 14, html: function (k) { return k.konumYasiMs === null ? '—' : (k.konumYasiMs / 1000).toFixed(1); }, xl: function (k) { return k.konumYasiMs === null ? null : k.konumYasiMs / 1000; } },
-    { b: 'Zaman kaynağı', w: 13, html: function (k) { return esc(k.zamanKaynagi); }, xl: function (k) { return k.zamanKaynagi; } },
-    { b: 'Sunucuya ulaştı', w: 20, html: function (k) { return zaman(k.alinmaZamani); }, xl: function (k) { return tarih(k.alinmaZamani); } },
-    { b: 'elapsedRealtime (ms)', w: 18, html: function (k) { return k.elapsedRealtime; }, xl: function (k) { return k.elapsedRealtime; } },
-    { b: 'Kayıt UUID', w: 38, html: function (k) { return esc(k.kayit); }, xl: function (k) { return k.kayit; } }
+    { b: 'Konum Süresi', w: 14, html: function (k) { return sureYaz(k.konumYasiMs); }, xl: function (k) { return sureYaz(k.konumYasiMs); } },
+    { b: 'Sunucuya ulaştı', w: 20, html: function (k) { return zaman(k.alinmaZamani); }, xl: function (k) { return tarih(k.alinmaZamani); } }
   ];
   document.querySelector('#liste thead').innerHTML = '<tr>' + COLS.map(function (c) { return '<th>' + esc(c.b) + '</th>'; }).join('') + '</tr>';
 
@@ -118,7 +116,7 @@
     var tb = document.querySelector('#liste tbody');
     if (!durum.kayitlar.length) { tb.innerHTML = '<tr><td colspan="' + COLS.length + '" class="bos">Kayıt bulunamadı.</td></tr>'; return; }
     tb.innerHTML = durum.kayitlar.map(function (k) {
-      return '<tr data-id="' + k.id + '"' + (k.id === durum.secili ? ' class="secili"' : '') + '>' + COLS.map(function (c) { return '<td>' + c.html(k) + '</td>'; }).join('') + '</tr>';
+      return '<tr data-id="' + k.id + '" class="t-' + esc(k.logTipi) + (k.id === durum.secili ? ' secili' : '') + '">' + COLS.map(function (c) { return '<td>' + c.html(k) + '</td>'; }).join('') + '</tr>';
     }).join('');
   }
   document.querySelector('#liste tbody').addEventListener('click', function (e) {
