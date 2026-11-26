@@ -506,7 +506,7 @@
 
 
   /* ---------- Bana son durumu göster (anlık durum komutu) ---------- */
-  var an = { cihaz: null, komutId: null, tm: null, t0: 0, son: null };
+  var AN_ARALIK = 3, an = { cihaz: null, komutId: null, tm: null, say: 0, geri: null };
   var AN_ETIKET = [
     ['anlikZamani', 'Anlık zamanı', 'z'], ['surum', 'Uygulama sürümü'], ['konum', 'Konum', 'k'],
     ['dogruluk', 'Doğruluk', 'm'], ['konumYasiMs', 'Konum yaşı', 's'], ['hizKmh', 'Hız', 'h'], ['yon', 'Yön', 'd'],
@@ -517,7 +517,14 @@
   ];
   var TERMAL = { NORMAL: 'Normal', ISINMIS: 'Isınmış', KRITIK: 'Kritik' };
   function anIstek(url, govde) { return dbIstek(url, govde); }
-  function anDur() { if (an.tm) { clearTimeout(an.tm); an.tm = null; } an.komutId = null; }
+  function anDur() { if (an.tm) { clearTimeout(an.tm); an.tm = null; } if (an.geri) { clearInterval(an.geri); an.geri = null; } an.komutId = null; $('an-geri').textContent = ''; }
+  function anGeriSay() {
+    var k = AN_ARALIK, g = $('an-geri');
+    if (an.geri) clearInterval(an.geri);
+    g.textContent = 'Sonraki kontrol: ' + k + ' sn';
+    an.geri = setInterval(function () { k--; g.textContent = k > 0 ? 'Sonraki kontrol: ' + k + ' sn' : 'kontrol ediliyor…'; if (k <= 0) { clearInterval(an.geri); an.geri = null; } }, 1000);
+  }
+  function anBekle() { anMesaj('Anlık durum talebi alındı. Lütfen bekleyin... (' + an.say + ')'); anGeriSay(); an.tm = setTimeout(anYokla, AN_ARALIK * 1000); }
   function anMesaj(t, tur) { var m = $('an-mesaj'); m.textContent = t || ''; m.className = 'mesaj' + (tur ? ' ' + tur : ''); }
   function anDeger(a, k, tip) {
     var v = a[k];
@@ -551,28 +558,26 @@
   function anYokla() {
     if (!an.komutId) return;
     var id = an.komutId, cihaz = an.cihaz;
+    an.say++; $('an-geri').textContent = 'kontrol ediliyor…';
     anIstek('/emeklirobot/anlik.php?islem=sorgu&komutId=' + id + '&cihazAdi=' + encodeURIComponent(cihaz)).then(function (v) {
       if (an.komutId !== id) return;
       if (!v.ok) throw new Error('sorgu');
       if (v.durum === 'TAMAM' && v.anlik) { anDur(); anMesaj(''); anGoster(v.anlik, v.alinma); return; }
       if (v.durum === 'ZAMAN_ASIMI') { anDur(); anMesaj('İstek 30 dk içinde cevaplanmadığı için zaman aşımına uğradı. Yeniden deneyin.', 'hata'); return; }
       if (v.durum === 'TAMAM') { anDur(); anMesaj('Cevap alındı ancak veri okunamadı.', 'hata'); return; }
-      if (Date.now() - an.t0 > 15000) {
-        anMesaj('Cihaz şu an çevrimdışı; internete bağlanınca cevaplanacak (son görülme: ' + zaman(an.son) + '). Bu pencere açık kaldıkça beklenir.');
-      } else { anMesaj('Cihazdan cevap bekleniyor…'); }
-      an.tm = setTimeout(anYokla, 3000);
+      anBekle();
     }).catch(function (e) {
       if (e.message === 'oturum' || an.komutId !== id) return;
-      anMesaj('Sorgu başarısız, yeniden deneniyor…', 'hata'); an.tm = setTimeout(anYokla, 3000);
+      anMesaj('Sorgu başarısız, yeniden deneniyor…', 'hata'); anGeriSay(); an.tm = setTimeout(anYokla, AN_ARALIK * 1000);
     });
   }
-  function anSec(cihaz, son) {
-    anDur(); an.cihaz = cihaz; an.son = son; an.t0 = Date.now(); $('an-sonuc').hidden = true;
+  function anSec(cihaz) {
+    anDur(); an.cihaz = cihaz; an.say = 0; $('an-sonuc').hidden = true;
     [].forEach.call($('an-liste').querySelectorAll('button'), function (b) { b.classList.toggle('sec', b.getAttribute('data-cihaz') === cihaz); });
     anMesaj('İstek gönderiliyor…');
     anIstek('/emeklirobot/anlik.php', { islem: 'ac', cihazAdi: cihaz }).then(function (v) {
       if (!v.ok) throw new Error('ac');
-      an.komutId = v.komutId; anMesaj('Cihazdan cevap bekleniyor…'); anYokla();
+      an.komutId = v.komutId; anMesaj('Anlık durum talebi alındı. Lütfen bekleyin... (1)'); anYokla();
     }).catch(function (e) { if (e.message !== 'oturum') anMesaj('İstek açılamadı.', 'hata'); });
   }
   function anAc() {
@@ -593,7 +598,7 @@
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !$('anmodal').hidden) anKapat(); });
   $('an-liste').addEventListener('click', function (e) {
     var b = e.target.closest('button[data-cihaz]'); if (!b) return;
-    anSec(b.getAttribute('data-cihaz'), b.getAttribute('data-son') || null);
+    anSec(b.getAttribute('data-cihaz'));
   });
 
   cipler('f-tipler', durum.tipler, TIP);

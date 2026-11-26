@@ -100,7 +100,7 @@
     <div class="bilgi-kutu" role="note">
       <strong>Bilgi</strong>
       <ul>
-        <li>Telefonun SIM'i yok; cihaz internette değilse istek bekler, bağlanınca cevaplanır (Wi-Fi bağlıyken ~1 dk).</li>
+        <li>Telefon dakikada bir yeni istek olup olmadığını kontrol eder; ekran kapalı veya şarjda değilken bu birkaç dakikaya (en çok ~9 dk) uzayabilir. İnternet yoksa bağlanınca cevaplanır.</li>
         <li>Bir cihaz için aynı anda tek bekleyen istek olur; art arda basmak yeni istek açmaz, tek cevap gelir.</li>
         <li>İstek 30 dk içinde cevaplanmazsa zaman aşımına uğrar; eski isteğe geç cevap verilmez.</li>
         <li>Anlık durum log olarak kaydedilmez, yalnızca son durum olarak tutulur.</li>
@@ -109,6 +109,7 @@
     <div id="an-liste" class="an-liste"></div>
     <div id="an-sonuc" class="an-sonuc" hidden></div>
     <p id="an-mesaj" class="mesaj" role="status"></p>
+    <p id="an-geri" class="sayac"></p>
   </div>
 </div>
 
