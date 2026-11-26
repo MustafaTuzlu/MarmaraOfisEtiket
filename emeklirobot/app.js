@@ -34,6 +34,15 @@
     html: '<svg width="28" height="38" viewBox="0 0 28 38"><path d="M14 1C6.8 1 1 6.8 1 14c0 9.5 13 23 13 23s13-13.5 13-23C27 6.8 21.2 1 14 1z" fill="#d93025" stroke="#fff" stroke-width="2"/><circle cx="14" cy="14" r="5" fill="#fff"/></svg>'
   });
   window.addEventListener('resize', function () { harita.invalidateSize(); });
+  function detayAcKapa(ac) {
+    $('ana').classList.toggle('detay-kapali', !ac);
+    $('detay-ac').setAttribute('aria-expanded', ac ? 'true' : 'false');
+    var bit = function () { harita.invalidateSize(); };
+    $('ana').addEventListener('transitionend', bit, { once: true });
+    setTimeout(bit, 400);
+  }
+  $('detay-ac').addEventListener('click', function () { detayAcKapa(true); });
+  $('detay-kapat').addEventListener('click', function () { detayAcKapa(false); });
 
   function kayitBul(id) {
     if (durum.sonKonum && durum.sonKonum.id === id) return durum.sonKonum;

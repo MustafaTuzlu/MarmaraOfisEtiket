@@ -69,9 +69,10 @@
     <span id="a-bilgi" class="anim-bilgi">—</span>
   </div>
 </section>
-<section class="ana">
+<section class="ana detay-kapali" id="ana">
   <div id="harita"></div>
-  <aside class="kart" id="detay"><p class="bos">Bir kayıt seçin.</p></aside>
+  <button type="button" id="detay-ac" class="detay-tus" title="Log detayını aç" aria-label="Log detayını aç" aria-expanded="false">&#9776;</button>
+  <aside class="kart" id="detay-kap"><button type="button" id="detay-kapat" class="detay-tus kapat" title="Kapat" aria-label="Log detayını kapat">&#10095;</button><div id="detay"><p class="bos">Bir kayıt seçin.</p></div></aside>
 </section>
 
 <section class="kart">
