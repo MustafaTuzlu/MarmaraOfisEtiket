@@ -28,7 +28,7 @@ Bu dosya, projede çalışan yapay zekâ (Claude) ve geliştiriciler için kalı
 
 ## 3b. EmekliRobot API (araç takip)
 - API kayıtlarında isteğe bağlı `hizKmh` (0..400) ve `yon` (0..359.9) alanları var (DB: `hiz_kmh`, `yon`; mevcut tabloya `db/2026-11-25-hiz-yon.sql` ile eklendi, görünüm yeniden oluşturuldu).
-- **Anlık durum (v1.1):** `api/emekli/komut.php` (GET, telefon yoklar) + `anlik.php` (POST), panelde "Bana son durumu göster" (`emeklirobot/anlik.php` oturum+CSRF, `app.js` bölümü). Tablolar `emekli_komut` (cihaz başına tek bekleyen: UNIQUE(cihaz_adi,bekleyen)) ve `cihaz_anlik` — migrasyon `db/2026-11-26-anlik.sql` elle çalıştırılmalı. Ayrıntı: sözleşme §12.
+- **Anlık durum (v1.1):** `api/emekli/komut.php` (GET, telefon yoklar) + `anlik.php` (POST), panelde "Bana son durumu göster" (`emeklirobot/anlik.php` oturum+CSRF, `app.js` bölümü). Tablolar `emekli_komut` (cihaz başına tek bekleyen: UNIQUE(cihaz_adi,bekleyen)) ve `cihaz_anlik` — migrasyon `db/2026-11-26-anlik.sql` elle çalıştırılmalı. Ayrıntı: sözleşme §12. Telefon ~1 dk'da bir yoklar; panel 3 sn'de bir sorar, 15 sn sonra "çevrimdışı" mesajı gösterir; komut ömrü 30 dk. PHP tarafı yerelde çalıştırılmadı, canlıda ilk kullanımda doğrulanmalı.
 - Sözleşme: `docs/emekli-robot-api.md`. Uç noktalar: `api/emekli/ping.php` (GET), `api/emekli/kayitlar.php` (POST, toplu, idempotent). Şema: `db/emekli-robot.sql` (MariaDB 5.5, phpMyAdmin'den elle çalıştırılır; deploy'a girmez).
 - Gizli bilgiler yalnızca GitHub secret/variable → `config.local.php`: secret `EMEKLI_DB_PASS`, `EMEKLI_API_KEY`; variable (opsiyonel) `EMEKLI_DB_HOST/PORT/NAME/USER`. Repoya yazma.
 - **İndekslenmemeli:** `/api/` hiçbir zaman sitemap'e, sayfa bağlantılarına girmez. Korumalar: `robots.txt` `Disallow: /api/`, `api/emekli/.htaccess` ve PHP yanıtlarında `X-Robots-Tag: noindex, nofollow`. Bunları kaldırma.
@@ -76,10 +76,11 @@ Bu dosya, projede çalışan yapay zekâ (Claude) ve geliştiriciler için kalı
 5. Kategori giriş metinleri, `ItemList`, ürün `offers`, EN sayfalardaki Türkçe düzeltmeleri, `lastmod` kaldırma, güvenlik başlıkları.
 6. "Marmara Ofis" → "Marmara Ofis Etiket" (başlıklar, açıklamalar, şemalar, PHP); ana sayfa metin bölümü; 23 sayfa için elle meta açıklama; `LocalBusiness` `geo`/`hasMap`/`contactPoint`; boş sosyal ikonlar kaldırıldı.
 7. JSON-LD'ye Bülent Seven (`employee` + `contactPoint.name`, görünmez).
-8. EmekliRobot sunucu tarafı: DB şeması, `api/emekli/` (ping + toplu kayıt), sözleşme dokümanı, noindex korumaları; gizli panel `/emeklirobot/` (giriş, harita, filtre, tablo+Excel, DB Ayarları, ses, cihaz kutusu/renkler, rota animasyonu, açılır detay/filtre). Ayrıntı: bölüm 3b/3c.
+8. EmekliRobot sunucu tarafı: DB şeması, `api/emekli/` (ping + toplu kayıt), sözleşme dokümanı, noindex korumaları; gizli panel `/emeklirobot/` (giriş, harita, filtre, tablo+Excel, DB Ayarları, ses, cihaz kutusu/renkler, rota animasyonu, açılır detay/filtre, "Bana son durumu göster" anlık durum komutu). Ayrıntı: bölüm 3b/3c.
 
 ## 7. Yapılacaklar / açık maddeler
 **EmekliRobot**
+- `db/2026-11-26-anlik.sql` migrasyonunu phpMyAdmin'de çalıştır; sonra canlıda `komut.php` / `anlik.php` curl testi (API anahtarı gerekir).
 - Paylaşılan DB şifresini değiştir ve güçlü bir panel şifresi (`EMEKLI_DASH_PASS`) kullan (şifreler sohbette paylaşıldı).
 - Açık karar: geçersiz kayıtta tüm parti 422 (şu an) mı, geçerlileri yaz + hatalıları raporla mı.
 - Excel yalnızca yüklü (limit'li) satırları indirir; tüm sonucu indirme istenirse sunucu tarafı dışa aktarma gerekir.
