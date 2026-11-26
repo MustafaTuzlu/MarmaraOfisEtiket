@@ -113,6 +113,16 @@ button.tehlike:hover{background:#b91c1c!important}
 .anim-satir .btn{padding:6px 12px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;cursor:pointer;font-size:13px}
 .anim-satir .btn:disabled,#a-kaydir:disabled{opacity:.45;cursor:not-allowed}
 #a-kaydir{flex:1;min-width:160px}.anim-bilgi{color:#475569;font-variant-numeric:tabular-nums}
+.a-hiz-kutu,.a-takip-kutu{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 12px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;font-size:13px;color:#334155;cursor:pointer;position:relative;box-sizing:border-box}
+.a-hiz-kutu span{font-weight:600;color:#64748b}
+.a-hiz-kutu select{appearance:none;-webkit-appearance:none;border:0;background:transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%2364748b' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right center;padding:0 16px 0 0;font:inherit;font-weight:600;color:#0f172a;cursor:pointer;outline:0}
+.a-hiz-kutu:focus-within,.a-takip-kutu:focus-within{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.15)}
+.a-takip-kutu i{width:30px;height:17px;border-radius:999px;background:#cbd5e1;position:relative;flex:none;transition:background .15s}
+.a-takip-kutu i:after{content:"";position:absolute;top:2px;left:2px;width:13px;height:13px;border-radius:50%;background:#fff;transition:left .15s}
+.a-takip-kutu .anahtar:checked + i{background:#22c55e}.a-takip-kutu .anahtar:checked + i:after{left:15px}
+.a-takip-kutu .anahtar{left:0;top:0}
+.anim-satir .btn{height:34px;box-sizing:border-box}
+@media(max-width:800px){.anim-satir strong{flex:1 0 100%}#a-kaydir{flex:1 0 100%;order:5}.anim-bilgi{flex:1 0 100%;order:6}}
 .arac{background:none;border:0}.arac-i{width:30px;height:30px;filter:drop-shadow(0 1px 3px rgba(0,0,0,.5))}
 .cihaz-nokta{padding:0;cursor:pointer}.cihaz-nokta:hover{box-shadow:0 0 0 2px #475569}
 .cihaz-palet{display:grid;grid-template-columns:repeat(4,24px);gap:6px;padding:4px 0 8px 20px}

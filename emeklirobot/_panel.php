@@ -69,9 +69,9 @@
     <strong>Rota animasyonu</strong>
     <button type="button" id="a-oynat" class="btn">▶ Başlat</button>
     <button type="button" id="a-sifirla" class="btn">■ Başa al</button>
-    <label>Hız <select id="a-hiz"><option value="0.5">0.5×</option><option value="1">1×</option><option value="2" selected>2×</option><option value="4">4×</option><option value="8">8×</option><option value="16">16×</option></select></label>
+    <label class="a-hiz-kutu"><span>Hız</span><select id="a-hiz"><option value="0.5">0.5×</option><option value="1">1×</option><option value="2" selected>2×</option><option value="4">4×</option><option value="8">8×</option><option value="16">16×</option></select></label>
     <input type="range" id="a-kaydir" min="0" max="1000" value="0" step="1">
-    <label class="onay"><input type="checkbox" id="a-takip" checked> Aracı takip et</label>
+    <label class="a-takip-kutu"><input type="checkbox" id="a-takip" class="anahtar" checked><i></i><span>Aracı takip et</span></label>
     <span id="a-bilgi" class="anim-bilgi">—</span>
   </div>
 </section>
