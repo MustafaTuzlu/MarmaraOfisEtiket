@@ -190,8 +190,8 @@
       var palet = paletAcik === ad ? '<div class="cihaz-palet">' + PALET.map(function (c) {
         return '<button type="button" class="renk' + (c.toLowerCase() === String(renkler[ad]).toLowerCase() ? ' sec' : '') + '" data-renk="' + c + '" data-cihaz="' + esc(ad) + '" style="background:' + c + '" title="' + c + '"></button>';
       }).join('') + '</div>' : '';
-      return '<label class="cihaz-satir"><button type="button" class="cihaz-nokta" data-nokta="' + esc(ad) + '" style="background:' + renkler[ad] + '" title="Rengi değiştir"></button><span class="cihaz-ad">' + esc(ad) +
-        '</span><input type="checkbox" class="anahtar" data-cihaz="' + esc(ad) + '"' + (gorunur[ad] ? ' checked' : '') + '><i></i></label>' + palet;
+      return '<div class="cihaz-satir"><button type="button" class="cihaz-nokta" data-nokta="' + esc(ad) + '" style="background:' + renkler[ad] + '" title="Rengi değiştir"></button><label class="cihaz-sw"><span class="cihaz-ad">' + esc(ad) +
+        '</span><input type="checkbox" class="anahtar" data-cihaz="' + esc(ad) + '"' + (gorunur[ad] ? ' checked' : '') + '><i></i></label></div>' + palet;
     }).join('') : '<div class="cihaz-bos">Cihaz yok</div>');
   }
 
