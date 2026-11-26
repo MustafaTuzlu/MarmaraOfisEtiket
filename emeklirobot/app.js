@@ -473,23 +473,26 @@
 
   /* ---------- Bildirim sesi (varsayılan kapalı) ---------- */
   var sesAcik = false, sesCtx = null;
-  function ses() {
-    if (!sesAcik) return;
+  function sesCal(notalar, sure, zorla) {
+    if (!sesAcik && !zorla) return;
     try {
       if (!sesCtx) sesCtx = new (window.AudioContext || window.webkitAudioContext)();
       if (sesCtx.state === 'suspended') sesCtx.resume();
       var t = sesCtx.currentTime;
-      [[880, 0], [1318.5, 0.16]].forEach(function (n) { // yumuşak iki notalı "ding"
+      notalar.forEach(function (n) {
         var o = sesCtx.createOscillator(), g = sesCtx.createGain(), b = t + n[1];
         o.type = 'sine'; o.frequency.value = n[0];
         g.gain.setValueAtTime(0.0001, b);
         g.gain.exponentialRampToValueAtTime(0.18, b + 0.02);
-        g.gain.exponentialRampToValueAtTime(0.0001, b + 0.5);
+        g.gain.exponentialRampToValueAtTime(0.0001, b + sure);
         o.connect(g); g.connect(sesCtx.destination);
-        o.start(b); o.stop(b + 0.55);
+        o.start(b); o.stop(b + sure + 0.05);
       });
     } catch (e) { /* ses desteklenmiyorsa sessizce geç */ }
   }
+  function ses() { sesCal([[880, 0], [1318.5, 0.16]], 0.5, false); } // yeni kayıt: kısa iki notalı "ding"
+  // Anlık durum cevabı: daha uzun, 4 notalı yükselen melodi; bildirim sesi düğmesinden bağımsız, her zaman çalar
+  function anSes() { sesCal([[659.3, 0], [783.99, 0.22], [987.77, 0.44], [1318.5, 0.66]], 0.9, true); }
   $('b-ses').addEventListener('click', function () {
     sesAcik = !sesAcik;
     this.classList.toggle('acik', sesAcik);
@@ -562,7 +565,7 @@
     anIstek('/emeklirobot/anlik.php?islem=sorgu&komutId=' + id + '&cihazAdi=' + encodeURIComponent(cihaz)).then(function (v) {
       if (an.komutId !== id) return;
       if (!v.ok) throw new Error('sorgu');
-      if (v.durum === 'TAMAM' && v.anlik) { anDur(); anMesaj(''); anGoster(v.anlik, v.alinma); return; }
+      if (v.durum === 'TAMAM' && v.anlik) { anDur(); anMesaj(''); anGoster(v.anlik, v.alinma); anSes(); return; }
       if (v.durum === 'ZAMAN_ASIMI') { anDur(); anMesaj('İstek 30 dk içinde cevaplanmadığı için zaman aşımına uğradı. Yeniden deneyin.', 'hata'); return; }
       if (v.durum === 'TAMAM') { anDur(); anMesaj('Cevap alındı ancak veri okunamadı.', 'hata'); return; }
       anBekle();
@@ -572,7 +575,8 @@
     });
   }
   function anSec(cihaz) {
-    anDur(); an.cihaz = cihaz; an.say = 0; $('an-sonuc').hidden = true;
+    anDur(); an.cihaz = cihaz; an.say = 0;
+    try { if (!sesCtx) sesCtx = new (window.AudioContext || window.webkitAudioContext)(); if (sesCtx.state === 'suspended') sesCtx.resume(); } catch (e) { /* ses yok */ } $('an-sonuc').hidden = true;
     [].forEach.call($('an-liste').querySelectorAll('button'), function (b) { b.classList.toggle('sec', b.getAttribute('data-cihaz') === cihaz); });
     anMesaj('İstek gönderiliyor…');
     anIstek('/emeklirobot/anlik.php', { islem: 'ac', cihazAdi: cihaz }).then(function (v) {
