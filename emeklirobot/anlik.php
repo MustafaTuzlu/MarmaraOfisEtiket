@@ -14,20 +14,22 @@ session_write_close();
 
 const KOMUT_OMUR = 1800; // 30 dk
 
-// Cihazın son 5 gönderim partisinin (alinma_zamani) aralıklarından kaba bir cevap süresi tahmini.
+// Cihazın son 20 gönderim partisinin (alinma_zamani) aralıklarından kaba bir cevap süresi tahmini.
 function gonderim_tahmini($pdo, $cihaz, $simdi) {
     try {
-        $st = $pdo->prepare('SELECT alinma_zamani FROM emekli_log WHERE cihaz_adi = ? ORDER BY id DESC LIMIT 300');
+        $st = $pdo->prepare('SELECT alinma_zamani FROM emekli_log WHERE cihaz_adi = ? ORDER BY id DESC LIMIT 1500');
         $st->execute([$cihaz]);
         $z = [];
-        foreach ($st->fetchAll(PDO::FETCH_COLUMN) as $a) { if (!in_array($a, $z, true)) { $z[] = $a; if (count($z) >= 5) { break; } } }
+        foreach ($st->fetchAll(PDO::FETCH_COLUMN) as $a) { if (!in_array($a, $z, true)) { $z[] = $a; if (count($z) >= 20) { break; } } }
         if (count($z) < 2) { return null; }
         $t = array_map(function ($a) { return strtotime($a . ' UTC'); }, $z); // yeniden eskiye
         $aralik = [];
         for ($i = 0; $i < count($t) - 1; $i++) { $aralik[] = $t[$i] - $t[$i + 1]; }
         sort($aralik);
-        $med = $aralik[intdiv(count($aralik), 2)];
-        return ['sonGonderim' => gmdate('Y-m-d\TH:i:s', $t[0]) . 'Z', 'aralikSn' => (int)$med, 'partiSayisi' => count($z)];
+        $n = count($aralik);
+        $med = $aralik[intdiv($n, 2)];
+        $p80 = $aralik[min($n - 1, (int)floor($n * 0.8))]; // uç değerlere dayanıklı: çoğu aralık bunun altında
+        return ['sonGonderim' => gmdate('Y-m-d\TH:i:s', $t[0]) . 'Z', 'aralikSn' => (int)$med, 'p80Sn' => (int)$p80, 'partiSayisi' => count($z)];
     } catch (Exception $e) { return null; }
 }
 

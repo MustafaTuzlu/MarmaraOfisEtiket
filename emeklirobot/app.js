@@ -578,9 +578,9 @@
   function anNot(t) {
     var n = $('an-not');
     if (!t) { n.hidden = true; return; }
-    var s = 'Not: Bu cihazın son ' + t.partiSayisi + ' gönderimi arasında tipik aralık ' + dkYaz(t.aralikSn) + ' (son gönderim: ' + zaman(t.sonGonderim) + '). ';
-    s += t.aralikSn <= 180 ? 'Cihaz yakın zamanda bağlıydı; cevap genellikle 1-2 dk içinde gelir.' :
-      'Cihaz uzun aralıklarla bağlanıyor olabilir; cevap bu süreye (' + dkYaz(t.aralikSn) + ') kadar uzayabilir.';
+    var s = 'Not: Bu cihazın son ' + t.partiSayisi + ' gönderimine göre aralıklar tipik ' + dkYaz(t.aralikSn) + ', çoğu zaman ' + dkYaz(t.p80Sn) + ' içinde (son gönderim: ' + zaman(t.sonGonderim) + '). ';
+    s += t.p80Sn <= 180 ? 'Cihaz sık bağlanıyor; cevap genellikle 1-2 dk içinde gelir.' :
+      'Cihaz uzun aralıklarla bağlanıyor olabilir; cevap ' + dkYaz(t.p80Sn) + ' civarına kadar uzayabilir.';
     n.textContent = s; n.hidden = false;
   }
   function anSec(cihaz) {
