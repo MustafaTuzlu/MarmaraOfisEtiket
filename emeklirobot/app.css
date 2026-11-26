@@ -118,3 +118,8 @@ button.tehlike:hover{background:#b91c1c!important}
 .cihaz-palet{display:grid;grid-template-columns:repeat(4,24px);gap:6px;padding:4px 0 8px 20px}
 .cihaz-palet .renk{width:24px;height:24px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px #94a3b8;padding:0;cursor:pointer}.cihaz-palet .renk.sec{box-shadow:0 0 0 2px #0f172a}
 .cihaz-sw{flex:1;display:flex;align-items:center;gap:8px;cursor:pointer;position:relative}
+.filtre-ac>summary{cursor:pointer;font-weight:600;font-size:15px;list-style:none;display:flex;align-items:center;gap:8px;user-select:none}
+.filtre-ac>summary::-webkit-details-marker{display:none}
+.filtre-ac>summary:before{content:"\25B8";display:inline-block;transition:transform .2s;color:#64748b}
+.filtre-ac[open]>summary:before{transform:rotate(90deg)}
+.filtre-govde{margin-top:12px}

@@ -30,6 +30,9 @@
 </header>
 
 <section class="kart" id="filtre">
+<details class="filtre-ac">
+<summary>Filtreler</summary>
+<div class="filtre-govde">
   <div class="satir">
     <label>Başlangıç <input type="datetime-local" id="f-bas"></label>
     <label>Bitiş <input type="datetime-local" id="f-bit"></label>
@@ -56,6 +59,8 @@
     <button type="button" id="b-temizle">Tüm filtreleri temizle</button>
     <span id="sayac" class="sayac"></span>
   </div>
+</div>
+</details>
 </section>
 
 <section class="kart" id="anim">
