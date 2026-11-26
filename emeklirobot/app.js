@@ -504,6 +504,98 @@
     if (this.checked) oto = setInterval(function () { yukle({ oto: true }); }, 15000);
   });
 
+
+  /* ---------- Bana son durumu göster (anlık durum komutu) ---------- */
+  var an = { cihaz: null, komutId: null, tm: null, t0: 0, son: null };
+  var AN_ETIKET = [
+    ['anlikZamani', 'Anlık zamanı', 'z'], ['surum', 'Uygulama sürümü'], ['konum', 'Konum', 'k'],
+    ['dogruluk', 'Doğruluk', 'm'], ['konumYasiMs', 'Konum yaşı', 's'], ['hizKmh', 'Hız', 'h'], ['yon', 'Yön', 'd'],
+    ['pilYuzdesi', 'Pil', 'p'], ['sarjdaMi', 'Şarjda mı', 'e'], ['pilSicakligi', 'Pil sıcaklığı', 'c'],
+    ['aracHareketli', 'Araç hareketli mi', 'e'], ['termal', 'Isı durumu', 't'], ['gpsModu', 'GPS modu'],
+    ['bekleyenKayit', 'Bekleyen kayıt'], ['sonGonderimZamani', 'Son gönderim', 'z'], ['hareketSensoru', 'Hareket sensörü', 'e'],
+    ['sensorTetiklenme', 'Sensör tetiklenme'], ['reddedilenKonum', 'Reddedilen konum'], ['sonCokme', 'Son çökme']
+  ];
+  var TERMAL = { NORMAL: 'Normal', ISINMIS: 'Isınmış', KRITIK: 'Kritik' };
+  function anIstek(url, govde) { return dbIstek(url, govde); }
+  function anDur() { if (an.tm) { clearTimeout(an.tm); an.tm = null; } an.komutId = null; }
+  function anMesaj(t, tur) { var m = $('an-mesaj'); m.textContent = t || ''; m.className = 'mesaj' + (tur ? ' ' + tur : ''); }
+  function anDeger(a, k, tip) {
+    var v = a[k];
+    if (v === null || v === undefined || v === '') return '—';
+    switch (tip) {
+      case 'z': return zaman(v);
+      case 'e': return v ? 'Evet' : 'Hayır';
+      case 'p': return '%' + v;
+      case 'c': return v + ' °C';
+      case 'm': return v + ' m';
+      case 'h': return v + ' km/sa';
+      case 'd': return v + '°';
+      case 's': return sureYaz(v);
+      case 't': return TERMAL[v] || esc(v);
+    }
+    return esc(v);
+  }
+  function anGoster(a, alinma) {
+    var h = '<h3>' + esc(an.cihaz) + '</h3><dl>';
+    AN_ETIKET.forEach(function (e) {
+      if (e[2] === 'k') {
+        h += '<dt>Konum</dt><dd>' + (a.enlem === null || a.boylam === null || a.enlem === undefined ? '—' :
+          a.enlem.toFixed(6) + ', ' + a.boylam.toFixed(6) + ' · <a href="https://www.openstreetmap.org/?mlat=' + a.enlem + '&amp;mlon=' + a.boylam + '#map=17/' + a.enlem + '/' + a.boylam + '" target="_blank" rel="noopener noreferrer">Haritada aç</a>') + '</dd>';
+        return;
+      }
+      h += '<dt>' + e[1] + '</dt><dd>' + anDeger(a, e[0], e[2]) + '</dd>';
+    });
+    h += '<dt>Sunucuya ulaştı</dt><dd>' + zaman(alinma) + '</dd></dl>';
+    $('an-sonuc').innerHTML = h; $('an-sonuc').hidden = false;
+  }
+  function anYokla() {
+    if (!an.komutId) return;
+    var id = an.komutId, cihaz = an.cihaz;
+    anIstek('/emeklirobot/anlik.php?islem=sorgu&komutId=' + id + '&cihazAdi=' + encodeURIComponent(cihaz)).then(function (v) {
+      if (an.komutId !== id) return;
+      if (!v.ok) throw new Error('sorgu');
+      if (v.durum === 'TAMAM' && v.anlik) { anDur(); anMesaj(''); anGoster(v.anlik, v.alinma); return; }
+      if (v.durum === 'ZAMAN_ASIMI') { anDur(); anMesaj('İstek 30 dk içinde cevaplanmadığı için zaman aşımına uğradı. Yeniden deneyin.', 'hata'); return; }
+      if (v.durum === 'TAMAM') { anDur(); anMesaj('Cevap alındı ancak veri okunamadı.', 'hata'); return; }
+      if (Date.now() - an.t0 > 15000) {
+        anMesaj('Cihaz şu an çevrimdışı; internete bağlanınca cevaplanacak (son görülme: ' + zaman(an.son) + '). Bu pencere açık kaldıkça beklenir.');
+      } else { anMesaj('Cihazdan cevap bekleniyor…'); }
+      an.tm = setTimeout(anYokla, 3000);
+    }).catch(function (e) {
+      if (e.message === 'oturum' || an.komutId !== id) return;
+      anMesaj('Sorgu başarısız, yeniden deneniyor…', 'hata'); an.tm = setTimeout(anYokla, 3000);
+    });
+  }
+  function anSec(cihaz, son) {
+    anDur(); an.cihaz = cihaz; an.son = son; an.t0 = Date.now(); $('an-sonuc').hidden = true;
+    [].forEach.call($('an-liste').querySelectorAll('button'), function (b) { b.classList.toggle('sec', b.getAttribute('data-cihaz') === cihaz); });
+    anMesaj('İstek gönderiliyor…');
+    anIstek('/emeklirobot/anlik.php', { islem: 'ac', cihazAdi: cihaz }).then(function (v) {
+      if (!v.ok) throw new Error('ac');
+      an.komutId = v.komutId; anMesaj('Cihazdan cevap bekleniyor…'); anYokla();
+    }).catch(function (e) { if (e.message !== 'oturum') anMesaj('İstek açılamadı.', 'hata'); });
+  }
+  function anAc() {
+    $('anmodal').hidden = false; anMesaj('Cihazlar yükleniyor…'); $('an-sonuc').hidden = true; $('an-liste').innerHTML = '';
+    anIstek('/emeklirobot/anlik.php?islem=cihazlar').then(function (v) {
+      if (!v.ok) throw new Error('liste');
+      if (!v.cihazlar.length) { anMesaj('Henüz kayıtlı cihaz yok.'); return; }
+      anMesaj('Bir cihaz seçin.');
+      $('an-liste').innerHTML = v.cihazlar.map(function (c) {
+        return '<button type="button" data-cihaz="' + esc(c.cihazAdi) + '" data-son="' + esc(c.sonGorulme || '') + '"><span>' + esc(c.cihazAdi) + '</span><small>Son görülme: ' + zaman(c.sonGorulme) + '</small></button>';
+      }).join('');
+    }).catch(function (e) { if (e.message !== 'oturum') anMesaj('Cihaz listesi alınamadı.', 'hata'); });
+  }
+  function anKapat() { anDur(); $('anmodal').hidden = true; }
+  $('b-anlik').addEventListener('click', anAc);
+  $('ankapat').addEventListener('click', anKapat);
+  $('anmodal').addEventListener('mousedown', function (e) { if (e.target === this) anKapat(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !$('anmodal').hidden) anKapat(); });
+  $('an-liste').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-cihaz]'); if (!b) return;
+    anSec(b.getAttribute('data-cihaz'), b.getAttribute('data-son') || null);
+  });
+
   cipler('f-tipler', durum.tipler, TIP);
   yukle({ ilk: true, sifirla: true });
 })();

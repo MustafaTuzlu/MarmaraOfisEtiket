@@ -21,6 +21,7 @@
       <path class="cizgi" d="m16 9 5 6m0-6-5 6"/>
     </svg>
   </button>
+  <button type="button" id="b-anlik" class="dbbtn">Bana son durumu göster</button>
   <button type="button" id="b-db" class="dbbtn">DB Ayarları</button>
   <form method="post" action="/emeklirobot/" class="cikis">
     <input type="hidden" name="islem" value="cikis">
@@ -91,6 +92,25 @@
     <table id="liste"><thead></thead><tbody></tbody></table>
   </div>
 </section>
+
+<div id="anmodal" class="modal" hidden>
+  <div class="modal-kutu" role="dialog" aria-modal="true" aria-labelledby="anbaslik">
+    <button type="button" class="modal-kapat" id="ankapat" aria-label="Kapat">×</button>
+    <h2 id="anbaslik">Anlık durum</h2>
+    <div class="bilgi-kutu" role="note">
+      <strong>Bilgi</strong>
+      <ul>
+        <li>Telefonun SIM'i yok; cihaz internette değilse istek bekler, bağlanınca cevaplanır (Wi-Fi bağlıyken ~1 dk).</li>
+        <li>Bir cihaz için aynı anda tek bekleyen istek olur; art arda basmak yeni istek açmaz, tek cevap gelir.</li>
+        <li>İstek 30 dk içinde cevaplanmazsa zaman aşımına uğrar; eski isteğe geç cevap verilmez.</li>
+        <li>Anlık durum log olarak kaydedilmez, yalnızca son durum olarak tutulur.</li>
+      </ul>
+    </div>
+    <div id="an-liste" class="an-liste"></div>
+    <div id="an-sonuc" class="an-sonuc" hidden></div>
+    <p id="an-mesaj" class="mesaj" role="status"></p>
+  </div>
+</div>
 
 <div id="dbmodal" class="modal" hidden>
   <div class="modal-kutu" role="dialog" aria-modal="true" aria-labelledby="dbbaslik">

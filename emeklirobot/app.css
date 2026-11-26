@@ -123,3 +123,13 @@ button.tehlike:hover{background:#b91c1c!important}
 .filtre-ac>summary:before{content:"\25B8";display:inline-block;transition:transform .2s;color:#64748b}
 .filtre-ac[open]>summary:before{transform:rotate(90deg)}
 .filtre-govde{margin-top:12px}
+.bilgi-kutu{background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:10px 14px;margin:0 0 14px;font-size:13px;color:#1e3a8a}
+.bilgi-kutu ul{margin:6px 0 0;padding-left:18px}.bilgi-kutu li{margin:3px 0}
+.an-liste{display:grid;gap:8px;margin-bottom:10px}
+.an-liste button{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 14px;border:1px solid #cbd5e1;background:#f8fafc;border-radius:8px;cursor:pointer;font-size:14px;text-align:left}
+.an-liste button:hover{background:#f1f5f9}.an-liste button.sec{border-color:#2563eb;background:#dbeafe}
+.an-liste small{color:#64748b;font-size:12px}
+.an-sonuc{border-top:1px solid #e2e8f0;padding-top:10px;max-height:340px;overflow:auto}
+.an-sonuc dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:4px 12px}
+.an-sonuc dt{color:#64748b;font-size:12px}.an-sonuc dd{margin:0;word-break:break-word}
+.an-sonuc h3{margin:0 0 8px;font-size:15px}

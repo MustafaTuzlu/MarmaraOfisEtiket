@@ -7,7 +7,7 @@ Android uygulaması (EmekliRobot, cihaz `EmektarNote9`) ↔ sunucu (`marmaraofis
 | | |
 |---|---|
 | Taban adres | `https://marmaraofisetiket.net/api/emekli/` |
-| Uç noktalar | `GET ping.php`, `POST kayitlar.php` |
+| Uç noktalar | `GET ping.php`, `POST kayitlar.php`, `GET komut.php`, `POST anlik.php` (v1.1) |
 | Protokol | **Yalnızca HTTPS.** `http://` istekleri 301 ile yönlendirilir ve POST gövdesi kaybolur; telefon doğrudan `https://` kullanmalı. Yönlendirmeyi (3xx) başarı sayma. |
 | Alan adı | `www` **yok**: `marmaraofisetiket.net` |
 | Gövde | UTF-8 JSON, `Content-Type: application/json` |
@@ -235,7 +235,39 @@ curl -s -X POST https://marmaraofisetiket.net/api/emekli/kayitlar.php \
 ## 10. Değişiklik geçmişi (v1 içinde geriye uyumlu eklemeler)
 
 - 2026-11-25: kayıtlara isteğe bağlı `hizKmh` ve `yon` eklendi. Zorunlu alan değişmedi; yeni log tipi yok. `hizKmh`/`yon` yalnızca taze fix'li kayıtlarda (`KONUM`, `ARAC_*`) dolu, diğerlerinde `null`. Sunucuda `db/2026-11-25-hiz-yon.sql` migrasyonu gerekir.
+- 2026-11-26 (v1.1): `GET komut.php` ve `POST anlik.php` eklendi (§12). Mevcut uç noktalar değişmedi. Sunucuda `db/2026-11-26-anlik.sql` migrasyonu gerekir.
 
-## 11. Sürüm notu
+## 12. Anlık durum komutu (v1.1) — "Bana son durumu göster"
+
+Sitedeki panelden bir cihaz için anlık durum istenir. Akış: panel komut açar → telefon `komut.php`'yi yoklar, komutu görür → tüm bilgisini **bir kez** `anlik.php`'ye gönderir → panel (3 sn'de bir sorarak) sonucu gösterir. Anlık veri `emekli_log` tablosuna **girmez**; cihaz başına tek satır (`cihaz_anlik`) olarak üzerine yazılır. Migrasyon: `db/2026-11-26-anlik.sql` (tablolar `emekli_komut`, `cihaz_anlik`).
+
+### 12.1 `GET /api/emekli/komut.php?cihazAdi=<ad>`
+`X-Api-Key` gerekir. `cihazAdi`: 1-50 karakter `A-Za-z0-9_-` (aksi 422 `gecersiz_cihaz`).
+```json
+{"ok":true,"komut":null}
+{"ok":true,"komut":{"id":123,"tip":"DURUM_ISTE","olusturma":"2026-11-26T09:00:00Z"}}
+```
+- Beklemede ve 30 dk'dan yeni komut varsa onu döner; 30 dk'dan eskiyi `ZAMAN_ASIMI` yapıp `null` döner.
+- Komut, `anlik.php` ile cevaplanana (veya zaman aşımına) kadar her yoklamada aynen döner.
+
+### 12.2 `POST /api/emekli/anlik.php`
+```json
+{"komutId":123,"cihazAdi":"EmektarNote9","gonderimElapsedRealtime":86400000,
+ "anlik":{"surum":"1.4","anlikZamani":"2026-11-26T12:00:00+03:00","enlem":41.0082,"boylam":28.9784,"dogruluk":6.5,
+  "konumYasiMs":1200,"hizKmh":0,"yon":null,"pilYuzdesi":77,"sarjdaMi":true,"pilSicakligi":33.1,"aracHareketli":false,
+  "termal":"NORMAL","gpsModu":"HIGH","bekleyenKayit":12,"sonGonderimZamani":"2026-11-26T11:58:00+03:00",
+  "hareketSensoru":true,"sensorTetiklenme":3,"reddedilenKonum":0,"sonCokme":null}}
+```
+- `anlik` alanlarının hepsi `null`/eksik olabilir; **yalnız `anlikZamani` zorunlu** (saat dilimli ISO 8601). `komutId` `null` olabilir (komutsuz anlık).
+- Tipler: `surum` metin(≤50), `enlem/boylam` birlikte dolu ya da null, `dogruluk` 0..1000000, `hizKmh` 0..400, `yon` 0..359.99, `pilYuzdesi` 0..100 tamsayı, `pilSicakligi` -50..150, `sarjdaMi/aracHareketli/hareketSensoru` bool, `termal` `NORMAL|ISINMIS|KRITIK`, `gpsModu` metin(≤50), `bekleyenKayit/sensorTetiklenme/reddedilenKonum/konumYasiMs` tamsayı ≥ 0, `sonGonderimZamani` ISO 8601, `sonCokme` metin (≤300; fazlası kesilir). Bilinmeyen alanlar yok sayılır.
+- **200** `{"ok":true}`: komut `TAMAM` yapılır ve `cihaz_anlik` satırı UPSERT edilir. Aynı `komutId` tekrar gelirse hata yok. `komutId` bilinmiyor / zaman aşımına uğramış / başka cihazın ise yine **200** ve yine UPSERT (komut durumu değişmez).
+- **422** `gecersiz_anlik` (`hatalar` listesiyle; hiçbir şey yazılmaz), **401** anahtar yanlış, **400/413/415** gövde sorunları (kayitlar.php ile aynı).
+
+### 12.3 Kurallar
+- Bir cihaz için aynı anda **tek** bekleyen komut. Beklerken siteden tekrar basılırsa yeni komut açılmaz, mevcudun `olusturma` zamanı yenilenir (10 kez basılsa tek cevap).
+- Geçerlilik 30 dk (son basıştan itibaren). Zaman aşımına uğrayan komuta geç cevap verilse de panelde "zaman aşımı" görünür; veri yine son durum olarak saklanır.
+- Telefon önerisi: internet varken ve uygulama çalışırken ~1 dk'da bir `komut.php`'yi yokla (SIM yok; Wi-Fi bağlıyken gecikme ≈ 1 dk). Komut gelince tek `anlik.php` gönder; 200 alınca bırak. 5xx/ağ hatasında aynı komutla yeniden dene.
+
+## 13. Sürüm notu
 
 Bu sözleşme v1'dir. Geriye dönük uyumsuz değişiklikte yeni yol (`/api/emekli/v2/`) açılır; mevcut telefon uygulaması bozulmaz.

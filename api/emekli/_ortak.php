@@ -50,3 +50,16 @@ function db() {
         hata(503, 'veritabani_hatasi', 'Veritabanına bağlanılamadı.');
     }
 }
+
+function iso_ayristir($s) {
+    // Dönüş: [UTC 'Y-m-d H:i:s', ofset dk, epoch sn] veya null
+    if (!is_string($s) || !preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,9})?(Z|[+-]\d{2}:\d{2})$/', $s)) { return null; }
+    $s = preg_replace('/\.\d+/', '', $s, 1);
+    if (substr($s, -1) === 'Z') { $s = substr($s, 0, -1) . '+00:00'; }
+    $d = DateTimeImmutable::createFromFormat('Y-m-d\TH:i:sP', $s);
+    $e = DateTimeImmutable::getLastErrors();
+    if (!$d || ($e && ($e['warning_count'] > 0 || $e['error_count'] > 0))) { return null; }
+    if ((int)$d->format('Y') < 2000) { return null; }
+    $utc = $d->setTimezone(new DateTimeZone('UTC'));
+    return [$utc->format('Y-m-d H:i:s'), (int)($d->getOffset() / 60), $d->getTimestamp()];
+}
