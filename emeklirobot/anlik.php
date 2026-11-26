@@ -14,6 +14,23 @@ session_write_close();
 
 const KOMUT_OMUR = 1800; // 30 dk
 
+// Cihazın son 5 gönderim partisinin (alinma_zamani) aralıklarından kaba bir cevap süresi tahmini.
+function gonderim_tahmini($pdo, $cihaz, $simdi) {
+    try {
+        $st = $pdo->prepare('SELECT alinma_zamani FROM emekli_log WHERE cihaz_adi = ? ORDER BY id DESC LIMIT 300');
+        $st->execute([$cihaz]);
+        $z = [];
+        foreach ($st->fetchAll(PDO::FETCH_COLUMN) as $a) { if (!in_array($a, $z, true)) { $z[] = $a; if (count($z) >= 5) { break; } } }
+        if (count($z) < 2) { return null; }
+        $t = array_map(function ($a) { return strtotime($a . ' UTC'); }, $z); // yeniden eskiye
+        $aralik = [];
+        for ($i = 0; $i < count($t) - 1; $i++) { $aralik[] = $t[$i] - $t[$i + 1]; }
+        sort($aralik);
+        $med = $aralik[intdiv(count($aralik), 2)];
+        return ['sonGonderim' => gmdate('Y-m-d\TH:i:s', $t[0]) . 'Z', 'aralikSn' => (int)$med, 'partiSayisi' => count($z)];
+    } catch (Exception $e) { return null; }
+}
+
 if ($post) {
     if (!hash_equals((string)$csrf, (string)($_SERVER['HTTP_X_CSRF_TOKEN'] ?? ''))) { cikis(403, ['ok' => false, 'hata' => 'csrf']); }
     $girdi = json_decode((string)file_get_contents('php://input', false, null, 0, 4096), true);
@@ -65,7 +82,7 @@ try {
                     $yeni = true;
                 }
                 $pdo->commit();
-                cikis(200, ['ok' => true, 'komutId' => (int)$id, 'yeni' => $yeni]);
+                cikis(200, ['ok' => true, 'komutId' => (int)$id, 'yeni' => $yeni, 'tahmin' => gonderim_tahmini($pdo, $cihaz, $simdi)]);
             } catch (PDOException $e) {
                 if ($pdo->inTransaction()) { $pdo->rollBack(); }
                 if ($deneme === 1 || (string)$e->getCode() !== '23000') { throw $e; } // eşzamanlı basış: bir kez daha dene

@@ -520,7 +520,7 @@
   ];
   var TERMAL = { NORMAL: 'Normal', ISINMIS: 'Isınmış', KRITIK: 'Kritik' };
   function anIstek(url, govde) { return dbIstek(url, govde); }
-  function anDur() { if (an.tm) { clearTimeout(an.tm); an.tm = null; } if (an.geri) { clearInterval(an.geri); an.geri = null; } an.komutId = null; $('an-geri').textContent = ''; }
+  function anDur() { if (an.tm) { clearTimeout(an.tm); an.tm = null; } if (an.geri) { clearInterval(an.geri); an.geri = null; } an.komutId = null; $('an-geri').textContent = ''; $('an-not').hidden = true; }
   function anGeriSay() {
     var k = AN_ARALIK, g = $('an-geri');
     if (an.geri) clearInterval(an.geri);
@@ -574,6 +574,15 @@
       anMesaj('Sorgu başarısız, yeniden deneniyor…', 'hata'); anGeriSay(); an.tm = setTimeout(anYokla, AN_ARALIK * 1000);
     });
   }
+  function dkYaz(sn) { return sn < 90 ? sn + ' sn' : sn < 5400 ? Math.round(sn / 60) + ' dk' : (sn / 3600).toFixed(1).replace('.', ',') + ' sa'; }
+  function anNot(t) {
+    var n = $('an-not');
+    if (!t) { n.hidden = true; return; }
+    var s = 'Not: Bu cihazın son ' + t.partiSayisi + ' gönderimi arasında tipik aralık ' + dkYaz(t.aralikSn) + ' (son gönderim: ' + zaman(t.sonGonderim) + '). ';
+    s += t.aralikSn <= 180 ? 'Cihaz yakın zamanda bağlıydı; cevap genellikle 1-2 dk içinde gelir.' :
+      'Cihaz uzun aralıklarla bağlanıyor olabilir; cevap bu süreye (' + dkYaz(t.aralikSn) + ') kadar uzayabilir.';
+    n.textContent = s; n.hidden = false;
+  }
   function anSec(cihaz) {
     anDur(); an.cihaz = cihaz; an.say = 0;
     try { if (!sesCtx) sesCtx = new (window.AudioContext || window.webkitAudioContext)(); if (sesCtx.state === 'suspended') sesCtx.resume(); } catch (e) { /* ses yok */ } $('an-sonuc').hidden = true;
@@ -581,7 +590,7 @@
     anMesaj('İstek gönderiliyor…');
     anIstek('/emeklirobot/anlik.php', { islem: 'ac', cihazAdi: cihaz }).then(function (v) {
       if (!v.ok) throw new Error('ac');
-      an.komutId = v.komutId; anMesaj('Anlık durum talebi alındı. Lütfen bekleyin... (1)'); anYokla();
+      an.komutId = v.komutId; anNot(v.tahmin); anMesaj('Anlık durum talebi alındı. Lütfen bekleyin... (1)'); anYokla();
     }).catch(function (e) { if (e.message !== 'oturum') anMesaj('İstek açılamadı.', 'hata'); });
   }
   function anAc() {

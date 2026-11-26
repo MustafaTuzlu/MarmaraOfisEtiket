@@ -110,6 +110,7 @@
     <div id="an-sonuc" class="an-sonuc" hidden></div>
     <p id="an-mesaj" class="mesaj" role="status"></p>
     <p id="an-geri" class="sayac"></p>
+    <p id="an-not" class="not" hidden></p>
   </div>
 </div>
 
