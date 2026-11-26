@@ -453,13 +453,24 @@
   $('db-evet').addEventListener('click', function () {
     if (!bekleyen || mesgul) return;
     var kural = bekleyen; butonlar(true); dbMesaj('Siliniyor…');
+    var yenile = false;
     dbIstek('/emeklirobot/db.php', { islem: 'sil', kural: kural }).then(function (v) {
       if (!v.ok) throw new Error('sil');
       dbAna();
-      dbMesaj(v.silinen.toLocaleString('tr-TR') + ' kayıt silindi.' + (v.bitti ? '' : ' Süre doldu, kalanlar için işlemi tekrarlayın.'), 'ok');
-      dbBilgi(); yukle({ sifirla: true });
+      var say = v.silinen.toLocaleString('tr-TR') + ' kayıt silindi.';
+      if (!v.bitti) { dbMesaj(say + ' Süre doldu, kalanlar için işlemi tekrarlayın.', 'ok'); dbBilgi(); yukle({ sifirla: true }); return; }
+      // Silme tamamlandı: alanı otomatik geri kazan (OPTIMIZE), bitince sayfayı tamamen yenile
+      dbMesaj(say + ' Alan geri kazanılıyor (OPTIMIZE)…', 'ok');
+      return dbIstek('/emeklirobot/db.php', { islem: 'optimize' }).then(function (o) {
+        if (!o.ok) throw new Error('opt');
+        yenile = true; dbMesaj(say + ' Alan geri kazanıldı. Sayfa yenileniyor…', 'ok');
+        setTimeout(function () { location.reload(); }, 800);
+      }).catch(function (e) {
+        if (e.message === 'oturum') throw e;
+        dbMesaj(say + ' Ancak alan geri kazanılamadı (OPTIMIZE başarısız); elle deneyebilirsiniz.', 'hata'); dbBilgi(); yukle({ sifirla: true });
+      });
     }).catch(function (e) { if (e.message !== 'oturum') { dbAna(); dbMesaj('Silme başarısız.', 'hata'); } })
-      .then(function () { butonlar(false); });
+      .then(function () { if (!yenile) butonlar(false); });
   });
   $('db-optimize').addEventListener('click', function (e) {
     e.preventDefault(); if (mesgul) return;
