@@ -27,13 +27,24 @@ Bu dosya, projede çalışan yapay zekâ (Claude) ve geliştiriciler için kalı
 - Deploy sonrası kontrol: `https://marmaraofisetiket.net/robots.txt`, `/sitemap.xml`, http→https ve www→non-www yönlendirmesi.
 
 ## 3b. EmekliRobot API (araç takip)
+- API kayıtlarında isteğe bağlı `hizKmh` (0..400) ve `yon` (0..359.9) alanları var (DB: `hiz_kmh`, `yon`; mevcut tabloya `db/2026-11-25-hiz-yon.sql` ile eklendi, görünüm yeniden oluşturuldu).
 - Sözleşme: `docs/emekli-robot-api.md`. Uç noktalar: `api/emekli/ping.php` (GET), `api/emekli/kayitlar.php` (POST, toplu, idempotent). Şema: `db/emekli-robot.sql` (MariaDB 5.5, phpMyAdmin'den elle çalıştırılır; deploy'a girmez).
 - Gizli bilgiler yalnızca GitHub secret/variable → `config.local.php`: secret `EMEKLI_DB_PASS`, `EMEKLI_API_KEY`; variable (opsiyonel) `EMEKLI_DB_HOST/PORT/NAME/USER`. Repoya yazma.
 - **İndekslenmemeli:** `/api/` hiçbir zaman sitemap'e, sayfa bağlantılarına girmez. Korumalar: `robots.txt` `Disallow: /api/`, `api/emekli/.htaccess` ve PHP yanıtlarında `X-Robots-Tag: noindex, nofollow`. Bunları kaldırma.
 - Durum: sunucu canlı ve test edildi (ping, kayıt ekleme, mükerrer atlama). Açık karar: geçersiz kayıtta tüm parti 422 ile reddedilir (alternatif: geçerlileri yaz, hatalıları raporla).
 
 ## 3c. Gizli panel `/emeklirobot/`
-- Giriş + harita paneli (Leaflet/OSM): `emeklirobot/` (`index.php`, `api.php`, `_panel.php`, `app.js`, `app.css`). Son 100 log, çoklu filtre, pin, detay paneli.
+- Giriş + harita paneli (Leaflet 1.9.4 + OSM, cdnjs): `emeklirobot/` (`index.php` giriş+CSP, `_ortak.php` oturum/CSRF/kilit/db, `_panel.php` HTML şablonu, `api.php` liste, `db.php` DB ayarları, `app.js`, `xlsx.js`, `app.css`). Vanilla JS (ES5 stili), **satır içi script yok** (CSP: script-src 'self' + cdnjs, img: tiles.openstreetmap.org).
+- **Özellikler (hepsi `app.js` içinde):**
+  - Filtre bölümü açılır/kapanır (`<details>`, varsayılan kapalı): tarih aralığı + hızlı butonlar, log tipi, cihaz, araç/şarj, pil %, sıcaklık, doğruluk, yalnızca konumlu, "Tüm filtreleri temizle". Kapalıyken de filtreler geçerli.
+  - Liste: kayıt sayısı seçici (100/250/500/1000, varsayılan 250, sunucuda whitelist), geniş tablo (UUID/elapsedRealtime/zaman kaynağı kolonları **bilerek yok**), "Konum Süresi" `SS:DD:ss`, satır renkleri (SARJ_BASLADI yeşil, SARJ_KESILDI kırmızı, ARAC_HAREKET sarı), satıra tıklayınca haritada pin. Excel (.xlsx) indirme tablodaki kolonlarla aynı, istemci tarafında üretilir (`xlsx.js`), yalnızca yüklü satırlar.
+  - Harita: kayıt başına nokta, ardışık noktalar arası çizgi + yön oku (iki nokta ekranda <22 px ise ok gizlenir), seçili kayıt kırmızı pin. **Cihaz kutusu** (sağ üst): cihazlar distinct+asc, aç/kapa anahtarı (varsayılan hepsi açık, yalnızca haritayı etkiler), renk noktasına tıklayınca 8 renkli palet; renkler `localStorage` (`er_renkler`) içinde saklanır. Renk noktası **anahtar `<label>`'inin dışında** olmalı (içindeyken anahtara basınca palet açılıyordu).
+  - **Rota animasyonu** (haritanın üstünde): cihaz başına eskiden yeniye, başlat/duraklat, başa al, hız (0.5×–16× = saniyede kaç nokta, gerçek zaman değil), kaydırıcı, "Aracı takip et" (varsayılan seçili), cihaz renginde yöne dönen araç simgesi. rAF zaman farkı `Math.max(0, …)` ile sınırlı (eksi değer animasyonu bozuyordu).
+  - Log detayı paneli sağda açılır/kapanır (varsayılan kapalı, ☰ ile açılır, harita genişler/daralır; mobilde haritanın altında açılır). Seçimde otomatik açılmaz.
+  - 15 sn'de bir otomatik yenileme (üst çubuk); yeni kayıt gelirse bildirim sesi (WebAudio, hoparlör düğmesi, varsayılan kapalı, yeşil=açık).
+  - **DB Ayarları** (Çıkış'ın solunda): toplam kayıt, tablo boyutu (KB/MB/GB); Hepsini / 1 haftadan eski / 1 aydan eski / bugüne ait kayıtları sil, "emin misiniz" onayı. `db.php`: `bilgi`/`onizle` GET, `sil`/`optimize` POST + `X-CSRF-Token`; 10.000'lik parçalarla DELETE, 40 sn sınırı, `error_log` ile kayıt.
+- **Doğrulama yöntemi:** PHP yerelde kurulu değil. PHP tarafı yerelde çalıştırılmadı; ön yüz, `_panel.php` etiketleri sıyrılıp sahte API ile servis edilen sahte sunucuyla (geçici dizinde, repoya girmez) Browser panelinde denendi. Canlıda ilk kullanımda PHP kısımlarını (giriş, `api.php`, `db.php`) kullanıcı gözlemlemeli.
+- **Zaman gösterimi:** tüm zamanlar UTC saklanır, panelde Europe/Istanbul (UTC+3) gösterilir. `konumZamani` anlamı log tipine göre değişir (KONUM/ARAC_*: GPS fix zamanı; DURUM/SARJ_*/CIHAZ_*/KONUM_ALINAMADI: kayıt oluşma zamanı).
 - **Hiçbir yerde görünmez:** `robots.txt`'e **eklenmez** (yoksa adresi ele verir), sitemap'e/sayfalara bağlanmaz; yalnızca `X-Robots-Tag: noindex` + meta robots. Adres dışarıya söylenmez.
 - Giriş: kullanıcı `EMEKLI_DASH_USER` variable'ı (varsayılan `mustafa`), şifre GitHub secret `EMEKLI_DASH_PASS`; workflow `password_hash` ile `config.local.php`'ye `$DASH` yazar. Şifre repoda yok. IP başına 5 hatalı denemede 15 dk kilit.
 
@@ -64,8 +75,14 @@ Bu dosya, projede çalışan yapay zekâ (Claude) ve geliştiriciler için kalı
 5. Kategori giriş metinleri, `ItemList`, ürün `offers`, EN sayfalardaki Türkçe düzeltmeleri, `lastmod` kaldırma, güvenlik başlıkları.
 6. "Marmara Ofis" → "Marmara Ofis Etiket" (başlıklar, açıklamalar, şemalar, PHP); ana sayfa metin bölümü; 23 sayfa için elle meta açıklama; `LocalBusiness` `geo`/`hasMap`/`contactPoint`; boş sosyal ikonlar kaldırıldı.
 7. JSON-LD'ye Bülent Seven (`employee` + `contactPoint.name`, görünmez).
+8. EmekliRobot sunucu tarafı: DB şeması, `api/emekli/` (ping + toplu kayıt), sözleşme dokümanı, noindex korumaları; gizli panel `/emeklirobot/` (giriş, harita, filtre, tablo+Excel, DB Ayarları, ses, cihaz kutusu/renkler, rota animasyonu, açılır detay/filtre). Ayrıntı: bölüm 3b/3c.
 
 ## 7. Yapılacaklar / açık maddeler
+**EmekliRobot**
+- Paylaşılan DB şifresini değiştir ve güçlü bir panel şifresi (`EMEKLI_DASH_PASS`) kullan (şifreler sohbette paylaşıldı).
+- Açık karar: geçersiz kayıtta tüm parti 422 (şu an) mı, geçerlileri yaz + hatalıları raporla mı.
+- Excel yalnızca yüklü (limit'li) satırları indirir; tüm sonucu indirme istenirse sunucu tarafı dışa aktarma gerekir.
+
 **Kullanıcının hesaplarıyla (kod dışı)**
 - Google Search Console (domain mülkü, sitemap gönderimi, ana sayfa + kategoriler için dizine ekleme isteği); Bing Webmaster ve Yandex Webmaster.
 - Google Business Profile aç/doldur; dış sitelerde eski telefon `(0212) 548 73 96` kaldıysa güncelle; Google yorumu topla.
