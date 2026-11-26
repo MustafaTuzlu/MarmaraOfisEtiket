@@ -204,8 +204,67 @@
       }
     });
     oklariGuncelle();
+    animHazirla(gruplar);
     if (sigdir && tum.length > 1) harita.fitBounds(tum, { maxZoom: 16, padding: [30, 30] });
   }
+
+  /* ---------- Rota animasyonu (cihaz başına eskiden yeniye) ---------- */
+  var anim = { izler: {}, pos: 0, max: 0, oynuyor: false, son: 0, araclar: {}, katman: L.layerGroup().addTo(harita) };
+  function aracIcon(renk) {
+    return L.divIcon({
+      className: 'arac', iconSize: [30, 30], iconAnchor: [15, 15],
+      html: '<div class="arac-i"><svg width="30" height="30" viewBox="0 0 30 30"><path d="M15 0l4.5 6h-9z" fill="' + renk + '"/><rect x="8" y="5" width="14" height="23" rx="6" fill="' + renk + '" stroke="#fff" stroke-width="1.5"/><rect x="10.5" y="9" width="9" height="5" rx="1.5" fill="#fff" opacity=".85"/><rect x="10.5" y="20" width="9" height="4" rx="1.5" fill="#fff" opacity=".6"/></svg></div>'
+    });
+  }
+  function animHazirla(gruplar) {
+    anim.izler = {}; anim.max = 0;
+    Object.keys(gruplar).sort().forEach(function (ad) {
+      anim.izler[ad] = { kayitlar: gruplar[ad], yon: 0 };
+      anim.max = Math.max(anim.max, gruplar[ad].length - 1);
+    });
+    Object.keys(anim.araclar).forEach(function (ad) { if (!anim.izler[ad]) { anim.katman.removeLayer(anim.araclar[ad]); delete anim.araclar[ad]; } });
+    var var_ = anim.max >= 1;
+    ['a-oynat', 'a-sifirla', 'a-kaydir'].forEach(function (id) { $(id).disabled = !var_; });
+    if (!var_) { animDurdur(); anim.pos = 0; }
+    if (anim.pos > anim.max) anim.pos = anim.max;
+    animCiz();
+  }
+  function animCiz() {
+    var adlar = Object.keys(anim.izler), ilk = null, bilgi = '';
+    adlar.forEach(function (ad) {
+      var iz = anim.izler[ad], ks = iz.kayitlar, n = ks.length;
+      var i = Math.min(Math.floor(anim.pos), n - 1), f = i >= n - 1 ? 0 : anim.pos - i;
+      var a = ks[i], b = ks[Math.min(i + 1, n - 1)];
+      var ll = [a.enlem + (b.enlem - a.enlem) * f, a.boylam + (b.boylam - a.boylam) * f];
+      if (a.enlem !== b.enlem || a.boylam !== b.boylam) iz.yon = yon([a.enlem, a.boylam], [b.enlem, b.boylam]);
+      var m = anim.araclar[ad];
+      if (!m) { m = anim.araclar[ad] = L.marker(ll, { icon: aracIcon(renkOf(ad)), interactive: false, keyboard: false, zIndexOffset: 1000 }).addTo(anim.katman); }
+      m.setLatLng(ll);
+      var el = m.getElement(); if (el && el.firstChild) el.firstChild.style.transform = 'rotate(' + iz.yon.toFixed(1) + 'deg)';
+      if (!ilk) ilk = ll;
+      bilgi += (adlar.length > 1 ? ad + ': ' : '') + zaman(a.zaman) + ' (' + (i + 1) + '/' + n + ')' + (adlar.length > 1 ? '  ' : '');
+    });
+    $('a-bilgi').textContent = adlar.length ? bilgi : '—';
+    $('a-kaydir').value = anim.max ? Math.round(anim.pos / anim.max * 1000) : 0;
+    if (ilk && $('a-takip').checked && anim.oynuyor) harita.panTo(ilk, { animate: false });
+  }
+  function animAdim(t) {
+    if (!anim.oynuyor) return;
+    anim.pos += (t - anim.son) / 1000 * Number($('a-hiz').value); anim.son = t;
+    if (anim.pos >= anim.max) { anim.pos = anim.max; animDurdur(); }
+    animCiz();
+    if (anim.oynuyor) requestAnimationFrame(animAdim);
+  }
+  function animBaslat() {
+    if (anim.max < 1) return;
+    if (anim.pos >= anim.max) anim.pos = 0;
+    anim.oynuyor = true; anim.son = performance.now(); $('a-oynat').textContent = '⏸ Duraklat';
+    requestAnimationFrame(animAdim);
+  }
+  function animDurdur() { anim.oynuyor = false; $('a-oynat').textContent = '▶ Başlat'; }
+  $('a-oynat').addEventListener('click', function () { if (anim.oynuyor) animDurdur(); else animBaslat(); });
+  $('a-sifirla').addEventListener('click', function () { animDurdur(); anim.pos = 0; animCiz(); });
+  $('a-kaydir').addEventListener('input', function () { anim.pos = Number(this.value) / 1000 * anim.max; animCiz(); });
 
   /* ---------- Filtreler ---------- */
   function cipler(kap, degerler, aciklama) {
