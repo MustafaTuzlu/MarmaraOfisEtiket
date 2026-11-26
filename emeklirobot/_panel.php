@@ -21,7 +21,7 @@
       <path class="cizgi" d="m16 9 5 6m0-6-5 6"/>
     </svg>
   </button>
-  <button type="button" id="b-anlik" class="dbbtn">Bana son durumu göster</button>
+  <button type="button" id="b-anlik" class="dbbtn">Anlık Durum</button>
   <button type="button" id="b-db" class="dbbtn">DB Ayarları</button>
   <form method="post" action="/emeklirobot/" class="cikis">
     <input type="hidden" name="islem" value="cikis">
@@ -96,7 +96,7 @@
 <div id="anmodal" class="modal" hidden>
   <div class="modal-kutu genis" role="dialog" aria-modal="true" aria-labelledby="anbaslik">
     <button type="button" class="modal-kapat" id="ankapat" aria-label="Kapat">×</button>
-    <h2 id="anbaslik">Anlık durum</h2>
+    <h2 id="anbaslik">Anlık Durum</h2>
     <details class="bilgi-kutu">
       <summary>Bilgi</summary>
       <ul>
