@@ -517,6 +517,7 @@
     clearInterval(oto);
     if (this.checked) oto = setInterval(function () { yukle({ oto: true }); }, 15000);
   });
+  if ($('f-oto').checked) oto = setInterval(function () { yukle({ oto: true }); }, 15000); // varsayılan açık
 
 
   /* ---------- Bana son durumu göster (anlık durum komutu) ---------- */

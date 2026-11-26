@@ -11,9 +11,9 @@
 </head>
 <body data-csrf="<?= htmlspecialchars(csrf(), ENT_QUOTES, 'UTF-8') ?>">
 <header class="ust">
-  <strong>Emekli Robot</strong>
+  <strong class="marka"><svg class="logo" viewBox="22 16 64 76" width="26" height="31" aria-hidden="true"><g fill="none" stroke="#3DDC84" stroke-width="2.6" stroke-linecap="round"><path d="M45 28L40 20"/><path d="M63 28L68 20"/></g><g fill="#3DDC84"><path d="M33 58H75V76Q75 82 69 82H39Q33 82 33 76Z"/><path d="M25 60A3 3 0 0 1 31 60V76A3 3 0 0 1 25 76Z"/><path d="M77 60A3 3 0 0 1 83 60V76A3 3 0 0 1 77 76Z"/><path d="M32 52A22 22 0 0 1 76 52Z"/></g><g fill="#fff"><circle cx="45" cy="42" r="2.8"/><circle cx="63" cy="42" r="2.8"/></g><path d="M31 48C30 60 33 70 41 77C46 81 50 86 54 86C58 86 62 81 67 77C75 70 78 60 77 48C72 54 64 56 54 56C44 56 36 54 31 48Z" fill="#ECEFF1" stroke="#90A4AE" stroke-width=".9"/><g fill="none" stroke="#B0BEC5" stroke-width="1" stroke-linecap="round"><path d="M44 66Q46 72 44 78"/><path d="M54 68V82"/><path d="M64 66Q62 72 64 78"/></g><path d="M38 55C43 49 50 50 54 55C58 50 65 49 70 55C65 60 58 58 54 57C50 58 43 60 38 55Z" fill="#CFD8DC" stroke="#90A4AE" stroke-width=".9"/></svg><span>Emekli Robot</span></strong>
   <span id="durum" class="durum"></span>
-  <label class="oto"><input type="checkbox" id="f-oto"> 15 sn'de bir yenile</label>
+  <label class="oto"><input type="checkbox" id="f-oto" checked> 15 sn'de bir yenile</label>
   <button type="button" id="b-ses" class="sesbtn" aria-pressed="false" title="Bildirim sesi: kapalı (açmak için tıkla)">
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
       <path d="M11 5 6 9H3v6h3l5 4z" fill="currentColor"/>

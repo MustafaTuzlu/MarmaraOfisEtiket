@@ -44,13 +44,19 @@ label.onay{flex-direction:row;align-items:center;gap:6px;padding-bottom:8px}
 .liste-ust select{font-size:14px;padding:3px 6px;border:1px solid #cbd5e1;border-radius:6px}
 .excel{font-size:13px;color:#1d4ed8;text-decoration:none;border:1px solid #bfdbfe;background:#eff6ff;padding:6px 12px;border-radius:6px;white-space:nowrap}
 .excel:hover{background:#dbeafe}
-.tablo-kap{max-height:560px;overflow:auto}
-table{border-collapse:collapse;width:100%;font-size:13px}
-th{position:sticky;top:0;background:#f1f5f9;text-align:left;padding:6px 8px;white-space:nowrap}
-td{padding:6px 8px;border-top:1px solid #e2e8f0;white-space:nowrap}
-tbody tr{cursor:pointer}tbody tr:hover{background:#f8fafc}
-tbody tr.t-SARJ_BASLADI{background:#ecfdf3}tbody tr.t-SARJ_KESILDI{background:#fef0f0}tbody tr.t-ARAC_HAREKET{background:#fefbe6}
-tbody tr:hover{background:#f1f5f9}tbody tr.secili{background:#dbeafe}
+.tablo-kap{max-height:560px;overflow:auto;border:1px solid #e2e8f0;border-radius:10px;background:#fff}
+table{border-collapse:separate;border-spacing:0;width:100%;font-size:13px;font-variant-numeric:tabular-nums}
+th{position:sticky;top:0;z-index:1;background:#f8fafc;color:#64748b;text-align:left;padding:10px 12px;white-space:nowrap;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid #e2e8f0}
+td{padding:9px 12px;border-bottom:1px solid #f1f5f9;white-space:nowrap;color:#1e293b}
+tbody tr:last-child td{border-bottom:0}
+tbody tr{cursor:pointer;transition:background .12s}
+tbody tr td:first-child{box-shadow:inset 3px 0 0 transparent;color:#64748b}
+tbody tr:nth-child(even){background:#fafbfc}
+tbody tr.t-SARJ_BASLADI td:first-child{box-shadow:inset 3px 0 0 #22c55e}
+tbody tr.t-SARJ_KESILDI td:first-child{box-shadow:inset 3px 0 0 #ef4444}
+tbody tr.t-ARAC_HAREKET td:first-child{box-shadow:inset 3px 0 0 #eab308}
+tbody tr.t-SARJ_BASLADI{background:#f3fcf6}tbody tr.t-SARJ_KESILDI{background:#fef6f6}tbody tr.t-ARAC_HAREKET{background:#fffdf0}
+tbody tr:hover{background:#eef2f7}tbody tr.secili{background:#dbeafe}
 .rozet{display:inline-block;padding:1px 8px;border-radius:999px;font-size:11px;background:#e2e8f0}
 .rozet.sicak{background:#fed7aa}.rozet.kritik{background:#fecaca}.rozet.konum{background:#dcfce7}.rozet.yok{background:#fef3c7}
 .pin{filter:drop-shadow(0 2px 2px rgba(0,0,0,.4))}
@@ -170,3 +176,5 @@ button.tehlike:hover{background:#b91c1c!important}
 .bilgi-kutu>summary::-webkit-details-marker{display:none}
 .bilgi-kutu>summary:before{content:"\25B8";display:inline-block;transition:transform .2s}
 .bilgi-kutu[open]>summary:before{transform:rotate(90deg)}
+
+.ust .marka{display:flex;align-items:center;gap:10px;font-size:16px}.ust .logo{flex:none;filter:drop-shadow(0 1px 2px rgba(0,0,0,.4))}
