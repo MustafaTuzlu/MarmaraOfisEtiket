@@ -610,6 +610,7 @@
       if (!v.ok) throw new Error('liste');
       if (!v.cihazlar.length) { anMesaj('Henüz kayıtlı cihaz yok.'); return; }
       anMesaj('Bir cihaz seçin.');
+      v.cihazlar.sort(function (x, y) { return x.cihazAdi.localeCompare(y.cihazAdi, 'tr', { sensitivity: 'base' }); });
       $('an-liste').innerHTML = v.cihazlar.map(function (c) {
         return '<button type="button" data-cihaz="' + esc(c.cihazAdi) + '" data-son="' + esc(c.sonGorulme || '') + '"><span>' + esc(c.cihazAdi) + '</span><small>Son görülme: ' + zaman(c.sonGorulme) + '</small></button>';
       }).join('');

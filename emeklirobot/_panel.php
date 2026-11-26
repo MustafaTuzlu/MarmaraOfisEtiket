@@ -97,15 +97,15 @@
   <div class="modal-kutu genis" role="dialog" aria-modal="true" aria-labelledby="anbaslik">
     <button type="button" class="modal-kapat" id="ankapat" aria-label="Kapat">×</button>
     <h2 id="anbaslik">Anlık durum</h2>
-    <div class="bilgi-kutu" role="note">
-      <strong>Bilgi</strong>
+    <details class="bilgi-kutu">
+      <summary>Bilgi</summary>
       <ul>
         <li>Telefon dakikada bir yeni istek olup olmadığını kontrol eder; ekran kapalı veya şarjda değilken bu birkaç dakikaya (en çok ~9 dk) uzayabilir. İnternet yoksa bağlanınca cevaplanır.</li>
         <li>Bir cihaz için aynı anda tek bekleyen istek olur; art arda basmak yeni istek açmaz, tek cevap gelir.</li>
         <li>İstek 30 dk içinde cevaplanmazsa zaman aşımına uğrar; eski isteğe geç cevap verilmez.</li>
         <li>Anlık durum log olarak kaydedilmez, yalnızca son durum olarak tutulur.</li>
       </ul>
-    </div>
+    </details>
     <div id="an-liste" class="an-liste"></div>
     <div id="an-sonuc" class="an-sonuc" hidden></div>
     <p id="an-mesaj" class="mesaj" role="status"></p>

@@ -156,3 +156,7 @@ button.tehlike:hover{background:#b91c1c!important}
 .an-s a{color:#1d4ed8;font-weight:500}
 .ok-yon{display:inline-block}.cokme{font-weight:400;color:#b91c1c;font-size:12px}
 .an-alt{font-size:12px;color:#64748b;text-align:right}
+.bilgi-kutu>summary{cursor:pointer;font-weight:600;list-style:none;display:flex;align-items:center;gap:6px;user-select:none}
+.bilgi-kutu>summary::-webkit-details-marker{display:none}
+.bilgi-kutu>summary:before{content:"\25B8";display:inline-block;transition:transform .2s}
+.bilgi-kutu[open]>summary:before{transform:rotate(90deg)}
