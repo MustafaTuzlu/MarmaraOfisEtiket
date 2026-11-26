@@ -509,7 +509,7 @@
 
 
   /* ---------- Bana son durumu göster (anlık durum komutu) ---------- */
-  var AN_ARALIK = 3, an = { cihaz: null, komutId: null, tm: null, say: 0, geri: null };
+  var AN_ARALIK = 3, an = { cihaz: null, komutId: null, tm: null, t0: 0, geri: null };
   var AN_ETIKET = [
     ['anlikZamani', 'Anlık zamanı', 'z'], ['surum', 'Uygulama sürümü'], ['konum', 'Konum', 'k'],
     ['dogruluk', 'Doğruluk', 'm'], ['konumYasiMs', 'Konum yaşı', 's'], ['hizKmh', 'Hız', 'h'], ['yon', 'Yön', 'd'],
@@ -521,13 +521,14 @@
   var TERMAL = { NORMAL: 'Normal', ISINMIS: 'Isınmış', KRITIK: 'Kritik' };
   function anIstek(url, govde) { return dbIstek(url, govde); }
   function anDur() { if (an.tm) { clearTimeout(an.tm); an.tm = null; } if (an.geri) { clearInterval(an.geri); an.geri = null; } an.komutId = null; $('an-geri').textContent = ''; $('an-not').hidden = true; }
-  function anGeriSay() {
-    var k = AN_ARALIK, g = $('an-geri');
+  function saatYaz(ms) { var t = Math.floor(ms / 1000), p = function (n) { return (n < 10 ? '0' : '') + n; }; return p(Math.floor(t / 3600)) + ':' + p(Math.floor(t % 3600 / 60)) + ':' + p(t % 60); }
+  // Bekleme sayacı: talep anından beri geçen süre (SS:DD:ss), saniyede bir artar
+  function anSayac() {
     if (an.geri) clearInterval(an.geri);
-    g.textContent = 'Sonraki kontrol: ' + k + ' sn';
-    an.geri = setInterval(function () { k--; g.textContent = k > 0 ? 'Sonraki kontrol: ' + k + ' sn' : 'kontrol ediliyor…'; if (k <= 0) { clearInterval(an.geri); an.geri = null; } }, 1000);
+    var g = $('an-geri'), yaz = function () { g.textContent = 'Kontrol ediliyor... (' + saatYaz(Date.now() - an.t0) + ')'; };
+    yaz(); an.geri = setInterval(yaz, 1000);
   }
-  function anBekle() { anMesaj('Anlık durum talebi alındı. Lütfen bekleyin... (' + an.say + ')'); anGeriSay(); an.tm = setTimeout(anYokla, AN_ARALIK * 1000); }
+  function anBekle() { an.tm = setTimeout(anYokla, AN_ARALIK * 1000); }
   function anMesaj(t, tur) { var m = $('an-mesaj'); m.textContent = t || ''; m.className = 'mesaj' + (tur ? ' ' + tur : ''); }
   function anDeger(a, k, tip) {
     var v = a[k];
@@ -561,7 +562,6 @@
   function anYokla() {
     if (!an.komutId) return;
     var id = an.komutId, cihaz = an.cihaz;
-    an.say++; $('an-geri').textContent = 'kontrol ediliyor…';
     anIstek('/emeklirobot/anlik.php?islem=sorgu&komutId=' + id + '&cihazAdi=' + encodeURIComponent(cihaz)).then(function (v) {
       if (an.komutId !== id) return;
       if (!v.ok) throw new Error('sorgu');
@@ -571,26 +571,26 @@
       anBekle();
     }).catch(function (e) {
       if (e.message === 'oturum' || an.komutId !== id) return;
-      anMesaj('Sorgu başarısız, yeniden deneniyor…', 'hata'); anGeriSay(); an.tm = setTimeout(anYokla, AN_ARALIK * 1000);
+      anBekle();
     });
   }
   function dkYaz(sn) { return sn < 90 ? sn + ' sn' : sn < 5400 ? Math.round(sn / 60) + ' dk' : (sn / 3600).toFixed(1).replace('.', ',') + ' sa'; }
+  function saatIst(ms) { return new Date(ms + 3 * 3600e3).toISOString().slice(11, 19); } // Türkiye UTC+3
   function anNot(t) {
     var n = $('an-not');
     if (!t) { n.hidden = true; return; }
-    var s = 'Not: Bu cihazın son ' + t.partiSayisi + ' gönderimine göre aralıklar tipik ' + dkYaz(t.aralikSn) + ', çoğu zaman ' + dkYaz(t.p80Sn) + ' içinde (son gönderim: ' + zaman(t.sonGonderim) + '). ';
-    s += t.p80Sn <= 180 ? 'Cihaz sık bağlanıyor; cevap genellikle 1-2 dk içinde gelir.' :
-      'Cihaz uzun aralıklarla bağlanıyor olabilir; cevap ' + dkYaz(t.p80Sn) + ' civarına kadar uzayabilir.';
+    var s = 'Not: Telefon genelde ' + dkYaz(t.aralikSn) + ' arayla sunucuya bağlanıyor, çoğu zaman en geç ' + dkYaz(t.p80Sn) + ' içinde. ';
+    s += t.p80Sn <= 180 ? 'Cevap birkaç dakikada gelir.' : 'Cevap biraz gecikebilir; sayfayı açık bırak, gelince ses çalar.';
     n.textContent = s; n.hidden = false;
   }
   function anSec(cihaz) {
-    anDur(); an.cihaz = cihaz; an.say = 0;
+    anDur(); an.cihaz = cihaz; an.t0 = Date.now();
     try { if (!sesCtx) sesCtx = new (window.AudioContext || window.webkitAudioContext)(); if (sesCtx.state === 'suspended') sesCtx.resume(); } catch (e) { /* ses yok */ } $('an-sonuc').hidden = true;
     [].forEach.call($('an-liste').querySelectorAll('button'), function (b) { b.classList.toggle('sec', b.getAttribute('data-cihaz') === cihaz); });
     anMesaj('İstek gönderiliyor…');
     anIstek('/emeklirobot/anlik.php', { islem: 'ac', cihazAdi: cihaz }).then(function (v) {
       if (!v.ok) throw new Error('ac');
-      an.komutId = v.komutId; anNot(v.tahmin); anMesaj('Anlık durum talebi alındı. Lütfen bekleyin... (1)'); anYokla();
+      an.komutId = v.komutId; anNot(v.tahmin); anMesaj('Anlık durum talebi ' + saatIst(an.t0) + ' da alındı.'); anSayac(); anYokla();
     }).catch(function (e) { if (e.message !== 'oturum') anMesaj('İstek açılamadı.', 'hata'); });
   }
   function anAc() {
