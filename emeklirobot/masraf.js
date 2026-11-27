@@ -72,14 +72,47 @@
       '<button type="submit" class="analiz-btn">' + (m ? 'Güncelle' : 'Ekle') + '</button>' + (m ? ' <button type="button" class="az-git" data-is="vazgec">Vazgeç</button>' : '') + '</form>';
   }
 
-  function ciz() {
+  // Km başı yakıt: litre fiyatı × (100 km’de litre ÷ 100)
+  function yakit() {
+    var a = I().ayarlar(), fiyat = a.yakit_fiyat || 0, yuz = a.yakit_100km || 0;
+    return { fiyat: fiyat, yuz: yuz, litre: yuz / 100, tl: fiyat * yuz / 100 };
+  }
+  function masrafToplami() {
     var L_ = suz(liste), toplam = 0, tur = {};
     L_.forEach(function (m) { toplam += m.tutar; tur[m.tur] = (tur[m.tur] || 0) + m.tutar; });
-    var Y = yollar(), gpsKm = Y.reduce(function (t, y) { return t + y.m; }, 0) / 1000, ucret = I().ayarlar().km_ucreti || 0;
-    var html = '<div class="rp-kartlar">' + [['Toplam masraf', tl(toplam), L_.length + ' kayıt'], ['GPS ile yol', sayi(gpsKm, 1) + ' km', 'GPS’siz yol dahil değil'], ['GPS km başına', gpsKm >= 1 && toplam ? tl(toplam / gpsKm) : '—', 'girilen masraf ÷ GPS km'],
-      ['Yolun km maliyeti', ucret ? tl(gpsKm * ucret) : '—', ucret ? sayi(gpsKm, 1) + ' km × ' + tl(ucret) : 'aşağıdan km ücreti girin']]
-      .concat(Object.keys(tur).map(function (t) { return [AD[t] || t, tl(tur[t]), '']; }))
-      .map(function (k) { return '<div><span>' + k[0] + '</span><strong>' + k[1] + '</strong><small>' + k[2] + '</small></div>'; }).join('') + '</div>';
+    return { liste: L_, toplam: toplam, tur: tur };
+  }
+  function yolKm() { return yollar().reduce(function (t, y) { return t + y.m; }, 0) / 1000; }
+  function kartlarHtml() {
+    var M = masrafToplami(), gpsKm = yolKm(), f = yakit();
+    return [['Toplam masraf', tl(M.toplam), M.liste.length + ' kayıt'], ['GPS ile yol', sayi(gpsKm, 1) + ' km', 'GPS’siz yol dahil değil'], ['GPS km başına', gpsKm >= 1 && M.toplam ? tl(M.toplam / gpsKm) : '—', 'girilen masraf ÷ GPS km'],
+      ['Yolun km maliyeti', f.tl ? tl(gpsKm * f.tl) : '—', f.tl ? 'yakıt: ' + sayi(gpsKm, 1) + ' km × ' + tl(f.tl) + ' · ' + sayi(gpsKm * f.litre, 2) + ' L' : 'aşağıdan yakıt fiyatı ve tüketim girin']]
+      .concat(Object.keys(M.tur).map(function (t) { return [AD[t] || t, tl(M.tur[t]), '']; }))
+      .map(function (k) { return '<div><span>' + k[0] + '</span><strong>' + k[1] + '</strong><small>' + k[2] + '</small></div>'; }).join('');
+  }
+  // Girdilere bağlı kısım; yazarken yalnızca burası ve kartlar yenilenir (kutular ve masraf formu bozulmaz)
+  function sonucHtml() {
+    var Y = yollar(), gpsKm = yolKm(), f = yakit();
+    return (f.tl ? '<p>Km başına <b>' + sayi(f.litre, 3) + ' L</b> yakıt = <b>' + tl(f.tl) + '</b></p>' : '<p class="not">Km başı maliyet için iki alanı da doldurun.</p>') +
+      '<p><b>' + Y.length + ' yolculuk · ' + sayi(gpsKm, 1) + ' km' + (f.tl ? ' · ' + sayi(gpsKm * f.litre, 2) + ' L · ' + tl(gpsKm * f.tl) : '') + '</b></p>' +
+      (Y.length ? '<p><button type="button" class="az-git" data-is="dokum">Yolculuk dökümünü Excel indir</button></p>' +
+        '<details class="ms-yollar"><summary>Hesaba giren yolculuklar</summary>' + I().tablo(['Başlangıç', 'Araç', 'Güzergâh', 'Km', 'Yakıt (L)', 'Maliyet'], Y.slice(-SATIR).reverse().map(function (y) {
+          var k = y.m / 1000;
+          return [esc(O.kisaTarih(y.t0)), esc(y.cihaz), '<span class="db-sar">' + esc(ucAdi(y.nereden) + ' → ' + ucAdi(y.nereye)) + '</span>', sayi(k, 1), f.tl ? sayi(k * f.litre, 2) : '—', f.tl ? tl(k * f.tl) : '—'];
+        })) + (Y.length > SATIR ? '<p class="not">Son ' + SATIR + ' yolculuk gösteriliyor; tamamı Excel’de.</p>' : '') + '</details>' : '');
+  }
+  function detayKoru(kutu, html) {
+    var acik = !!kutu.querySelector('.ms-yollar[open]');
+    kutu.innerHTML = html;
+    if (acik && kutu.querySelector('.ms-yollar')) kutu.querySelector('.ms-yollar').open = true;
+  }
+  function yakitKutusu(id, etiket, deger, en, ornek) {
+    return '<label>' + etiket + ' <input type="number" id="' + id + '" min="0" max="' + en + '" step="0.01" inputmode="decimal" placeholder="' + ornek + '" value="' + (deger || '') + '"></label>';
+  }
+
+  function ciz() {
+    var M = masrafToplami(), L_ = M.liste, f = yakit();
+    var html = '<div class="rp-kartlar" id="ms-kartlar">' + kartlarHtml() + '</div>';
     if (sonDonem && sonDonem.ozel) html += '<p class="not">' + esc(O.kisaTarih(sonDonem.t0) + ' – ' + O.kisaTarih(sonDonem.t1)) + ' arasında başlayan yolculuklar sayılır. Masraf kayıtlarında saat olmadığından masraflar gün olarak süzülür; saatli aralıkta “GPS km başına” yanıltabilir.</p>';
     var tk = ($('ms-cihaz').value ? [$('ms-cihaz').value] : cihazlar).map(function (c) {
       var t = tuketim(c);
@@ -91,16 +124,11 @@
       return [I().gunYaz(m.tarih), esc(m.cihaz), AD[m.tur] || esc(m.tur), tl(m.tutar), m.litre === null ? '' : sayi(m.litre, 2), m.km === null ? '' : sayi(m.km), '<span class="db-sar">' + esc(m.not) + '</span>',
         '<button type="button" class="az-git" data-is="duzenle" data-id="' + m.id + '">Düzenle</button> <button type="button" class="az-git yr-kirmizi" data-is="sil" data-id="' + m.id + '">Sil</button>'];
     })) + '</div>';
-    html += '<div class="az-bolum"><h4>Yolculukların km maliyeti</h4><p><label>Km ücreti (TL) <input type="number" id="ms-ucret" min="0" max="10000" step="0.1" value="' + ucret + '" inputmode="decimal"></label></p>' +
-      '<p><b>' + Y.length + ' yolculuk · ' + sayi(gpsKm, 1) + ' km' + (ucret ? ' · ' + tl(gpsKm * ucret) : '') + '</b></p>' +
-      (Y.length ? '<p><button type="button" class="az-git" data-is="dokum">Yolculuk dökümünü Excel indir</button></p>' +
-        '<details class="ms-yollar"><summary>Hesaba giren yolculuklar</summary>' + I().tablo(['Başlangıç', 'Araç', 'Güzergâh', 'Km', 'Maliyet'], Y.slice(-SATIR).reverse().map(function (y) {
-          return [esc(O.kisaTarih(y.t0)), esc(y.cihaz), '<span class="db-sar">' + esc(ucAdi(y.nereden) + ' → ' + ucAdi(y.nereye)) + '</span>', sayi(y.m / 1000, 1), ucret ? tl(y.m / 1000 * ucret) : '—'];
-        })) + (Y.length > SATIR ? '<p class="not">Son ' + SATIR + ' yolculuk gösteriliyor; tamamı Excel’de.</p>' : '') + '</details>' : '') +
-      '<p class="not">Seçili dönem ve araçtaki bütün yolculuklar dahildir. Mesafe GPS’ten yaklaşık hesaplanır; GPS’siz yol sayılmaz.</p></div>';
-    var acik = !!$('ms-icerik').querySelector('.ms-yollar[open]');
-    $('ms-icerik').innerHTML = html;
-    if (acik && $('ms-icerik').querySelector('.ms-yollar')) $('ms-icerik').querySelector('.ms-yollar').open = true;
+    html += '<div class="az-bolum"><h4>Yolculukların km maliyeti</h4><div class="ms-yakit">' +
+      yakitKutusu('ms-fiyat', 'Yakıtın litre fiyatı (TL)', f.fiyat, 10000, 'örn. 72,11') + yakitKutusu('ms-yuz', 'Aracın 100 km’de yaktığı (litre)', f.yuz, 100, 'örn. 8,2') + '</div>' +
+      '<div id="ms-sonuc">' + sonucHtml() + '</div>' +
+      '<p class="not">Seçili dönem ve araçtaki bütün yolculuklar dahildir. Girilen fiyat ve tüketim tüm araçlara ve dönemlere uygulanır; yalnızca yakıt tahminidir. Mesafe GPS’ten yaklaşık hesaplanır; GPS’siz yol sayılmaz.</p></div>';
+    detayKoru($('ms-icerik'), html);
   }
 
   function yukle() {
@@ -145,9 +173,21 @@
       if (!f.cihaz.value || !f.tarih.value || s('tutar') === null) { mesaj('Araç, tarih ve tutar zorunlu.'); return; }
       islem('masraf_kaydet', { id: duzenlenen ? duzenlenen.id : 0, cihaz: f.cihaz.value, tarih: f.tarih.value, tur: f.tur.value, tutar: s('tutar'), litre: s('litre'), km: s('km') === null ? null : Math.round(s('km')), not: f['not'].value.trim() });
     });
+    // Yazdıkça hesaplanır, kutudan çıkınca kaydedilir (iki hane)
+    var YAKIT = { 'ms-fiyat': 'yakit_fiyat', 'ms-yuz': 'yakit_100km' };
+    function yakitOku(e) {
+      var anahtar = YAKIT[e.target.id]; if (!anahtar) return null;
+      var v = Math.round(Math.min(Number(e.target.max), Math.max(0, Number(e.target.value) || 0)) * 100) / 100;
+      I().ayarlar()[anahtar] = v;
+      $('ms-kartlar').innerHTML = kartlarHtml();
+      detayKoru($('ms-sonuc'), sonucHtml());
+      return { anahtar: anahtar, deger: v };
+    }
+    $('ms-icerik').addEventListener('input', yakitOku);
     $('ms-icerik').addEventListener('change', function (e) {
-      if (e.target.id !== 'ms-ucret') return;
-      islem('ayar_kaydet', { anahtar: 'km_ucreti', deger: Number(e.target.value) || 0 });
+      var g = yakitOku(e); if (!g) return;
+      mesaj('Kaydediliyor…');
+      O.ozellik('ayar_kaydet', g).then(function () { mesaj('Kaydedildi.'); }, function (h) { mesaj(h.kod === 'girdi' ? 'Girilen değerleri kontrol edin.' : O.hataMetni(h)); });
     });
     $('ms-icerik').addEventListener('click', function (e) {
       var b = e.target.closest('button[data-is]'); if (!b) return;
@@ -156,11 +196,11 @@
       else if (is === 'vazgec') { duzenlenen = null; ciz(); }
       else if (is === 'sil') { if (confirm(I().gunYaz(m.tarih) + ' tarihli ' + tl(m.tutar) + ' masraf silinsin mi?')) islem('masraf_sil', { id: m.id }); }
       else if (is === 'dokum') {
-        var ucret = I().ayarlar().km_ucreti || 0;
-        I().indir(['Başlangıç', 'Bitiş', 'Cihaz', 'Nereden', 'Nereye', 'Mesafe (km)', 'Km ücreti (TL)', 'Tutar (TL)', 'Tür', 'Not'], yollar().map(function (y) {
-          var t = I().etkinTur(y), k = Math.round(y.m / 100) / 10;
-          return [new Date(y.t0), new Date(y.t1), y.cihaz, y.nereden ? y.nereden.ad : '', y.nereye ? y.nereye.ad : '', k, ucret, Math.round(k * ucret * 100) / 100, I().turAdi(t.tur), t.e ? t.e.not : ''];
-        }), [20, 20, 16, 24, 24, 12, 14, 12, 8, 30], 'Yolculuk-dokumu', sonDonem);
+        var f = yakit(), iki = function (n) { return Math.round(n * 100) / 100; };
+        I().indir(['Başlangıç', 'Bitiş', 'Cihaz', 'Nereden', 'Nereye', 'Mesafe (km)', 'Yakıt (L)', 'Litre fiyatı (TL)', 'Km başı (TL)', 'Tutar (TL)', 'Tür', 'Not'], yollar().map(function (y) {
+          var t = I().etkinTur(y), k = y.m / 1000;
+          return [new Date(y.t0), new Date(y.t1), y.cihaz, y.nereden ? y.nereden.ad : '', y.nereye ? y.nereye.ad : '', Math.round(k * 10) / 10, iki(k * f.litre), f.fiyat, iki(f.tl), iki(k * f.tl), I().turAdi(t.tur), t.e ? t.e.not : ''];
+        }), [20, 20, 16, 24, 24, 12, 10, 16, 13, 12, 8, 30], 'Yolculuk-dokumu', sonDonem);
       }
     });
   }
