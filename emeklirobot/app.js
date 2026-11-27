@@ -368,9 +368,10 @@
   $('b-uygula').addEventListener('click', gecikmeliYukle);
 
   document.querySelector('.hizli').addEventListener('click', function (e) {
-    var b = e.target.closest('button[data-saat]'); if (!b) return;
+    var b = e.target.closest('button[data-saat],button[data-dk]'); if (!b) return;
     var s = b.getAttribute('data-saat'), simdi = Date.now();
     if (s === 'bugun') $('f-bas').value = istYerel(simdi).slice(0, 10) + 'T00:00';
+    else if (b.hasAttribute('data-dk')) $('f-bas').value = istYerel(simdi - Number(b.getAttribute('data-dk')) * 60e3);
     else $('f-bas').value = istYerel(simdi - Number(s) * 3600e3);
     $('f-bit').value = '';
     gecikmeliYukle();

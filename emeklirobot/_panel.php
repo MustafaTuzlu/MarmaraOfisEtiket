@@ -38,6 +38,8 @@
     <label>Başlangıç <input type="datetime-local" id="f-bas"></label>
     <label>Bitiş <input type="datetime-local" id="f-bit"></label>
     <div class="hizli">
+      <button type="button" data-dk="15">Son 15 dk</button>
+      <button type="button" data-dk="20">Son 20 dk</button>
       <button type="button" data-saat="1">Son 1 sa</button>
       <button type="button" data-saat="6">Son 6 sa</button>
       <button type="button" data-saat="24">Son 24 sa</button>
