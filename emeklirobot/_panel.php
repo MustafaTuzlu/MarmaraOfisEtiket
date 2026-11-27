@@ -41,13 +41,7 @@
 </header>
 
 <nav class="arac-cubugu" aria-label="Panel araçları">
-  <button type="button" data-ac="yolculuk">🧭 Yolculuklar</button>
-  <button type="button" data-ac="rapor">📊 Rapor</button>
-  <button type="button" data-ac="ziyaret">📌 Ziyaretler</button>
-  <button type="button" data-ac="karne">🗒️ Aylık karne</button>
-  <button type="button" data-ac="dikkat">👀 Dikkat çekenler</button>
-  <button type="button" data-ac="saglik">🩺 Cihaz sağlığı</button>
-  <button type="button" data-ac="kor">📡 GPS kör noktaları</button>
+  <button type="button" data-ac="yolculuk">📊 Yolculuklar ve raporlar</button>
   <button type="button" data-ac="nezaman">🔎 Buraya ne zaman gittim?</button>
   <button type="button" data-ac="masraf">💳 Masraf</button>
   <button type="button" data-ac="bakim">🔧 Bakım</button>
@@ -173,7 +167,7 @@
 <div id="rpmodal" class="modal" hidden>
   <div class="modal-kutu az-kutu" role="dialog" aria-modal="true" aria-labelledby="rpbaslik">
     <button type="button" class="modal-kapat" id="rpkapat" aria-label="Kapat">×</button>
-    <h2 id="rpbaslik">Yolculuklar ve rapor</h2>
+    <h2 id="rpbaslik">Yolculuklar ve raporlar</h2>
     <p id="rp-baski" class="rp-baski"></p>
     <div id="rp-sekmeler" class="rp-sekmeler" role="tablist">
       <button type="button" role="tab" data-sekme="yolculuk">Yolculuklar</button>
