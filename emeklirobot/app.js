@@ -419,11 +419,47 @@
     yukle({ sifirla: true, sigdir: true });
   });
 
+  /* Filtreler URL'de saklanır (F5 / hard refresh sonrası korunur). Varsayılan durumda adres temiz kalır ki
+     ertesi gün açılışta yine "bugün 00:00" gelsin; kaldırılan Başlangıç ise URL'de boş "bas=" olarak durur. */
+  var varsayilanBas = istYerel(Date.now()).slice(0, 10) + 'T00:00';
+  var URL_ALANLAR = ['bit', 'hareket', 'sarj', 'pilMin', 'pilMax', 'sicMin', 'sicMax', 'dogMax'];
+  function urlYaz() {
+    var q = new URLSearchParams(), bas = $('f-bas').value;
+    q.set('bas', bas);
+    var t = secilenler('f-tipler'); if (t.length) q.set('tip', t.join(','));
+    var c = secilenler('f-cihazlar'); if (c.length) q.set('cihaz', c.join(','));
+    URL_ALANLAR.forEach(function (a) { var v = $('f-' + a).value; if (v !== '') q.set(a, v); });
+    if ($('f-konumlu').checked) q.set('konumlu', '1');
+    if ($('f-limit').value !== '250') q.set('limit', $('f-limit').value);
+    var varsayilan = bas === varsayilanBas && q.toString() === new URLSearchParams({ bas: bas }).toString();
+    var metin = varsayilan ? '' : '?' + q.toString().replace(/%3A/g, ':').replace(/%2C/g, ',');
+    if (metin !== location.search) history.replaceState(null, '', location.pathname + metin);
+  }
+  // Açılışta URL'deki filtreleri forma uygular; URL'de filtre yoksa Başlangıç = bugün 00:00
+  function urlOku() {
+    var q = new URLSearchParams(location.search);
+    function liste(ad, re) { return (q.get(ad) || '').split(',').filter(function (v) { return re.test(v); }); }
+    function isaretle(kap, degerler) { [].forEach.call($(kap).querySelectorAll('input'), function (i) { if (degerler.indexOf(i.value) >= 0) { i.checked = true; i.closest('.cip').classList.add('acik'); } }); }
+    var tipler = liste('tip', /^[A-Z_]{1,30}$/), cihazlar = liste('cihaz', /^[A-Za-z0-9_-]{1,50}$/);
+    // Etiketler ilk istekten önce çizilir; yoksa log tipi / cihaz filtresi ilk sorguya girmez
+    durum.tipler = birlestir(durum.tipler, tipler); durum.cihazlar = cihazlar;
+    cipler('f-tipler', durum.tipler, TIP); cipler('f-cihazlar', durum.cihazlar);
+    isaretle('f-tipler', tipler); isaretle('f-cihazlar', cihazlar);
+    $('f-bas').value = q.has('bas') ? q.get('bas') : varsayilanBas;
+    URL_ALANLAR.forEach(function (a) {
+      var el = $('f-' + a); el.value = q.get(a) || '';
+      if (el.tagName === 'SELECT' && el.selectedIndex < 0) el.value = '';
+    });
+    $('f-konumlu').checked = q.get('konumlu') === '1';
+    $('f-limit').value = /^(100|250|500|1000)$/.test(q.get('limit') || '') ? q.get('limit') : '250';
+  }
+
   var istek = 0;
   function yukle(opts) {
     opts = opts || {};
     var no = ++istek;
     filtreOzeti();
+    urlYaz();
     $('durum').textContent = 'Yükleniyor…';
     // Açık bir pencere varken (Anlık Durum / DB Ayarları) otomatik yenileme pencerenin üstünü kapatmasın
     if (!(opts.oto && document.querySelector('.modal:not([hidden])'))) ykGoster();
@@ -436,7 +472,7 @@
       .then(function (v) {
         if (no !== istek) return;
         if (!v.ok) throw new Error('sunucu');
-        if (v.tipler) { durum.secenekGeldi = true; durum.tipler = birlestir(Object.keys(TIP), v.tipler); durum.cihazlar = v.cihazlar; cipler('f-tipler', durum.tipler, TIP); cipler('f-cihazlar', durum.cihazlar); }
+        if (v.tipler) { durum.secenekGeldi = true; durum.tipler = birlestir(birlestir(Object.keys(TIP), v.tipler), secilenler('f-tipler')); durum.cihazlar = birlestir(v.cihazlar, secilenler('f-cihazlar')); cipler('f-tipler', durum.tipler, TIP); cipler('f-cihazlar', durum.cihazlar); }
         var maxId = v.kayitlar.reduce(function (m, k) { return k.id > m ? k.id : m; }, 0), yeni = 0;
         if (opts.oto && durum.sonId !== null) {
           v.kayitlar.forEach(function (k) { if (k.id > durum.sonId) yeni++; });
@@ -749,7 +785,6 @@
     anSec(b.getAttribute('data-cihaz'));
   });
 
-  cipler('f-tipler', durum.tipler, TIP);
-  $('f-bas').value = istYerel(Date.now()).slice(0, 10) + 'T00:00'; // varsayılan: bugün 00:00 (Türkiye saati)
+  urlOku();
   yukle({ ilk: true, sifirla: true });
 })();
