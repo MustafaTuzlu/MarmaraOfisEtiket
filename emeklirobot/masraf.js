@@ -86,7 +86,8 @@
   function kartlarHtml() {
     var M = masrafToplami(), gpsKm = yolKm(), f = yakit();
     return [['Toplam masraf', tl(M.toplam), M.liste.length + ' kayıt'], ['GPS ile yol', sayi(gpsKm, 1) + ' km', 'GPS’siz yol dahil değil'], ['GPS km başına', gpsKm >= 1 && M.toplam ? tl(M.toplam / gpsKm) : '—', 'girilen masraf ÷ GPS km'],
-      ['Yolun km maliyeti', f.tl ? tl(gpsKm * f.tl) : '—', f.tl ? 'yakıt: ' + sayi(gpsKm, 1) + ' km × ' + tl(f.tl) + ' · ' + sayi(gpsKm * f.litre, 2) + ' L' : 'aşağıdan yakıt fiyatı ve tüketim girin']]
+      ['Tüketilen yakıt (Lt)', f.litre ? sayi(gpsKm * f.litre, 2) + ' L' : '—', f.litre ? sayi(gpsKm, 1) + ' km × ' + String(f.yuz).replace('.', ',') + ' L/100 km · tahmini' : 'aşağıdan 100 km tüketimini girin'],
+      ['Yolun km maliyeti', f.tl ? tl(gpsKm * f.tl) : '—', f.tl ? 'yakıt: ' + sayi(gpsKm, 1) + ' km × ' + tl(f.tl) : 'aşağıdan yakıt fiyatı ve tüketim girin']]
       .concat(Object.keys(M.tur).map(function (t) { return [AD[t] || t, tl(M.tur[t]), '']; }))
       .map(function (k) { return '<div><span>' + k[0] + '</span><strong>' + k[1] + '</strong><small>' + k[2] + '</small></div>'; }).join('');
   }
