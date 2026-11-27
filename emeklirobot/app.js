@@ -73,7 +73,12 @@
 
   function ozetHtml(k) {
     return '<strong>' + esc(TIP[k.logTipi] || k.logTipi) + '</strong><br>' + zaman(k.zaman) +
-      '<br>Pil: ' + (k.pilYuzdesi === null ? '—' : k.pilYuzdesi + '%') + ' · ' + (k.pilSicakligi === null ? '—' : k.pilSicakligi + '°C');
+      '<br>Pil: ' + (k.pilYuzdesi === null ? '—' : k.pilYuzdesi + '%') + ' · ' + (k.pilSicakligi === null ? '—' : k.pilSicakligi + '°C') + yerSatiri(k);
+  }
+  function yerSatiri(k) {
+    if (!konumlu(k)) return '';
+    var y = Yerler.bul(k.enlem, k.boylam);
+    return y ? '<br>' + Yerler.ikon(y.tur) + ' <strong>' + esc(y.ad) + '</strong>' : '<br><button type="button" class="az-git pin-kaydet">Bu konumu kaydet</button>';
   }
 
   /* Pin penceresindeki "ne kadar önce" satırı ve son konum tazeyken (≤ 20 dk) çalışan halka efekti */
@@ -129,6 +134,13 @@
         pin = L.marker([k.enlem, k.boylam], { icon: pinIcon, zIndexOffset: 1000 }).addTo(harita).bindPopup('');
         pin.on('click', function () { detayYaz(this.erKayit); });
         pin.on('popupopen', pinGuncelle);
+        pin.on('popupopen', function () { // Leaflet pencere tıklamalarını haritaya iletmez: dinleyici pencerenin kendisinde
+          var p = this;
+          p.getPopup().getElement().onclick = function (e) {
+            if (!e.target.closest('.pin-kaydet')) return;
+            var k = p.erKayit; p.closePopup(); Yerler.duzenle({ lat: k.enlem, lon: k.boylam });
+          };
+        });
       }
       pin.erKayit = k;
       pinGorunurluk();
@@ -501,7 +513,7 @@
       .then(function (v) {
         if (no !== istek) return;
         if (!v.ok) throw new Error('sunucu');
-        if (v.tipler) { durum.secenekGeldi = true; durum.tipler = birlestir(birlestir(Object.keys(TIP), v.tipler), secilenler('f-tipler')); durum.cihazlar = birlestir(v.cihazlar, secilenler('f-cihazlar')); cipler('f-tipler', durum.tipler, TIP); cipler('f-cihazlar', durum.cihazlar); }
+        if (v.tipler) { durum.secenekGeldi = true; durum.tipler = birlestir(birlestir(Object.keys(TIP), v.tipler), secilenler('f-tipler')); durum.cihazlar = birlestir(v.cihazlar, secilenler('f-cihazlar')); cipler('f-tipler', durum.tipler, TIP); cipler('f-cihazlar', durum.cihazlar); SonDurum.cihazlar(v.cihazlar); }
         var maxId = v.kayitlar.reduce(function (m, k) { return k.id > m ? k.id : m; }, 0), yeni = 0;
         if (opts.oto && durum.sonId !== null) {
           v.kayitlar.forEach(function (k) { if (k.id > durum.sonId) yeni++; });
@@ -842,7 +854,25 @@
     anSec(b.getAttribute('data-cihaz'));
   });
 
-  AnalizUI.baslat({ harita: harita, sorgu: function () { return sorgu(false); } }); // "Analiz et": ekrandaki filtrelerle
+  Ortak.haritaKur(harita);
+  // Kayıtlı yer adları pin penceresinde: yer listesi gelince ya da değişince pin içeriği yenilenir
+  Yerler.degisince(function () { if (pin) { pin.erOzet = null; sec(durum.secili, false); } });
+  Yerler.baslat(harita);
+  AnalizUI.baslat({ sorgu: function () { return sorgu(false); } }); // "Analiz et": ekrandaki filtrelerle
+  Rapor.baslat();
+  Bakim.baslat();
+  SonDurum.baslat();
+  document.querySelector('.arac-cubugu').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-ac]'); if (!b) return;
+    var a = b.getAttribute('data-ac');
+    if (a === 'yerler') Yerler.yonetAc(); else if (a === 'bakim') Bakim.ac(); else Rapor.ac(a);
+  });
+  $('b-yerler').addEventListener('click', Yerler.yonetAc);
+  $('db-ozet-sil').addEventListener('click', function (e) {
+    e.preventDefault();
+    if (!confirm('Rapor özetleri silinsin mi? Ham kayıtları silinmiş günlerin yolculukları ve raporu geri getirilemez.')) return;
+    Ortak.ozellik('ozet_sil', {}).then(function (v) { dbMesaj(v.silinen + ' günlük özet silindi.', 'ok'); }, function (err) { dbMesaj(Ortak.hataMetni(err), 'hata'); });
+  });
   urlOku();
   yukle({ ilk: true, sifirla: true });
 })();

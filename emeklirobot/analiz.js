@@ -31,7 +31,8 @@
   function gunBasi(t) { return Math.floor((t + A.SAAT_FARKI) / 864e5) * 864e5 - A.SAAT_FARKI; }
 
   function hareketliMi(k) {
-    if (k.tip === 'ARAC_DURUYOR' || k.tip === 'DURUM') return false;
+    if (k.tip === 'DURUM') return k.har === true;
+    if (k.tip === 'ARAC_DURUYOR') return false;
     if (k.tip === 'KONUM' || k.tip === 'ARAC_HAREKET') return true;
     return k.har;
   }
@@ -45,6 +46,7 @@
       if (h === null) h = durum;
       durum = h;
       if (a.tip === 'KONUM_ALINAMADI' && dt > A.HAREKET_BOSLUK) T.push('gps');
+      else if (a.tip === 'DURUM' && a.har === true) T.push(dt <= A.DURAGAN_BOSLUK ? 'gps' : 'yok');
       else if (h) T.push(dt <= A.HAREKET_BOSLUK ? 'yol' : 'yok');
       else T.push(dt <= A.DURAGAN_BOSLUK ? 'bekle' : 'yok');
     }
@@ -79,12 +81,13 @@
       T[son] = 'gps';
       bas = kuyrukBasi(son, K[son], K[i].t);
       for (j = bas; j < son; j++) T[j] = 'gps';
-      // Sinyal dönünce gecikmeli yazılan ARAC_DURUYOR ile kısa süre sonraki hareket de aynı döneme aittir
-      if (K[i + 1] && K[i + 1].tip === 'ARAC_DURUYOR') {
-        var n = i + 1;
-        while (n < T.length && T[n] === 'bekle' && K[n + 1].t - K[i + 1].t <= A.DURUS_GERI) n++;
-        if (n > i + 1 && K[n] && K[n].tip === 'ARAC_HAREKET') for (j = i + 1; j < n; j++) T[j] = 'gps';
-      }
+    }
+    // Sinyal dönünce gecikmeli yazılan ARAC_DURUYOR ile kısa süre sonraki hareket de aynı döneme aittir
+    for (i = 1; i < T.length; i++) {
+      if (T[i - 1] !== 'gps' || K[i].tip !== 'ARAC_DURUYOR') continue;
+      var n = i;
+      while (n < T.length && T[n] === 'bekle' && K[n + 1].t - K[i].t <= A.DURUS_GERI) n++;
+      if (n > i && K[n] && K[n].tip === 'ARAC_HAREKET') for (j = i; j < n; j++) T[j] = 'gps';
     }
   }
 
@@ -114,7 +117,15 @@
     } else if (s.tur === 'gps' || s.tur === 'yok') {
       var o = oncekiKonum(K, s.i0), n = sonrakiKonum(K, s.i1);
       // GPS kesilmesinde "aynı yerde mi" sorusu: kesilmeden önceki son konum ile sinyal dönünce alınan ilk konum
-      for (var x = s.i0; x < s.i1; x++) if (K[x].tip === 'KONUM_ALINAMADI') { o = oncekiKonum(K, x); n = sonrakiKonum(K, x + 1); break; }
+      // GPS yokken yazılan DURUM kayıtları eski konumu taşır; "sonraki konum" sayılmaz
+      for (var x = s.i0; x < s.i1; x++) {
+        if (K[x].tip !== 'KONUM_ALINAMADI') continue;
+        o = oncekiKonum(K, x);
+        var y = x + 1;
+        while (y < K.length && (!konumlu(K[y]) || (K[y].tip === 'DURUM' && K[y].har === true))) y++;
+        n = K[y] || null;
+        break;
+      }
       s.fark = o && n ? mesafe(o, n) : null;
       s.konum = o || n;
       s.sonraki = n;
@@ -123,14 +134,21 @@
 
   // Yakın duraklar "Yer A, Yer B…" diye gruplanır
   function yerAdi(n) { var h = ''; do { h = String.fromCharCode(65 + n % 26) + h; n = Math.floor(n / 26) - 1; } while (n >= 0); return 'Yer ' + h; }
-  function yerler(S) {
-    var Y = [];
+  // yerBul(lat, lon) -> {anahtar, ad} (kayıtlı yer) ya da null; yakinBul -> yakındaki kayıtlı yer ipucu
+  function yerler(S, ayar) {
+    var Y = [], harf = 0;
     S.forEach(function (s) {
       var durak = (s.tur === 'bekle' && s.t1 - s.t0 >= 60e3) || ((s.tur === 'gps' || s.tur === 'yok') && s.fark !== null && s.fark <= A.YER_YARICAP);
       if (!durak || !s.konum) return;
-      var y = null;
-      for (var i = 0; i < Y.length; i++) if (mesafe(Y[i], s.konum) <= A.YER_YARICAP) { y = Y[i]; break; }
-      if (!y) { y = { ad: yerAdi(Y.length), lat: s.konum.lat, lon: s.konum.lon, adet: 0, sure: 0, belirsizSure: 0 }; Y.push(y); }
+      var y = null, i, kayitli = ayar.yerBul ? ayar.yerBul(s.konum.lat, s.konum.lon) : null;
+      for (i = 0; i < Y.length; i++) {
+        if (kayitli ? Y[i].anahtar === kayitli.anahtar : (!Y[i].anahtar && mesafe(Y[i], s.konum) <= A.YER_YARICAP)) { y = Y[i]; break; }
+      }
+      if (!y) {
+        y = { ad: kayitli ? kayitli.ad : yerAdi(harf++), anahtar: kayitli ? kayitli.anahtar : null, lat: s.konum.lat, lon: s.konum.lon, adet: 0, sure: 0, belirsizSure: 0,
+          yakin: !kayitli && ayar.yakinBul ? ayar.yakinBul(s.konum.lat, s.konum.lon) : null };
+        Y.push(y);
+      }
       y.adet++;
       if (s.tur === 'bekle') y.sure += s.t1 - s.t0; else y.belirsizSure += s.t1 - s.t0;
       s.yer = y.ad;
@@ -174,6 +192,27 @@
     return p;
   }
 
+  var UC_PAYI = 400; // "harekete geçti" kaydı duraktan 40-180 m ileride gelebilir
+  // Yolculuğun başlangıç/varış noktası: mümkünse önceki/sonraki durağın konumu (yer adları için daha doğru)
+  function uclar(S, i, nokta) {
+    function sec(durak, p) {
+      if (!p) return durak && durak.konum ? [durak.konum.lat, durak.konum.lon] : null;
+      if (durak && durak.konum && (durak.tur === 'bekle' || (durak.fark !== null && durak.fark <= A.YER_YARICAP)) &&
+        mesafe(durak.konum, { lat: p[0], lon: p[1] }) <= UC_PAYI) return [durak.konum.lat, durak.konum.lon];
+      return p;
+    }
+    return { bas: sec(S[i - 1], nokta[0]), bit: sec(S[i + 1], nokta[nokta.length - 1]) };
+  }
+  function kisaYol(p) { return p.t1 - p.t0 < 60e3 && p.mesafe < 100; }
+
+  function ucEkle(S, olay) {
+    olay.forEach(function (e) {
+      if (e.tur !== 'yol') return;
+      var u = uclar(S, e.sira, e.tumNokta);
+      e.basUc = u.bas; e.bitUc = u.bit;
+    });
+  }
+
   function gunler(K, T, S) {
     if (!K.length) return [];
     var G = [], g = gunBasi(K[0].t), son = gunBasi(K[K.length - 1].t), i = 0;
@@ -182,7 +221,14 @@
       while (i < K.length && K[i].t < g) i++;
       var kayit = [];
       for (var j = i; j < K.length && K[j].t < bit; j++) kayit.push(K[j]);
-      var olay = S.filter(function (s) { return s.t1 > g && s.t0 < bit; }).map(function (s) { return kes(K, T, s, g, bit); });
+      var olay = [];
+      S.forEach(function (s, no) {
+        if (!(s.t1 > g && s.t0 < bit)) return;
+        var p = kes(K, T, s, g, bit);
+        if (p.tur === 'yol') { p.sira = no; p.tumNokta = s.t0 >= g && s.t1 <= bit ? p.nokta : kes(K, T, s, s.t0, s.t1).nokta; }
+        olay.push(p);
+      });
+      ucEkle(S, olay);
       // Hiç kaydı olmayan ve yalnızca "veri yok" içeren günler listelenmez
       if (!kayit.length && !olay.some(function (o) { return o.tur !== 'yok'; })) continue;
       G.push({ bas: g, kayitSayisi: kayit.length, olaylar: olay, ozet: gunOzeti(kayit, olay) });
@@ -274,7 +320,7 @@
       var K = grup[ad].slice().sort(function (x, y) { return x.t - y.t; });
       var T = araliklar(K), S = bolumle(K, T);
       S.forEach(function (s) { bolumBilgisi(K, s); });
-      var Y = yerler(S), G = gunler(K, T, S), son = K[K.length - 1];
+      var Y = yerler(S, ayar), G = gunler(K, T, S), son = K[K.length - 1];
       var toplam = { yolculuk: 0, surus: 0, mesafe: 0, bekleme: 0, maks: null };
       G.forEach(function (g) {
         toplam.surus += g.ozet.surus; toplam.mesafe += g.ozet.mesafe; toplam.bekleme += g.ozet.bekleme;
@@ -286,12 +332,57 @@
         return !(s.t1 - s.t0 < 60e3 && p.mesafe < 100);
       }).length;
       return {
-        ad: ad, kayitSayisi: K.length, ilk: K[0].t, son: son.t, sonHareketli: hareketliMi(son), sonKonum: oncekiKonum(K, K.length - 1),
+        ad: ad, kayitSayisi: K.length, ilk: K[0].t, son: son.t, sonTip: son.tip, sonHiz: son.hiz, sonHareketli: hareketliMi(son), sonKonum: oncekiKonum(K, K.length - 1),
+        sonBolum: S.length ? { tur: S[S.length - 1].tur, t0: S[S.length - 1].t0, ilkVeri: S[S.length - 1].i0 === 0 } : null,
         toplam: toplam, gunler: G, yerler: Y, hiz: hizOlaylari(K, ayar.hizSinir), kontak: kontak(K, S), saglik: saglik(K, S)
       };
     });
   }
 
-  kok.Analiz = { coz: coz, ayar: A };
+  /* Sunucuda saklanan günlük özet (rapor, yolculuk listesi, bakım km). Biçim değişirse OZET_SURUM artırılır.
+     Zamanlar epoch saniye. yol: [t0, t1, metre, enYuksekHiz|null, basLat, basLon, bitLat, bitLon] (başladığı güne yazılır)
+     durak: [t0, t1, lat, lon, belirsiz(0|1)] (güne kırpılmış, en az 1 dk) */
+  var OZET_SURUM = 1;
+  function ozetle(kayitlar) {
+    var grup = {}, cikti = [];
+    kayitlar.forEach(function (k) { (grup[k.cihaz] = grup[k.cihaz] || []).push(k); });
+    function sn(t) { return Math.round(t / 1000); }
+    function yuvarla(x) { return Math.round(x * 1e6) / 1e6; }
+    Object.keys(grup).sort().forEach(function (ad) {
+      var K = grup[ad].slice().sort(function (x, y) { return x.t - y.t; });
+      var T = araliklar(K), S = bolumle(K, T);
+      S.forEach(function (s) { bolumBilgisi(K, s); });
+      var yolculuklar = [];
+      S.forEach(function (s, i) {
+        if (s.tur !== 'yol') return;
+        var p = kes(K, T, s, s.t0, s.t1);
+        if (kisaYol(p)) return;
+        var u = uclar(S, i, p.nokta);
+        yolculuklar.push({ gun: gunBasi(s.t0), v: [sn(s.t0), sn(s.t1), Math.round(p.mesafe), p.maks ? p.maks.hiz : null,
+          u.bas ? yuvarla(u.bas[0]) : null, u.bas ? yuvarla(u.bas[1]) : null, u.bit ? yuvarla(u.bit[0]) : null, u.bit ? yuvarla(u.bit[1]) : null] });
+      });
+      gunler(K, T, S).forEach(function (g) {
+        var o = g.ozet, saat = [], durak = [], h;
+        for (h = 0; h < 24; h++) saat.push(0);
+        g.olaylar.forEach(function (e) {
+          if (e.tur === 'yol' && !kisaYol(e)) {
+            for (var t = e.t0; t < e.t1;) {
+              var sira = Math.floor((t - g.bas) / 3600e3), son = Math.min(e.t1, g.bas + (sira + 1) * 3600e3);
+              saat[sira] += (son - t) / 1000; t = son;
+            }
+          } else if (e.konum && e.t1 - e.t0 >= 60e3 && (e.tur === 'bekle' || (e.fark !== null && e.fark <= A.YER_YARICAP))) {
+            durak.push([sn(e.t0), sn(e.t1), yuvarla(e.konum.lat), yuvarla(e.konum.lon), e.tur === 'bekle' ? 0 : 1]);
+          }
+        });
+        var yol = yolculuklar.filter(function (y) { return y.gun === g.bas; }).map(function (y) { return y.v; });
+        cikti.push({ cihaz: ad, gun: new Date(g.bas + A.SAAT_FARKI).toISOString().slice(0, 10), veri: {
+          surus: sn(o.surus), m: Math.round(o.mesafe), bekleme: sn(o.bekleme), gps: sn(o.gps), yok: sn(o.veriYok),
+          maks: o.maks ? o.maks.hiz : null, maksT: o.maks ? sn(o.maks.t) : null, saat: saat.map(Math.round), yol: yol, durak: durak } });
+      });
+    });
+    return cikti;
+  }
+
+  kok.Analiz = { coz: coz, ozetle: ozetle, ozetSurum: OZET_SURUM, mesafe: mesafe, ayar: A };
   if (typeof module !== 'undefined' && module.exports) module.exports = kok.Analiz;
 })(typeof window !== 'undefined' ? window : this);

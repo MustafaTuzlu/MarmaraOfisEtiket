@@ -28,6 +28,7 @@
   <div class="ayar-kap">
     <button type="button" id="b-ayar" class="dbbtn" aria-haspopup="true" aria-expanded="false" aria-controls="ayar-menu">Ayarlar <span aria-hidden="true">▾</span></button>
     <div id="ayar-menu" class="ayar-menu" hidden>
+      <button type="button" id="b-yerler">Yerlerim</button>
       <button type="button" id="b-db">DB Ayarları</button>
       <button type="button" id="b-harita-ayar">Harita Ayarları</button>
     </div>
@@ -38,6 +39,22 @@
     <button type="submit">Çıkış</button>
   </form>
 </header>
+
+<nav class="arac-cubugu" aria-label="Panel araçları">
+  <button type="button" data-ac="yolculuk">🧭 Yolculuklar</button>
+  <button type="button" data-ac="rapor">📊 Rapor</button>
+  <button type="button" data-ac="guzergah">🔁 Sık güzergâhlar</button>
+  <button type="button" data-ac="bakim">🔧 Bakım</button>
+  <button type="button" data-ac="yerler">📍 Yerlerim</button>
+</nav>
+
+<section class="kart" id="son-durum">
+  <details id="sd" open>
+    <summary><span>Son durum</span><span id="sd-ozet" class="sd-ozet"></span></summary>
+    <div id="sd-liste" class="sd-liste"></div>
+    <p id="sd-mesaj" class="sayac" role="status"></p>
+  </details>
+</section>
 
 <section class="kart" id="filtre">
 <details class="filtre-ac">
@@ -142,6 +159,63 @@
   </div>
 </div>
 
+<div id="rpmodal" class="modal" hidden>
+  <div class="modal-kutu az-kutu" role="dialog" aria-modal="true" aria-labelledby="rpbaslik">
+    <button type="button" class="modal-kapat" id="rpkapat" aria-label="Kapat">×</button>
+    <h2 id="rpbaslik">Yolculuklar ve rapor</h2>
+    <p id="rp-baski" class="rp-baski"></p>
+    <div id="rp-sekmeler" class="rp-sekmeler" role="tablist">
+      <button type="button" role="tab" data-sekme="yolculuk">Yolculuklar</button>
+      <button type="button" role="tab" data-sekme="rapor">Rapor</button>
+      <button type="button" role="tab" data-sekme="guzergah">Sık güzergâhlar</button>
+    </div>
+    <div class="rp-suzgec">
+      <label>Dönem <select id="rp-donem"><option value="7">Son 7 gün</option><option value="hafta">Bu hafta</option><option value="ay">Bu ay</option><option value="30" selected>Son 30 gün</option><option value="90">Son 90 gün</option><option value="365">Son 1 yıl</option><option value="ozel">Tarih seç…</option></select></label>
+      <span id="rp-ozel" class="rp-ozel" hidden><label>Başlangıç <input type="date" id="rp-bas"></label><label>Bitiş <input type="date" id="rp-bit"></label></span>
+      <label>Cihaz <select id="rp-cihaz"><option value="">Tüm cihazlar</option></select></label>
+      <label id="rp-etiket-kap">Tür <select id="rp-etiket"><option value="">Hepsi</option><option value="is">İş</option><option value="ozel">Özel</option><option value="yok">Etiketsiz</option></select></label>
+      <span class="rp-cikti"><button type="button" id="rp-excel" class="excel">Excel</button><button type="button" id="rp-yazdir" class="excel">Yazdır / PDF</button></span>
+    </div>
+    <div id="rp-durum" class="az-durum" role="status" hidden></div>
+    <p id="rp-mesaj" class="sayac" role="status"></p>
+    <div id="rp-icerik"></div>
+  </div>
+</div>
+
+<div id="bkmodal" class="modal" hidden>
+  <div class="modal-kutu az-kutu" role="dialog" aria-modal="true" aria-labelledby="bkbaslik">
+    <button type="button" class="modal-kapat" id="bkkapat" aria-label="Kapat">×</button>
+    <h2 id="bkbaslik">Bakım hatırlatıcı</h2>
+    <p class="not">Kilometre, girdiğiniz gösterge değerine GPS mesafesi eklenerek tahmin edilir. GPS’siz dönemler sayılmadığı için ara sıra göstergedeki değeri yeniden girin. Uyarılar yalnızca bu panelde görünür.</p>
+    <datalist id="bk-adlar"><option value="Yağ değişimi"></option><option value="Periyodik bakım"></option><option value="Lastik değişimi"></option><option value="Muayene"></option><option value="Trafik sigortası"></option><option value="Kasko"></option></datalist>
+    <p id="bk-mesaj" class="sayac" role="status"></p>
+    <div id="bk-icerik"></div>
+  </div>
+</div>
+
+<div id="yrmodal" class="modal" hidden>
+  <div class="modal-kutu genis" role="dialog" aria-modal="true" aria-labelledby="yrbaslik">
+    <button type="button" class="modal-kapat" id="yrkapat" aria-label="Kapat">×</button>
+    <h2 id="yrbaslik">Yerlerim</h2>
+    <p class="not">Bir yerin birden fazla konumu olabilir (bina, otopark, sokak parkı). Adlar analizde, yolculuklarda ve raporda kullanılır; geçmiş kayıtlarda da görünür. Taşınırsanız eski yeri değiştirmek yerine yeni yer ekleyin.</p>
+    <p><button type="button" id="yr-ekle" class="analiz-btn">+ Haritadan yer ekle</button></p>
+    <p id="yr-mesaj" class="sayac" role="status"></p>
+    <div id="yr-liste"></div>
+  </div>
+</div>
+
+<div id="yerpanel" role="dialog" aria-labelledby="yp-baslik" hidden>
+  <div class="yp-ust"><b id="yp-baslik">Konum kaydet</b><span>Haritaya tıklayın ya da işareti sürükleyin.</span></div>
+  <div class="yp-alanlar">
+    <label>Yer <select id="yp-yer"></select></label>
+    <span id="yp-yeni" class="yp-yeni"><label>Yeni yer adı <input id="yp-ad" maxlength="60" placeholder="örn. TorunCenter"></label><label>Tür <select id="yp-tur"><option value="ev">Ev</option><option value="is">İş yeri</option><option value="diger">Diğer</option></select></label></span>
+    <label>Konum etiketi <input id="yp-etiket" maxlength="40" placeholder="örn. Otopark"></label>
+    <label class="yp-yaricap-kap">Yarıçap: <b id="yp-yaricap-yaz">150 m</b><input type="range" id="yp-yaricap" min="30" max="1000" step="10" value="150"></label>
+  </div>
+  <p id="yp-uyari" class="yp-uyari"></p>
+  <div class="yp-alt"><span id="yp-mesaj" role="status"></span><button type="button" id="yp-vazgec">Vazgeç</button><button type="button" id="yp-kaydet" class="analiz-btn">Kaydet</button></div>
+</div>
+
 <div id="hamodal" class="modal" hidden>
   <div class="modal-kutu" role="dialog" aria-modal="true" aria-labelledby="habaslik">
     <button type="button" class="modal-kapat" id="hakapat" aria-label="Kapat">×</button>
@@ -177,6 +251,7 @@
         <button type="button" data-kural="ay">1 aydan eski olanları sil</button>
         <button type="button" data-kural="hepsi" class="tehlike">Hepsini sil</button>
       </div>
+      <p class="alt">Rapor özetleri (yolculuk listesi, rapor, bakım km) bu silmelerden etkilenmez. <a href="#" id="db-ozet-sil">Rapor özetlerini de sil</a></p>
       <p class="alt"><a href="#" id="db-optimize">Alanı geri kazan (OPTIMIZE)</a> <small>— silmeden sonra tablo boyutu küçülmezse</small></p>
     </div>
     <div id="db-onay" hidden>
@@ -193,7 +268,12 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="/emeklirobot/xlsx.js"></script>
 <script src="/emeklirobot/analiz.js"></script>
+<script src="/emeklirobot/ortak.js"></script>
+<script src="/emeklirobot/yerler.js"></script>
 <script src="/emeklirobot/analiz-ui.js"></script>
+<script src="/emeklirobot/son-durum.js"></script>
+<script src="/emeklirobot/rapor.js"></script>
+<script src="/emeklirobot/bakim.js"></script>
 <script src="/emeklirobot/app.js"></script>
 </body>
 </html>

@@ -3,28 +3,14 @@
   'use strict';
 
   var $ = function (id) { return document.getElementById(id); };
-  var HIZ_VARSAYILAN = 90, UC_DK = 150;
-  var harita = null, sorgu = null;
+  var O = window.Ortak, esc = O.esc, sayi = O.sayi, saat = O.saat, gunAd = O.gunAd, kisaTarih = O.kisaTarih, sure = O.sure, km = O.km, metre = O.metre;
+  var HIZ_VARSAYILAN = 90;
+  var sorgu = null;
   var kayitlar = null, sonuc = null, istekNo = 0, iptal = null;
-  var hedefler = []; // "Haritada göster" düğmelerinin verisi
-  var katman = null, donKontrol = null, kaydirma = 0;
+  var hedefler = []; // "Haritada göster" / "Kaydet" düğmelerinin verisi
   var hizSinir = HIZ_VARSAYILAN;
   try { var h = Number(localStorage.getItem('er_hiz_sinir')); if (h >= 10 && h <= 300) hizSinir = Math.round(h); } catch (e) {}
 
-  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
-  function sayi(n, k) { return Number(n).toLocaleString('tr-TR', { minimumFractionDigits: k || 0, maximumFractionDigits: k || 0 }); }
-  function bicim(ayar) { var f = new Intl.DateTimeFormat('tr-TR', ayar); return function (t) { return f.format(new Date(t)); }; }
-  var saat = bicim({ timeZone: 'Europe/Istanbul', hour: '2-digit', minute: '2-digit', hour12: false });
-  var gunAd = bicim({ timeZone: 'Europe/Istanbul', day: '2-digit', month: 'long', year: 'numeric', weekday: 'long' });
-  var kisaTarih = bicim({ timeZone: 'Europe/Istanbul', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false });
-  function sure(ms) {
-    if (ms < 60e3) return Math.round(ms / 1000) + ' sn';
-    var dk = Math.round(ms / 60e3);
-    if (dk < 60) return dk + ' dk';
-    return Math.floor(dk / 60) + ' sa' + (dk % 60 ? ' ' + (dk % 60) + ' dk' : '');
-  }
-  function km(m) { return sayi(m / 1000, 1) + ' km'; }
-  function metre(m) { return m >= 1000 ? km(m) : Math.round(m) + ' m'; }
   function bitisSaat(t, gunBas) { return t >= gunBas + 864e5 ? '24:00' : saat(t); }
 
   function dugme(hedef, yazi) {
@@ -36,6 +22,18 @@
   function cip(yazi, tur) { return '<span class="az-cip' + (tur ? ' ' + tur : '') + '">' + yazi + '</span>'; }
 
   /* ---------- Gün ---------- */
+  // Yolculuk ucu için ad: kayıtlı yer, yoksa bu cihazın "Yer A…" durağı
+  function ucAdi(c, p) {
+    if (!p) return null;
+    var k = Yerler.bul(p[0], p[1]);
+    if (k) return k.ad;
+    for (var i = 0; i < c.yerler.length; i++) if (!c.yerler[i].anahtar && Analiz.mesafe(c.yerler[i], { lat: p[0], lon: p[1] }) <= Analiz.ayar.YER_YARICAP) return c.yerler[i].ad;
+    return null;
+  }
+  function izi(cihaz, t0, t1) {
+    return kayitlar.filter(function (k) { return k.cihaz === cihaz && k.t >= t0 && k.t <= t1 && k.lat !== null; }).map(function (k) { return { t: k.t, lat: k.lat, lon: k.lon, hiz: k.hiz }; });
+  }
+
   function gunCumleleri(c, g) {
     var o = g.ozet, s = [];
     if (!o.yolculuk) {
@@ -67,9 +65,11 @@
         }).join(', ') + (e.kisa.length > 8 ? ' ve ' + (e.kisa.length - 8) + ' tane daha.' : ''));
       }
       if (e.ilkVeri) alt.push('Analiz edilen veri bu yolculuğun içinde başlıyor; öncesi bilinmiyor.');
-      hedef = { nokta: e.nokta, etiket: 'Yolculuk ' + aralik };
+      var nereden = ucAdi(c, e.basUc), nereye = ucAdi(c, e.bitUc);
+      if (nereden || nereye) alt.unshift('<b class="az-rota">' + esc(nereden || '?') + ' → ' + esc(e.sonraSuruyor || (sonraki === undefined && c.sonHareketli) ? 'devam ediyor' : (nereye || '?')) + '</b>');
+      hedef = { nokta: e.nokta, iz: izi(c.ad, e.t0, e.t1), etiket: 'Yolculuk ' + aralik };
     } else if (tur === 'bekle') {
-      baslik = sure(s) + (s < 60e3 ? ' durdu' : ' bekledi') + (e.yer ? ' · ' + e.yer : '');
+      baslik = sure(s) + (s < 60e3 ? ' durdu' : ' bekledi') + (e.yer ? ' · ' + esc(e.yer) : '');
       if (e.tamSure >= Analiz.ayar.UZUN_BEKLEME) {
         ekCip = cip('uzun bekleme', 'uy');
         alt.push('Bu aralıkta araç neredeyse hiç hareket etmedi' + (e.yayilim !== null ? ' (konum yayılımı en çok ' + metre(e.yayilim) + ')' : '') + '.');
@@ -77,7 +77,7 @@
       if (sonraki && sonraki.tur === 'yol') alt.push('Ardından yola devam etti.');
       hedef = konumHedef(e.konum, 'Bekleme ' + aralik + ' (' + sure(s) + ')');
     } else {
-      baslik = (tur === 'gps' ? 'GPS alınamadı · ' : 'Veri yok · ') + sure(s) + (e.yer ? ' · ' + e.yer : '');
+      baslik = (tur === 'gps' ? 'GPS alınamadı · ' : 'Veri yok · ') + sure(s) + (e.yer ? ' · ' + esc(e.yer) : '');
       if (e.fark === null) alt.push('Sonrasında henüz konum kaydı yok; aracın durumu bilinmiyor.');
       else if (e.fark <= Analiz.ayar.YER_YARICAP) {
         alt.push('Öncesi ve sonrasındaki konum yaklaşık ' + metre(e.fark) + ' arayla: araç büyük olasılıkla aynı yerde bekliyordu. Arada hareket edip döndüğü ihtimali doğrulanamaz.');
@@ -87,7 +87,7 @@
     if (e.oncedenSuruyor || e.sonraSuruyor) {
       alt.push((e.oncedenSuruyor ? 'Önceki günden sürüyor' : 'Sonraki güne devam ediyor') + (e.oncedenSuruyor && e.sonraSuruyor ? ', sonraki güne de devam ediyor' : '') + ' (toplam ' + sure(e.tamSure) + ').');
     }
-    return '<li class="az-olay az-' + tur + '"><div class="az-saat">' + aralik + '</div><div class="az-metin"><div class="az-olay-bas"><b>' + baslik + '</b>' + ekCip + dugme(hedef) + '</div>' +
+    return '<li class="az-olay az-' + tur + '"><div class="az-saat">' + aralik + '</div><div class="az-metin"><div class="az-olay-bas"><b>' + baslik + '</b>' + ekCip + dugme(hedef, hedef && hedef.iz && hedef.iz.length > 1 ? '▶ Oynat' : null) + '</div>' +
       (alt.length ? '<p>' + alt.join(' ') + '</p>' : '') + '</div></li>';
   }
 
@@ -114,12 +114,20 @@
   /* ---------- Cihaz geneli ---------- */
   function bolum(ad, icerik) { return '<div class="az-bolum"><h4>' + ad + '</h4>' + icerik + '</div>'; }
 
+  function kaydetDugmesi(veri, yazi) {
+    hedefler.push({ kaydet: veri });
+    return '<button type="button" class="az-git az-kaydet" data-hedef="' + (hedefler.length - 1) + '">' + yazi + '</button>';
+  }
   function yerlerHtml(c) {
     if (!c.yerler.length) return '';
     var Y = c.yerler.slice().sort(function (a, b) { return (b.sure + b.belirsizSure) - (a.sure + a.belirsizSure); });
     return bolum('Durulan yerler', '<ul>' + Y.slice(0, 15).map(function (y) {
-      return '<li><b>' + y.ad + '</b> · ' + y.adet + ' kez' + (y.sure ? ' · ' + sure(y.sure) + ' bekleme' : '') + (y.belirsizSure ? ' · ' + sure(y.belirsizSure) + ' belirsiz (büyük olasılıkla burada)' : '') + ' ' +
-        dugme(konumHedef(y, c.ad + ' ' + y.ad)) + '</li>';
+      var dugmeler = dugme(konumHedef(y, c.ad + ' ' + y.ad));
+      if (!y.anahtar) {
+        dugmeler += ' ' + kaydetDugmesi({ lat: y.lat, lon: y.lon }, 'Kaydet');
+        if (y.yakin) dugmeler += '<span class="az-yakin">' + esc(y.yakin.ad) + ' ' + metre(y.yakin.mesafe) + ' uzakta ' + kaydetDugmesi({ lat: y.lat, lon: y.lon, yerId: y.yakin.yerId }, 'Bu yere konum olarak ekle') + '</span>';
+      }
+      return '<li><b>' + esc(y.ad) + '</b> · ' + y.adet + ' kez' + (y.sure ? ' · ' + sure(y.sure) + ' bekleme' : '') + (y.belirsizSure ? ' · ' + sure(y.belirsizSure) + ' belirsiz (büyük olasılıkla burada)' : '') + ' ' + dugmeler + '</li>';
     }).join('') + '</ul>' + (Y.length > 15 ? '<p class="not">' + (Y.length - 15) + ' yer daha var (en uzun süreli 15 tanesi listelendi).</p>' : ''));
   }
 
@@ -145,7 +153,7 @@
       }).join('') + '</ul>' + (k.olaylar.length > 30 ? '<p class="not">' + (k.olaylar.length - 30) + ' olay daha var.</p>' : '');
     }
     ic += k.rolanti.length ? '<p><b>Kontak açık görünürken bekleme (olası rölanti):</b></p><ul>' + k.rolanti.slice(0, 30).map(function (r) {
-      return '<li>' + kisaTarih(r.t0) + ' – ' + saat(r.t1) + ' · ' + sure(r.t1 - r.t0) + (r.yer ? ' · ' + r.yer : '') + ' ' + dugme(konumHedef(r.konum, 'Olası rölanti ' + kisaTarih(r.t0))) + '</li>';
+      return '<li>' + kisaTarih(r.t0) + ' – ' + saat(r.t1) + ' · ' + sure(r.t1 - r.t0) + (r.yer ? ' · ' + esc(r.yer) : '') + ' ' + dugme(konumHedef(r.konum, 'Olası rölanti ' + kisaTarih(r.t0))) + '</li>';
     }).join('') + '</ul>' : '<p>5 dakikadan uzun, kontak açık bekleme görülmedi.</p>';
     return bolum('Kontak / şarj', ic);
   }
@@ -175,9 +183,9 @@
 
   function ciz() {
     hedefler = [];
-    sonuc = Analiz.coz(kayitlar, { hizSinir: hizSinir });
+    sonuc = Analiz.coz(kayitlar, { hizSinir: hizSinir, yerBul: Yerler.bul, yakinBul: Yerler.yakin });
     $('az-icerik').innerHTML = sonuc.map(function (c, i) { return cihazHtml(c, i, sonuc.length); }).join('') +
-      '<p class="not">Sonuçlar kayıtlardan kurallarla çıkarılır; süre ve mesafeler yaklaşıktır. Duruş saati, 2 dakika gecikmeli yazılan “araç durdu” kaydından geriye doğru düzeltilir. Bekleme nedeni ve sürücü bilinemez. “Yer A, B…” adları her cihaz için ayrıdır.</p>';
+      '<p class="not">Sonuçlar kayıtlardan kurallarla çıkarılır; süre ve mesafeler yaklaşıktır. Duruş saati, 2 dakika gecikmeli yazılan “araç durdu” kaydından geriye doğru düzeltilir. Bekleme nedeni ve sürücü bilinemez. Kayıtlı olmayan “Yer A, B…” adları her cihaz için ayrıdır.</p>';
   }
 
   /* ---------- Veri ---------- */
@@ -199,10 +207,9 @@
   }
 
   function getir(q, mod, sinyal) {
+    if (mod === 'veri') return O.veriGetir(q, sinyal);
     q.set('analiz', mod);
-    return fetch('/emeklirobot/api.php?' + q.toString(), { credentials: 'same-origin', cache: 'no-store', signal: sinyal })
-      .then(function (r) { if (r.status === 401) { location.reload(); throw new Error('oturum'); } return r.json(); })
-      .then(function (v) { if (!v.ok || typeof v.toplam !== 'number') throw new Error('sunucu'); return v; });
+    return O.istek('/emeklirobot/api.php?' + q.toString(), null, sinyal);
   }
 
   function sinirMesaji(v) {
@@ -217,7 +224,7 @@
     sure_ = iptal ? setTimeout(function (c) { c.abort(); }, 60000, iptal) : null;
     q.delete('limit'); q.delete('secenek');
     kayitlar = null; sonuc = null;
-    haritaTemizle();
+    O.haritaTemizle();
     $('az-icerik').innerHTML = ''; $('az-kapsam').textContent = '';
     filtreUyarisi(q);
     $('azmodal').hidden = false;
@@ -228,13 +235,11 @@
       if (!v.toplam) { durumYaz('Bu filtreye uyan kayıt yok.', 'uyari'); return null; }
       if (v.toplam > v.sinir) { sinirMesaji(v); return null; }
       durumYaz(sayi(v.toplam) + ' kayıt alınıp analiz ediliyor…');
-      return getir(q, 'veri', sinyal);
+      return Yerler.hazir().then(function () { return getir(q, 'veri', sinyal); });
     }).then(function (v) {
       if (!v || no !== istekNo) return;
-      if (!v.satirlar) { sinirMesaji(v); return; }
-      kayitlar = v.satirlar.map(function (r) { // sıra: api.php analiz=veri
-        return { cihaz: r[0], tip: r[1], t: r[2] * 1000, lat: r[3], lon: r[4], acc: r[5], hiz: r[6], pil: r[7], sarj: r[8] === null ? null : r[8] === 1, sic: r[9], har: r[10] === null ? null : r[10] === 1, alinma: r[11] * 1000 };
-      });
+      if (!v.kayitlar) { sinirMesaji(v); return; }
+      kayitlar = v.kayitlar;
       if (!kayitlar.length) { durumYaz('Bu filtreye uyan kayıt yok.', 'uyari'); return; }
       ciz();
       $('az-kapsam').textContent = sayi(kayitlar.length) + ' kayıt · ' + sonuc.length + ' cihaz · ' + kisaTarih(kayitlar[0].t) + ' – ' + kisaTarih(kayitlar[kayitlar.length - 1].t);
@@ -246,61 +251,12 @@
     }).then(function () { clearTimeout(sure_); });
   }
 
-  function kapat() {
-    $('azmodal').hidden = true;
-    if (!kayitlar) { istekNo++; if (iptal) iptal.abort(); }
-  }
-
-  /* ---------- Haritada gösterme ---------- */
-  function haritaTemizle() {
-    if (katman) { harita.removeLayer(katman); katman = null; }
-    if (donKontrol) { harita.removeControl(donKontrol); donKontrol = null; }
-  }
-
-  function haritadaGoster(h) {
-    haritaTemizle();
-    kaydirma = $('azmodal').querySelector('.az-kutu').scrollTop; // "Analize dön" aynı yere dönsün
-    $('azmodal').hidden = true;
-    katman = L.layerGroup().addTo(harita);
-    var D = L.Control.extend({
-      options: { position: 'bottomleft' },
-      onAdd: function () {
-        var d = L.DomUtil.create('div', 'az-don');
-        d.innerHTML = '<span>' + esc(h.etiket) + '</span><button type="button" data-is="don">← Analize dön</button><button type="button" data-is="sil" aria-label="İşareti kaldır" title="İşareti kaldır">×</button>';
-        L.DomEvent.disableClickPropagation(d);
-        L.DomEvent.on(d, 'click', function (e) {
-          var b = e.target.closest('button'); if (!b) return;
-          var don = b.getAttribute('data-is') === 'don';
-          haritaTemizle();
-          if (don) { $('azmodal').hidden = false; $('azmodal').querySelector('.az-kutu').scrollTop = kaydirma; }
-        });
-        return d;
-      }
-    });
-    donKontrol = new D().addTo(harita);
-    $('harita').scrollIntoView({ block: 'center' });
-    harita.invalidateSize();
-    if (h.nokta && h.nokta.length > 1) {
-      L.polyline(h.nokta, { color: '#0f172a', weight: 9, opacity: .55, interactive: false }).addTo(katman);
-      L.polyline(h.nokta, { color: '#f59e0b', weight: 5, opacity: 1, interactive: false }).addTo(katman);
-      L.circleMarker(h.nokta[0], { radius: 7, color: '#fff', weight: 2, fillColor: '#16a34a', fillOpacity: 1 }).bindTooltip('Başlangıç').addTo(katman);
-      L.circleMarker(h.nokta[h.nokta.length - 1], { radius: 7, color: '#fff', weight: 2, fillColor: '#dc2626', fillOpacity: 1 }).bindTooltip('Bitiş').addTo(katman);
-      harita.fitBounds(h.nokta, { maxZoom: 17, padding: [40, 40] });
-    } else {
-      var k = h.konum || h.nokta[0];
-      L.circle(k, { radius: 40, color: '#f59e0b', weight: 2, fillOpacity: .2, interactive: false }).addTo(katman);
-      L.circleMarker(k, { radius: 9, color: '#0f172a', weight: 3, fillColor: '#f59e0b', fillOpacity: 1 }).addTo(katman);
-      harita.setView(k, 17);
-    }
-  }
-
   function baslat(secenek) {
-    harita = secenek.harita; sorgu = secenek.sorgu;
+    sorgu = secenek.sorgu;
     $('az-hiz').value = hizSinir;
     $('b-analiz').addEventListener('click', analizEt);
-    $('azkapat').addEventListener('click', kapat);
-    $('azmodal').addEventListener('mousedown', function (e) { if (e.target === this) kapat(); });
-    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !$('azmodal').hidden) kapat(); });
+    O.pencere('azmodal', 'azkapat', function () { if (!kayitlar) { istekNo++; if (iptal) iptal.abort(); } });
+    Yerler.degisince(function () { if (kayitlar && kayitlar.length) ciz(); });
     $('az-hiz').addEventListener('change', function () {
       var n = Math.round(Number(this.value));
       if (!(n >= 10 && n <= 300)) { this.value = hizSinir; return; }
@@ -310,7 +266,10 @@
     });
     $('az-icerik').addEventListener('click', function (e) {
       var b = e.target.closest('.az-git');
-      if (b) { e.preventDefault(); haritadaGoster(hedefler[Number(b.getAttribute('data-hedef'))]); }
+      if (!b) return;
+      e.preventDefault();
+      var h = hedefler[Number(b.getAttribute('data-hedef'))];
+      if (h.kaydet) Yerler.duzenle(h.kaydet); else O.haritadaGoster(h);
     });
     // Kapalı günlerin içeriği ilk açılışta oluşturulur (uzun aralıklarda sayfa ağırlaşmasın). "toggle" yukarı taşınmaz: yakalama aşaması.
     $('az-icerik').addEventListener('toggle', function (e) {
