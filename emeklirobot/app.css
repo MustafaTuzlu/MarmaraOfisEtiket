@@ -282,6 +282,9 @@ button.tehlike:hover{background:#b91c1c!important}
 .arac-cubugu{display:flex;gap:8px;flex-wrap:wrap;margin:12px 16px 0}
 .arac-cubugu button{font:inherit;font-size:13px;font-weight:600;color:#0f172a;background:#fff;border:1px solid #cbd5e1;border-radius:8px;padding:8px 14px;cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,.06)}
 .arac-cubugu button:hover{background:#f8fafc;border-color:#94a3b8}
+.yedek-serit{display:flex;gap:8px 12px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin:12px 16px 0;padding:9px 12px;border-radius:10px;background:#fffbeb;border:1px solid #fde68a;color:#92400e;font-size:13px}
+.yedek-serit[hidden]{display:none}.yedek-serit-dugme{display:flex;gap:6px}.yedek-serit button{font:inherit;font-size:13px;font-weight:600;border:1px solid #f59e0b;background:#fff;color:#92400e;border-radius:7px;padding:5px 12px;cursor:pointer}
+#db-yedek-gun{font-size:14px;padding:5px;border:1px solid #cbd5e1;border-radius:6px;background:#fff}
 #sd>summary{cursor:pointer;font-weight:600;font-size:15px;list-style:none;display:flex;align-items:center;flex-wrap:wrap;gap:4px 10px;user-select:none}
 #sd>summary::-webkit-details-marker{display:none}
 #sd>summary:before{content:"\25B8";display:inline-block;transition:transform .2s;color:#64748b}

@@ -109,6 +109,20 @@ function islem_yaz($pdo, $islem, $hedef, $adet) {
     } catch (Exception $e) { error_log('emeklirobot db: islem log yazılamadı: ' . $e->getMessage()); }
 }
 function iso_utc($dt) { return empty($dt) ? null : str_replace(' ', 'T', $dt) . 'Z'; }
+// Yedek hatırlatıcı: son TAM yedek ('yedek_tam') ve hatırlatma süresi (gün; 0 = kapalı). İlgili tablolar yoksa null.
+const YEDEK_GUN = 30;
+function yedek_durum($pdo) {
+    try {
+        $son = $pdo->query("SELECT zaman FROM emekli_islem_log WHERE islem = 'yedek_tam' ORDER BY id DESC LIMIT 1")->fetchColumn();
+        $esik = $pdo->query("SELECT deger FROM emekli_ayar WHERE anahtar = 'yedek_gun'")->fetchColumn();
+    } catch (PDOException $e) {
+        if ((string)$e->getCode() === '42S02') { return null; }
+        throw $e;
+    }
+    return ['son' => $son === false ? null : iso_utc($son),
+        'gecen' => $son === false ? null : max(0, (int)floor((time() - strtotime($son . ' UTC')) / 86400)),
+        'esik' => $esik === false ? YEDEK_GUN : (int)$esik];
+}
 
 /* ---------- Yedek indirme (form POST; yanıt dosyadır) ---------- */
 // Arabelleksiz sorgu KULLANILMAZ: sunucuda ilk tablodan sonraki sorgu başarısız oluyordu. Bellek için satırlar parça parça okunur.
@@ -162,7 +176,9 @@ function yedek_indir($pdo, $secilen, $logBas, $logBit, $ZAMAN, &$asama) {
     foreach ($sira as $t) { if (in_array($t, $secilen, true) && isset($var[$t])) { $liste[] = $t; } }
     if (!$liste) { http_response_code(400); header('Content-Type: text/plain; charset=utf-8'); echo 'Yedeklenecek tablo seçilmedi.'; exit; }
 
-    islem_yaz($pdo, 'yedek', implode(',', $liste) . ($logBas || $logBit ? " (log: $logBas..$logBit)" : ''), null);
+    $ayrinti = implode(',', $liste) . ($logBas || $logBit ? " (log: $logBas..$logBit)" : '');
+    // Tam yedek: panelin tanıdığı ve veritabanında bulunan bütün tablolar, tarih aralığı olmadan
+    $tam = !$logBas && !$logBit && count($liste) === count(array_intersect(array_keys(tablolar()), array_keys($var)));
     header('Content-Type: application/sql; charset=utf-8');
     header('Content-Disposition: attachment; filename="emekli-robot-yedek-' . gmdate('Ymd-Hi', time() + 3 * 3600) . '.sql"');
     while (ob_get_level() > 0 && @ob_end_flush()) { } // kaldırılamayan tamponda döngü sürmesin
@@ -187,6 +203,9 @@ function yedek_indir($pdo, $secilen, $logBas, $logBit, $ZAMAN, &$asama) {
         flush();
     }
     echo '-- Yedek tamamlandı. ' . count($liste) . " tablo, $satirToplam satır.\n";
+    flush();
+    // İşlem geçmişine yalnızca dosya sonuna kadar gönderildiyse yazılır; yarım yedek hatırlatıcıyı susturmaz
+    if (!connection_aborted()) { islem_yaz($pdo, $tam ? 'yedek_tam' : 'yedek', $ayrinti, $satirToplam); }
     exit;
 }
 
@@ -200,6 +219,7 @@ if ($post && isset($_POST['islem']) && $_POST['islem'] === 'yedek') {
     try { yedek_indir(db(), $secilen, $logBas, $logBit, $ZAMAN, $asama); }
     catch (Exception $e) {
         error_log('emeklirobot yedek: ' . $e->getMessage());
+        try { islem_yaz(db(), 'yedek_hata', 'Aşama: ' . $asama, null); } catch (Exception $y) { }
         // Dosya akışı başladıysa dosyanın sonuna açık bir hata satırı eklenir (yarım yedek fark edilsin)
         if (!headers_sent()) { http_response_code(500); }
         // Neden de yazılır (tek satır): sunucu günlüğüne erişmeden teşhis edilebilsin
@@ -272,8 +292,12 @@ try {
             $saklamaAsan = (int)$st->fetchColumn();
         }
         cikis(200, ['ok' => true, 'sunucu' => (string)$pdo->query('SELECT VERSION()')->fetchColumn(), 'tablolar' => $liste, 'diger' => $diger, 'log' => $log,
-            'ozetEksik' => $ozetEksik, 'konumsuzYer' => $yetim, 'takiliKomut' => $takili, 'saklamaAy' => $saklama, 'saklamaAsan' => $saklamaAsan,
+            'ozetEksik' => $ozetEksik, 'konumsuzYer' => $yetim, 'takiliKomut' => $takili, 'saklamaAy' => $saklama, 'saklamaAsan' => $saklamaAsan, 'yedek' => yedek_durum($pdo),
             'sunucuZamani' => gmdate('Y-m-d\TH:i:s\Z')]);
+    }
+
+    if (!$post && $islem === 'yedek_durum') {
+        cikis(200, ['ok' => true, 'yedek' => yedek_durum($pdo)]);
     }
 
     if (!$post && $islem === 'tablo') {

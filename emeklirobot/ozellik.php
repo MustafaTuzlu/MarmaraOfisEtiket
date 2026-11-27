@@ -68,7 +68,7 @@ function tur_girdi($v) {
 
 $ZAMAN = 'COALESCE(duzeltilmis_zaman, konum_zamani)';
 // Tarayıcılar arası ortak ayarlar: anahtar => [en az, en çok] (hepsi tamsayı ya da ondalık sayı)
-$AYARLAR = ['yakit_fiyat' => [0, 10000], 'yakit_100km' => [0, 100], 'saklama_ay' => [0, 120], 'gece_bas' => [0, 23], 'gece_bit' => [0, 23], 'uzak_km' => [1, 2000]];
+$AYARLAR = ['yakit_fiyat' => [0, 10000], 'yakit_100km' => [0, 100], 'saklama_ay' => [0, 120], 'yedek_gun' => [0, 365], 'gece_bas' => [0, 23], 'gece_bit' => [0, 23], 'uzak_km' => [1, 2000]];
 function kural_ucu($v) {
     if (!is_string($v) || !preg_match('/^(\*|tur:(ev|is|diger)|yer:[1-9][0-9]{0,9})$/', $v)) { hatali('kural_ucu'); }
     return $v;

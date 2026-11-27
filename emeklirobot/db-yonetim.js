@@ -22,6 +22,38 @@
   }
   function bolum(baslik, icerik) { return '<div class="az-bolum"><h4>' + baslik + '</h4>' + icerik + '</div>'; }
 
+  /* ---------- Yedek hatırlatıcı ---------- */
+  var yedek = null; // {son, gecen, esik}
+  function yedekGecikti(y) { return !!y && y.esik > 0 && (y.gecen === null || y.gecen >= y.esik); }
+  function yedekMetni(y) {
+    if (!y) return 'Yedek durumu bilinmiyor (işlem geçmişi ya da ayar tablosu yok).';
+    if (y.gecen === null) return 'Kayıtlı bir tam yedek yok.';
+    return 'Son tam yedek ' + (y.gecen ? y.gecen + ' gün önce' : 'son 24 saat içinde') + ' alındı (' + tarih(y.son) + ').';
+  }
+  function gizliMi() { try { return localStorage.getItem('er_yedek_gizle') === O.istGun(Date.now()); } catch (e) { return false; } }
+  function seritCiz() {
+    var goster = yedekGecikti(yedek) && !gizliMi();
+    $('yedek-serit').hidden = !goster;
+    if (goster) $('yedek-serit-metin').textContent = '💾 ' + yedekMetni(yedek) + (yedek.gecen === null ? ' Tüm tabloları seçip bir yedek alın.' : '');
+  }
+  // Pencere açıksa yalnızca durum satırı yenilenir (yedek formundaki seçimler bozulmasın)
+  function yedekYenile() {
+    return db('?islem=yedek_durum').then(function (v) {
+      yedek = v.yedek;
+      if (bilgi) bilgi.yedek = yedek;
+      if ($('db-yedek-durum')) { $('db-yedek-durum').textContent = yedekMetni(yedek); $('db-yedek-durum').parentNode.className = yedekGecikti(yedek) ? 'az-uyari' : ''; }
+      seritCiz();
+    }, function () {});
+  }
+  function yedekDurumHtml() {
+    var y = bilgi.yedek;
+    return bolum('Yedek durumu', '<p class="' + (yedekGecikti(y) ? 'az-uyari' : '') + '"><b id="db-yedek-durum">' + esc(yedekMetni(y)) + '</b></p>' +
+      (y ? '<p><label>Hatırlatma <select id="db-yedek-gun">' + [0, 7, 14, 30, 60, 90].concat([0, 7, 14, 30, 60, 90].indexOf(y.esik) < 0 ? [y.esik] : []).map(function (g) {
+        return '<option value="' + g + '"' + (g === y.esik ? ' selected' : '') + '>' + (g ? g + ' günde bir' : 'Kapalı') + '</option>';
+      }).join('') + '</select></label></p>' : '') +
+      '<p class="not">Yalnızca bütün tablolar seçiliyken ve tarih aralığı boşken alınan yedek “tam yedek” sayılır. Panel dosyanın bilgisayarınıza kaydedildiğini göremez; sunucunun onu sonuna kadar gönderdiğini kaydeder. Yedeğin yerinde olduğunu yine kontrol edin.</p>');
+  }
+
   /* ---------- Riskler ---------- */
   var RISK = {
     emekli_log: 'Harita, tablo, “Analiz et” ve yolculuk tekrar oynatma bu günleri artık gösteremez. Telefon gönderdiği kaydı sildiği için kayıtlar geri gelmez. Rapor özetleri korunur (silmeden önce otomatik hesaplanır).',
@@ -59,6 +91,7 @@
       if (t.bosBayt > 20 * 1048576 && t.bosBayt > toplam * .2) L.push(['uy', t.ad + ': yaklaşık ' + bayt(t.bosBayt) + ' boş alan geri kazanılabilir.', '<button type="button" class="az-git" data-is="optimize" data-tablo="' + t.tablo + '">OPTIMIZE</button>']);
     });
     if (!L.length) L.push(['ok', 'Sorun görünmüyor.', '']);
+    if (bilgi.yedek) L.push(yedekGecikti(bilgi.yedek) ? ['uy', yedekMetni(bilgi.yedek), '<button type="button" class="az-git" data-is="yedege-git">Yedek al</button>'] : ['ok', yedekMetni(bilgi.yedek), '']);
     return '<ul class="db-saglik">' + L.map(function (x) { return '<li class="' + x[0] + '"><span>' + esc(x[1]) + '</span>' + x[2] + '</li>'; }).join('') + '</ul>';
   }
   function genelHtml() {
@@ -111,7 +144,7 @@
   /* ---------- Temizlik ---------- */
   function temizlikHtml() {
     var cihazlar = bilgi.log.cihazlar.map(function (c) { return c[0]; });
-    var html = '<p class="az-uyari">Silinen veriler geri getirilemez. Büyük bir temizlikten önce <button type="button" class="az-git" data-is="yedege-git">yedek alın</button>. Silmeden önce her zaman kaç satırın etkileneceği gösterilir.</p>' +
+    var html = '<p class="az-uyari">Silinen veriler geri getirilemez. Büyük bir temizlikten önce <button type="button" class="az-git" data-is="yedege-git">yedek alın</button>. Silmeden önce her zaman kaç satırın etkileneceği gösterilir.<br><b>' + esc(yedekMetni(bilgi.yedek)) + '</b></p>' +
       bolum('Saklama kuralı', '<p>Ham logları kaç ay saklamak istiyorsunuz? Süreyi aşan kayıt olunca “Genel bakış” uyarır; <b>silme kendiliğinden yapılmaz</b>, siz onaylarsınız.</p>' +
         '<p><select id="db-saklama">' + [0, 3, 6, 12, 24].map(function (a) { return '<option value="' + a + '"' + (a === (bilgi.saklamaAy || 0) ? ' selected' : '') + '>' + (a ? a + ' ay' : 'Sınırsız (uyarma)') + '</option>'; }).join('') + '</select> ' +
         (bilgi.saklamaAsan ? '<button type="button" class="az-git" data-is="saklama-temizle">Süreyi aşan ' + sayi(bilgi.saklamaAsan) + ' logu incele</button>' : '') + '</p>');
@@ -206,6 +239,7 @@
   /* ---------- Yedek ---------- */
   function yedekHtml() {
     return '<p class="az-uyari">Yedek dosyası <b>tüm konum geçmişinizi ve kayıtlı adreslerinizi</b> içerir. Güvenli yerde saklayın, e-posta ya da paylaşım bağlantısıyla göndermeyin.</p>' +
+      yedekDurumHtml() +
       '<form method="post" action="/emeklirobot/db.php" id="db-yedek-form"><input type="hidden" name="islem" value="yedek"><input type="hidden" name="csrf" value="' + esc(document.body.getAttribute('data-csrf')) + '">' +
       bolum('Tablolar', '<div class="db-secimler">' + bilgi.tablolar.filter(function (t) { return t.var; }).map(function (t) {
         return '<label><input type="checkbox" name="tablo[]" value="' + t.tablo + '" checked> ' + esc(t.ad) + ' <small>' + sayi(t.adet) + ' satır · ' + bayt(t.veriBayt) + '</small></label>';
@@ -222,7 +256,7 @@
     var n = ++no;
     db('?islem=gecmis').then(function (v) {
       if (n !== no || sekme !== 'gecmis') return;
-      var AD = { sil: 'Silme', optimize: 'OPTIMIZE', yedek: 'Yedek' };
+      var AD = { sil: 'Silme', optimize: 'OPTIMIZE', yedek: 'Yedek', yedek_tam: 'Tam yedek', yedek_hata: 'Yedek başarısız' };
       $('db-icerik').innerHTML = tablo(['Zaman', 'İşlem', 'Ayrıntı', 'Satır', 'IP'], v.islemler.map(function (i) { return [tarih(i[0]), AD[i[1]] || esc(i[1]), esc(i[2]), i[3] === null ? '—' : sayi(i[3]), esc(i[4])]; })) +
         '<p class="not">Son 200 işlem. Bu kayıt panelden silinemez. Tanımadığınız bir işlem ya da IP görürseniz panel şifrenizi hemen değiştirin.</p>';
     }).catch(function (e) { if (n === no) $('db-icerik').innerHTML = '<p class="az-uyari">' + esc(O.hataMetni(e)) + '</p>'; });
@@ -248,11 +282,12 @@
     return db('?islem=genel').then(function (v) { bilgi = v; ciz(); }).catch(function (e) { mesaj(O.hataMetni(e), 'hata'); });
   }
   function sec(s) { if (mesgul) return; sekme = s; mesaj(''); ciz(); $('dbmodal').querySelector('.modal-kutu').scrollTop = 0; }
-  function ac() { sekme = 'genel'; bilgi = null; mesaj(''); $('db-icerik').innerHTML = '<p class="sayac">Veritabanı inceleniyor…</p>'; $('dbmodal').hidden = false; ciz(); yukle(); }
+  function ac(ilkSekme) { sekme = ilkSekme || 'genel'; bilgi = null; mesaj(''); $('db-icerik').innerHTML = '<p class="sayac">Veritabanı inceleniyor…</p>'; $('dbmodal').hidden = false; ciz(); yukle(); }
   function kapat() {
     // Silme sürerken pencere kapanmaz
     if (mesgul) { $('dbmodal').hidden = false; return; }
-    if (degisti) location.reload();
+    if (degisti) { location.reload(); return; }
+    yedekYenile();
   }
   function saklamaTemizle() {
     sec('temizlik');
@@ -265,7 +300,14 @@
 
   function baslat() {
     O.pencere('dbmodal', 'dbkapat', kapat);
-    $('b-db').addEventListener('click', ac);
+    $('b-db').addEventListener('click', function () { ac(); });
+    $('yedek-al').addEventListener('click', function () { ac('yedek'); });
+    $('yedek-sonra').addEventListener('click', function () {
+      try { localStorage.setItem('er_yedek_gizle', O.istGun(Date.now())); } catch (e) {}
+      $('yedek-serit').hidden = true;
+    });
+    yedekYenile();
+    setInterval(function () { if (!document.hidden) yedekYenile(); }, 3600e3);
     $('db-sekmeler').addEventListener('click', function (e) { var b = e.target.closest('button'); if (b) sec(b.getAttribute('data-sekme')); });
     $('db-icerik').addEventListener('click', function (e) {
       var b = e.target.closest('button[data-is]'); if (!b) return;
@@ -291,6 +333,11 @@
       bekleyen.kutu.querySelector('[data-is="sil"]').disabled = e.target.value.trim().toLocaleUpperCase('tr-TR') !== bekleyen.soz;
     });
     $('db-icerik').addEventListener('change', function (e) {
+      if (e.target.id === 'db-yedek-gun') {
+        O.ozellik('ayar_kaydet', { anahtar: 'yedek_gun', deger: Number(e.target.value) }).then(yedekYenile).then(function () { mesaj('Hatırlatma süresi kaydedildi.', 'ok'); })
+          .catch(function (err) { mesaj(O.hataMetni(err), 'hata'); });
+        return;
+      }
       if (e.target.id === 'db-saklama') {
         var ay = Number(e.target.value);
         O.ozellik('ayar_kaydet', { anahtar: 'saklama_ay', deger: ay }).then(function () { return yukle(); }).then(function () { mesaj('Saklama kuralı kaydedildi.', 'ok'); })
@@ -310,6 +357,8 @@
       if (e.target.id !== 'db-yedek-form') return;
       if (!e.target.querySelector('input[name="tablo[]"]:checked')) { e.preventDefault(); mesaj('En az bir tablo seçin.', 'hata'); return; }
       mesaj('Yedek hazırlanıyor; indirme birazdan başlar.', 'ok');
+      // İndirmenin bitişi tarayıcıdan izlenemez; durum birkaç kez yeniden sorulur
+      [4, 15, 45, 120].forEach(function (s) { setTimeout(yedekYenile, s * 1000); });
     });
   }
 

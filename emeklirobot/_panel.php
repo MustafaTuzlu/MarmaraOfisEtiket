@@ -52,6 +52,11 @@
   <button type="button" data-ac="yerler">📍 Yerlerim</button>
 </nav>
 
+<div id="yedek-serit" class="yedek-serit" role="status" hidden>
+  <span id="yedek-serit-metin"></span>
+  <span class="yedek-serit-dugme"><button type="button" id="yedek-al">Yedek al</button><button type="button" id="yedek-sonra">Bugün gizle</button></span>
+</div>
+
 <section class="kart" id="son-durum">
   <details id="sd" open>
     <summary><span>Son durum</span><span id="sd-ozet" class="sd-ozet"></span></summary>
