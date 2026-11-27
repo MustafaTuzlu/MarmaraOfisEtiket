@@ -339,24 +339,43 @@
   function filtreOzeti() {
     var o = [];
     function tarihYaz(v) { return v.replace(/^(\d{4})-(\d\d)-(\d\d)T(\d\d:\d\d).*$/, '$3.$2.$1 $4'); }
-    function ekle(ad, deger) { o.push('<span class="oz"><b>' + esc(ad) + (deger === undefined ? '' : ':') + '</b>' + (deger === undefined ? '' : ' ' + esc(deger)) + '</span>'); }
-    function aralik(ad, mn, mx, birim) {
-      var a = $(mn).value, b = $(mx).value;
-      if (a !== '' && b !== '') ekle(ad, a + ' – ' + b + birim);
-      else if (a !== '') ekle(ad, '≥ ' + a + birim);
-      else if (b !== '') ekle(ad, '≤ ' + b + birim);
+    // anahtar: × ile kaldırılırken temizlenecek alanlar (boşlukla ayrılmış id listesi)
+    function ekle(anahtar, ad, deger) {
+      o.push('<span class="oz"><b>' + esc(ad) + (deger === undefined ? '' : ':') + '</b>' + (deger === undefined ? '' : ' ' + esc(deger)) +
+        '<button type="button" class="oz-sil" data-alan="' + anahtar + '" title="Filtreyi kaldır" aria-label="' + esc(ad) + ' filtresini kaldır">×</button></span>');
     }
-    if ($('f-bas').value) ekle('Başlangıç', tarihYaz($('f-bas').value));
-    if ($('f-bit').value) ekle('Bitiş', tarihYaz($('f-bit').value));
-    var t = secilenler('f-tipler'); if (t.length) ekle('Log tipi', t.join(', '));
-    var c = secilenler('f-cihazlar'); if (c.length) ekle('Cihaz', c.join(', '));
-    [['f-hareket', 'Araç'], ['f-sarj', 'Şarj/kontak']].forEach(function (s) { var el = $(s[0]); if (el.value !== '') ekle(s[1], el.options[el.selectedIndex].text); });
+    function aralik(ad, mn, mx, birim) {
+      var a = $(mn).value, b = $(mx).value, k = mn + ' ' + mx;
+      if (a !== '' && b !== '') ekle(k, ad, a + ' – ' + b + birim);
+      else if (a !== '') ekle(k, ad, '≥ ' + a + birim);
+      else if (b !== '') ekle(k, ad, '≤ ' + b + birim);
+    }
+    if ($('f-bas').value) ekle('f-bas', 'Başlangıç', tarihYaz($('f-bas').value));
+    if ($('f-bit').value) ekle('f-bit', 'Bitiş', tarihYaz($('f-bit').value));
+    var t = secilenler('f-tipler'); if (t.length) ekle('f-tipler', 'Log tipi', t.join(', '));
+    var c = secilenler('f-cihazlar'); if (c.length) ekle('f-cihazlar', 'Cihaz', c.join(', '));
+    [['f-hareket', 'Araç'], ['f-sarj', 'Şarj/kontak']].forEach(function (s) { var el = $(s[0]); if (el.value !== '') ekle(s[0], s[1], el.options[el.selectedIndex].text); });
     aralik('Pil', 'f-pilMin', 'f-pilMax', ' %');
     aralik('Pil sıcaklığı', 'f-sicMin', 'f-sicMax', ' °C');
-    if ($('f-dogMax').value !== '') ekle('Doğruluk', '≤ ' + $('f-dogMax').value + ' m');
-    if ($('f-konumlu').checked) ekle('Yalnızca konumlu');
+    if ($('f-dogMax').value !== '') ekle('f-dogMax', 'Doğruluk', '≤ ' + $('f-dogMax').value + ' m');
+    if ($('f-konumlu').checked) ekle('f-konumlu', 'Yalnızca konumlu');
     $('f-ozet').innerHTML = o.length ? o.join('') : '<span class="oz-yok">Aktif filtre yok</span>';
   }
+
+  // Etikete tıklamak paneli açmaz; × o filtreyi kaldırıp listeyi yeniler. Başlık ve boş beyaz alan paneli açar/kapatır.
+  $('f-ozet').addEventListener('click', function (e) {
+    if (!e.target.closest('.oz')) return;
+    e.preventDefault();
+    var b = e.target.closest('.oz-sil'); if (!b) return;
+    b.getAttribute('data-alan').split(' ').forEach(function (id) {
+      var el = $(id);
+      if (id === 'f-tipler' || id === 'f-cihazlar') [].forEach.call(el.querySelectorAll('input'), function (i) { i.checked = false; i.closest('.cip').classList.remove('acik'); });
+      else if (el.type === 'checkbox') el.checked = false;
+      else el.value = '';
+    });
+    clearTimeout(zamanlayici);
+    yukle({ sifirla: true, sigdir: true });
+  });
 
   var istek = 0;
   function yukle(opts) {
