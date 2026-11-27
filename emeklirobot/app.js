@@ -36,8 +36,8 @@
     options: { position: 'topleft' },
     onAdd: function () {
       var b = L.DomUtil.create('button', 'ortala-btn leaflet-bar');
-      b.type = 'button'; b.title = 'Haritayı son konuma ortala';
-      b.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg><span>Ortala</span>';
+      b.type = 'button'; b.title = 'Haritayı son konuma ortala'; b.setAttribute('aria-label', b.title);
+      b.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>';
       L.DomEvent.disableClickPropagation(b);
       L.DomEvent.on(b, 'click', ortala);
       return b;
