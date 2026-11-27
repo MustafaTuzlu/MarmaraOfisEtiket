@@ -37,6 +37,8 @@
   }
   function gunDonemi() {
     var bugun = O.istGun(Date.now()), s = $('ms-donem').value, ayBas = bugun.slice(0, 8) + '01';
+    if (s === 'bugun') return { bas: bugun, bit: bugun };
+    if (s === 'dun') { var dun = O.gunEkle(bugun, -1); return { bas: dun, bit: dun }; }
     if (s === 'gecenay') { var son = O.gunEkle(ayBas, -1); return { bas: son.slice(0, 8) + '01', bit: son }; }
     if (s === 'ay') return { bas: ayBas, bit: bugun };
     if (s === 'yil') return { bas: bugun.slice(0, 4) + '-01-01', bit: bugun };
