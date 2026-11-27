@@ -213,7 +213,7 @@
       bolum('Konum logları için tarih aralığı (boşsa tümü)', '<p><input type="date" name="logBas" aria-label="Başlangıç günü"> – <input type="date" name="logBit" aria-label="Bitiş günü"></p>') +
       '<p><button type="submit" class="analiz-btn">SQL yedeğini indir</button></p></form>' +
       bolum('Geri yükleme', '<ol><li>phpMyAdmin’de EmekliRobot veritabanını seçin.</li><li>“İçe aktar” ile indirdiğiniz .sql dosyasını yükleyin.</li><li>Var olan satırlar korunur, yalnızca eksikler eklenir.</li></ol>' +
-        '<p class="not">İndirdikten sonra dosyanın en sonunda “Yedek tamamlandı” satırı olduğunu kontrol edin; yoksa ya da “HATA” yazıyorsa yedek eksiktir. Çok büyük dosyada phpMyAdmin sınırına takılırsanız tarih aralığıyla parça parça yedek alın.</p>');
+        '<p class="not">İndirdikten sonra dosyanın en sonunda “Yedek tamamlandı. N tablo, M satır” satırı olduğunu kontrol edin; yoksa ya da “HATA” yazıyorsa yedek eksiktir (hatanın altında nedeni yazar). Dosyanın başında içinde olması gereken tablolar listelenir. Çok büyük dosyada phpMyAdmin sınırına takılırsanız tarih aralığıyla parça parça yedek alın.</p>');
   }
 
   /* ---------- Geçmiş ve rehber ---------- */

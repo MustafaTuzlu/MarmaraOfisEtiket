@@ -111,13 +111,55 @@ function islem_yaz($pdo, $islem, $hedef, $adet) {
 function iso_utc($dt) { return empty($dt) ? null : str_replace(' ', 'T', $dt) . 'Z'; }
 
 /* ---------- Yedek indirme (form POST; yanıt dosyadır) ---------- */
-function yedek_indir($pdo, $secilen, $logBas, $logBit, $ZAMAN) {
+// Arabelleksiz sorgu KULLANILMAZ: sunucuda ilk tablodan sonraki sorgu başarısız oluyordu. Bellek için satırlar parça parça okunur.
+const YEDEK_PARCA = 1000;
+function birincil_anahtar($pdo, $tablo) {
+    $st = $pdo->prepare("SELECT COLUMN_NAME FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND INDEX_NAME = 'PRIMARY' ORDER BY SEQ_IN_INDEX");
+    $st->execute([$tablo]);
+    return $st->fetchAll(PDO::FETCH_COLUMN);
+}
+// Bir tabloyu INSERT IGNORE satırları olarak yazar; yazılan satır sayısını döner. $w/$p: sabit metinli koşullar ve değerleri.
+function yedek_tablo($pdo, $t, $w, $p) {
+    $pk = birincil_anahtar($pdo, $t);
+    $artan = $pk === ['id']; // 'id' varsa kaldığı yerden devam eder (yedek sırasında yeni log gelse de satır atlanmaz)
+    $sira = [];
+    foreach ($pk as $k) { $sira[] = '`' . str_replace('`', '', $k) . '`'; }
+    $sonId = 0; $atla = 0; $toplam = 0;
+    while (true) {
+        $kosullar = $w; $degerler = $p;
+        if ($artan) { $kosullar[] = '`id` > ?'; $degerler[] = $sonId; }
+        $sql = "SELECT * FROM `$t`" . ($kosullar ? ' WHERE ' . implode(' AND ', $kosullar) : '')
+            . ($sira ? ' ORDER BY ' . implode(', ', $sira) : '') . ' LIMIT ' . YEDEK_PARCA . ($artan ? '' : ' OFFSET ' . (int)$atla);
+        $st = $pdo->prepare($sql);
+        $st->execute($degerler);
+        $satirlar = $st->fetchAll(PDO::FETCH_ASSOC);
+        $st->closeCursor();
+        if (!$satirlar) { break; }
+        $kolon = '`' . implode('`,`', array_keys($satirlar[0])) . '`';
+        foreach (array_chunk($satirlar, 200) as $dilim) {
+            $parti = [];
+            foreach ($dilim as $r) {
+                $d = [];
+                foreach ($r as $v) { $d[] = $v === null ? 'NULL' : $pdo->quote((string)$v); }
+                $parti[] = '(' . implode(',', $d) . ')';
+            }
+            echo "INSERT IGNORE INTO `$t` ($kolon) VALUES\n" . implode(",\n", $parti) . ";\n";
+        }
+        flush();
+        $n = count($satirlar);
+        $toplam += $n; $atla += $n;
+        if ($artan) { $sonId = $satirlar[$n - 1]['id']; }
+        if ($n < YEDEK_PARCA) { break; }
+    }
+    return $toplam;
+}
+function yedek_indir($pdo, $secilen, $logBas, $logBit, $ZAMAN, &$asama) {
     @set_time_limit(300);
     $var = mevcut_tablolar($pdo);
-    // Yerler, konumlarından önce yazılır (yabancı anahtar)
-    $sira = array_keys(tablolar());
-    usort($sira, function ($a, $b) { $o = ['emekli_yer' => 0, 'emekli_yer_nokta' => 1]; return (isset($o[$a]) ? $o[$a] : 2) - (isset($o[$b]) ? $o[$b] : 2); });
-    $liste = array_values(array_filter($sira, function ($t) use ($secilen, $var) { return in_array($t, $secilen, true) && isset($var[$t]); }));
+    // Yerler konumlarından önce yazılır (yabancı anahtar). Sıra açıkça kurulur: PHP 7.0'da usort sırayı korumaz.
+    $sira = array_values(array_unique(array_merge(['emekli_yer', 'emekli_yer_nokta'], array_keys(tablolar()))));
+    $liste = [];
+    foreach ($sira as $t) { if (in_array($t, $secilen, true) && isset($var[$t])) { $liste[] = $t; } }
     if (!$liste) { http_response_code(400); header('Content-Type: text/plain; charset=utf-8'); echo 'Yedeklenecek tablo seçilmedi.'; exit; }
 
     islem_yaz($pdo, 'yedek', implode(',', $liste) . ($logBas || $logBit ? " (log: $logBas..$logBit)" : ''), null);
@@ -126,38 +168,25 @@ function yedek_indir($pdo, $secilen, $logBas, $logBit, $ZAMAN) {
     while (ob_get_level() > 0 && @ob_end_flush()) { } // kaldırılamayan tamponda döngü sürmesin
     echo "-- EmekliRobot veritabanı yedeği. DİKKAT: konum geçmişi içerir; güvenli yerde saklayın.\n";
     echo "-- Geri yükleme: phpMyAdmin > İçe aktar. Var olan satırlar KORUNUR (CREATE TABLE IF NOT EXISTS + INSERT IGNORE).\n";
+    echo '-- Bu dosyada olması gereken tablolar (' . count($liste) . '): ' . implode(', ', $liste) . "\n";
+    if ($logBas || $logBit) { echo '-- Konum logları tarih aralığı: ' . ($logBas ? $logBas : 'başlangıçtan') . ' .. ' . ($logBit ? $logBit : 'bugüne') . "\n"; }
     echo "SET NAMES utf8mb4;\nSET time_zone = '+00:00';\n\n";
-    $pdo->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, false); // büyük tabloda bellek şişmesin
+    $satirToplam = 0;
     foreach ($liste as $t) {
-        $st = $pdo->query("SHOW CREATE TABLE `$t`");
-        $olustur = $st->fetch(PDO::FETCH_NUM);
-        $st->closeCursor();
-        echo '-- ' . $t . "\n" . preg_replace('/^CREATE TABLE /', 'CREATE TABLE IF NOT EXISTS ', $olustur[1]) . ";\n";
+        $asama = $t;
+        $olustur = $pdo->query("SHOW CREATE TABLE `$t`")->fetchAll(PDO::FETCH_NUM);
+        echo '-- ' . $t . "\n" . preg_replace('/^CREATE TABLE /', 'CREATE TABLE IF NOT EXISTS ', $olustur[0][1]) . ";\n";
         $w = []; $p = [];
         if ($t === 'emekli_log') {
             if ($logBas) { $w[] = "$ZAMAN >= ?"; $p[] = gmdate('Y-m-d H:i:s', ist_gun_basi_utc($logBas)); }
             if ($logBit) { $w[] = "$ZAMAN < ?"; $p[] = gmdate('Y-m-d H:i:s', ist_gun_basi_utc($logBit) + 86400); }
         }
-        $st = $pdo->prepare("SELECT * FROM `$t`" . ($w ? ' WHERE ' . implode(' AND ', $w) : ''));
-        $st->execute($p);
-        $parti = []; $kolon = null; $n = 0;
-        $yaz = function () use (&$parti, &$kolon, $t) {
-            if ($parti) { echo "INSERT IGNORE INTO `$t` ($kolon) VALUES\n" . implode(",\n", $parti) . ";\n"; $parti = []; flush(); }
-        };
-        while ($r = $st->fetch(PDO::FETCH_ASSOC)) {
-            if ($kolon === null) { $kolon = '`' . implode('`,`', array_keys($r)) . '`'; }
-            // quote() arabelleksiz sonuç açıkken sunucuya sorgu göndermez; güvenle burada kullanılabilir
-            $d = [];
-            foreach ($r as $v) { $d[] = $v === null ? 'NULL' : $pdo->quote((string)$v); }
-            $parti[] = '(' . implode(',', $d) . ')';
-            if (count($parti) >= 200) { $yaz(); }
-            $n++;
-        }
-        $yaz();
-        $st->closeCursor();
+        $n = yedek_tablo($pdo, $t, $w, $p);
+        $satirToplam += $n;
         echo "-- $t: $n satır\n\n";
+        flush();
     }
-    echo "-- Yedek tamamlandı.\n";
+    echo '-- Yedek tamamlandı. ' . count($liste) . " tablo, $satirToplam satır.\n";
     exit;
 }
 
@@ -167,12 +196,16 @@ if ($post && isset($_POST['islem']) && $_POST['islem'] === 'yedek') {
     $secilen = isset($_POST['tablo']) && is_array($_POST['tablo']) ? array_map('strval', $_POST['tablo']) : [];
     $logBas = gecerli_gun($_POST['logBas'] ?? null) ? $_POST['logBas'] : null;
     $logBit = gecerli_gun($_POST['logBit'] ?? null) ? $_POST['logBit'] : null;
-    try { yedek_indir(db(), $secilen, $logBas, $logBit, $ZAMAN); }
+    $asama = 'bağlantı';
+    try { yedek_indir(db(), $secilen, $logBas, $logBit, $ZAMAN, $asama); }
     catch (Exception $e) {
         error_log('emeklirobot yedek: ' . $e->getMessage());
         // Dosya akışı başladıysa dosyanın sonuna açık bir hata satırı eklenir (yarım yedek fark edilsin)
         if (!headers_sent()) { http_response_code(500); }
-        echo "\n-- HATA: yedek TAMAMLANAMADI. Bu dosyayı kullanmayın.\n"; exit;
+        // Neden de yazılır (tek satır): sunucu günlüğüne erişmeden teşhis edilebilsin
+        echo "\n-- HATA: yedek TAMAMLANAMADI. Bu dosyayı kullanmayın.\n";
+        echo '-- Aşama: ' . $asama . ' | Neden: ' . substr(preg_replace('/\s+/', ' ', $e->getMessage()), 0, 300) . "\n";
+        exit;
     }
 }
 if ($post) {
