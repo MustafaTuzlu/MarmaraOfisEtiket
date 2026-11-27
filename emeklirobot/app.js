@@ -639,5 +639,6 @@
   });
 
   cipler('f-tipler', durum.tipler, TIP);
+  $('f-bas').value = istYerel(Date.now()).slice(0, 10) + 'T00:00'; // varsayılan: bugün 00:00 (Türkiye saati)
   yukle({ ilk: true, sifirla: true });
 })();
