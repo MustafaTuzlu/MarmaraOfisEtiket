@@ -3,18 +3,21 @@
   'use strict';
   var $ = function (id) { return document.getElementById(id); };
   var O = window.Ortak, esc = O.esc;
-  var kayitlar = null, uyarilar = {}, dikkat = {}, bilinen = [], mesgul = false, sonAlma = 0, hedefler = [];
+  var kayitlar = null, uyarilar = {}, dikkat = {}, bilinen = [], mesgul = false, tekrar = false, sira = 0, sonAlma = 0, hedefler = [];
+  var TAKILDI = 30e3; // bu süredir yanıt gelmeyen istek yok sayılır (kartlar eski veride takılı kalmasın)
 
   function sorgula(saatGeri) { return O.veriGetir(O.aralikSorgu(Date.now() - saatGeri * 3600e3, Date.now() + 3600e3)); }
 
   function yenile() {
-    if (mesgul) return;
-    mesgul = true; sonAlma = Date.now();
+    // Sürmekte olan istek yeni kayıttan önce yola çıkmış olabilir: bitince bir kez daha alınır
+    if (mesgul && Date.now() - sonAlma < TAKILDI) { tekrar = true; return; }
+    mesgul = true; tekrar = false; sonAlma = Date.now();
+    var no = ++sira;
     Yerler.hazir().then(function () { return sorgula(72); })
       .then(function (v) { return v.kayitlar ? v : sorgula(24); })
-      .then(function (v) { kayitlar = v.kayitlar || []; $('sd-mesaj').textContent = ''; ciz(); })
-      .catch(function (e) { if (!e || e.kod !== 'oturum') $('sd-mesaj').textContent = 'Son durum alınamadı.'; })
-      .then(function () { mesgul = false; });
+      .then(function (v) { if (no !== sira) return; kayitlar = v.kayitlar || []; $('sd-mesaj').textContent = ''; ciz(); })
+      .catch(function (e) { if (no === sira && (!e || e.kod !== 'oturum')) $('sd-mesaj').textContent = 'Son durum alınamadı.'; })
+      .then(function () { if (no !== sira) return; mesgul = false; if (tekrar) yenile(); });
   }
   function uyariYenile() {
     if (window.Bakim) Bakim.uyarilar().then(function (u) { uyarilar = u; ciz(); }, function () {});
@@ -108,7 +111,7 @@
     Yerler.degisince(ciz);
     yenile(); uyariYenile();
     setInterval(sayacYaz, 1000);
-    // Dakikada bir yeni veri (sekme görünürken); süre yazıları da böylece güncel kalır
+    // Yeni kayıtta app.js hemen yeniletir; ayrıca dakikada bir (sekme görünürken) süre ve durum yazıları tazelenir
     setInterval(function () { if (!document.hidden) yenile(); }, 60e3);
     document.addEventListener('visibilitychange', function () { if (!document.hidden && Date.now() - sonAlma > 60e3) yenile(); });
   }

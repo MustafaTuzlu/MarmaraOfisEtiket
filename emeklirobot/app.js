@@ -510,6 +510,11 @@
           durum.sonId = Math.max(durum.sonId, maxId);
         } else { durum.sonId = maxId; }
         durum.kayitlar = v.kayitlar; durum.sonKonum = v.sonKonum;
+        // Yeni kayıt geldiyse (ekrandaki filtre onu göstermese de) "Son durum" kartları da hemen yenilenir
+        if (v.enSonId !== undefined) {
+          if (durum.enSonId !== undefined && v.enSonId !== durum.enSonId) SonDurum.yenile();
+          durum.enSonId = v.enSonId;
+        }
         if (v.sunucuZamani) saatFarki = Date.parse(v.sunucuZamani) - Date.now();
         hizliSayilar(v.hizli);
         $('sayac').textContent = v.toplam + ' kayıt eşleşti, ilk ' + v.kayitlar.length + ' tanesi listeleniyor';

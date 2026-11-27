@@ -148,7 +148,10 @@ try {
     $st->execute(array_merge($ph, $pHizli));
     $hizli = array_map('intval', $st->fetch(PDO::FETCH_ASSOC));
 
-    $cikti = ['ok' => true, 'toplam' => $toplam, 'kayitlar' => $kayitlar, 'sonKonum' => $sonKonum, 'hizli' => $hizli, 'sunucuZamani' => gmdate('Y-m-d\TH:i:s\Z')];
+    // Filtrelerden bağımsız en büyük kayıt no: panel yeni kayıt geldiğini bununla anlar ("Son durum" kartları hemen yenilenir)
+    $enSonId = (int)$pdo->query('SELECT MAX(id) FROM emekli_log')->fetchColumn();
+
+    $cikti = ['ok' => true, 'enSonId' => $enSonId, 'toplam' => $toplam, 'kayitlar' => $kayitlar, 'sonKonum' => $sonKonum, 'hizli' => $hizli, 'sunucuZamani' => gmdate('Y-m-d\TH:i:s\Z')];
     if (($_GET['secenek'] ?? '') === '1') {
         $cikti['tipler'] = $pdo->query('SELECT DISTINCT log_tipi FROM emekli_log ORDER BY log_tipi')->fetchAll(PDO::FETCH_COLUMN);
         $cikti['cihazlar'] = $pdo->query('SELECT DISTINCT cihaz_adi FROM emekli_log ORDER BY cihaz_adi')->fetchAll(PDO::FETCH_COLUMN);
