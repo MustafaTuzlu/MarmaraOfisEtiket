@@ -111,7 +111,7 @@ Bu dosya, projede çalışan yapay zekâ (Claude) ve geliştiriciler için kalı
 
 ## 7. Yapılacaklar / açık maddeler
 **EmekliRobot**
-- Canlıda: `db/2026-11-27-masraf-kural.sql` çalıştırılmalı. Veritabanı Yönetimi ilk kullanımda sırayla: Genel bakış → Tablolar → **yedek indir ve dosya sonunda "Yedek tamamlandı" satırını doğrula** (ilk sürümde yalnız `emekli_yer` yazılıp kesiliyordu; düzeltmenin canlı sonucu henüz doğrulanmadı) → küçük bir temizlik. Kural, masraf, ayar kaydı gözlemlenmeli.
+- Canlıda: `db/2026-11-27-masraf-kural.sql` çalıştırılmalı. Veritabanı Yönetimi ilk kullanımda sırayla: Genel bakış → Tablolar → **yedek indir ve dosya sonunda "Yedek tamamlandı" satırını doğrula** (ilk sürümde yalnız `emekli_yer` yazılıp kesiliyordu; düzeltme canlıda doğrulandı, 2026-11-27) → küçük bir temizlik. Kural, masraf, ayar kaydı gözlemlenmeli.
 - Güvenlik paketi önerildi, yapılmadı (iki adımlı giriş, giriş geçmişi, tüm oturumları kapat).
 - "Analiz et" eşikleri bir günlük veriyle ayarlandı; daha çok veriyle gözden geçirilmeli.
 - İsteyince: Telegram/e-posta bildirimleri (SIM olmadığından anlık olmaz; "cihaz sessiz" için zamanlanmış görev gerekir).
