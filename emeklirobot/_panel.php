@@ -25,7 +25,13 @@
     </svg>
   </button>
   <button type="button" id="b-anlik" class="dbbtn">Anlık Durum</button>
-  <button type="button" id="b-db" class="dbbtn">DB Ayarları</button>
+  <div class="ayar-kap">
+    <button type="button" id="b-ayar" class="dbbtn" aria-haspopup="true" aria-expanded="false" aria-controls="ayar-menu">Ayarlar <span aria-hidden="true">▾</span></button>
+    <div id="ayar-menu" class="ayar-menu" hidden>
+      <button type="button" id="b-db">DB Ayarları</button>
+      <button type="button" id="b-harita-ayar">Harita Ayarları</button>
+    </div>
+  </div>
   <form method="post" action="/emeklirobot/" class="cikis">
     <input type="hidden" name="islem" value="cikis">
     <input type="hidden" name="csrf" value="<?= htmlspecialchars(csrf(), ENT_QUOTES, 'UTF-8') ?>">
@@ -116,6 +122,23 @@
     <p id="an-mesaj" class="mesaj" role="status"></p>
     <p id="an-geri" class="sayac"></p>
     <p id="an-not" class="not" hidden></p>
+  </div>
+</div>
+
+<div id="hamodal" class="modal" hidden>
+  <div class="modal-kutu" role="dialog" aria-modal="true" aria-labelledby="habaslik">
+    <button type="button" class="modal-kapat" id="hakapat" aria-label="Kapat">×</button>
+    <h2 id="habaslik">Harita Ayarları</h2>
+    <label class="ha-etiket" for="ha-dk">Son konum halka efekti süresi</label>
+    <div class="ha-sayac">
+      <button type="button" id="ha-azalt" aria-label="Süreyi azalt">−</button>
+      <input type="number" id="ha-dk" min="1" max="1440" step="1" inputmode="numeric">
+      <button type="button" id="ha-artir" aria-label="Süreyi artır">+</button>
+      <span>dakika</span>
+    </div>
+    <p id="ha-aciklama" class="not"></p>
+    <p class="not">− ve + düğmeleri 5'er dakika değiştirir; kutuya istediğiniz değeri de yazabilirsiniz (1–1440). Ayar bu tarayıcıda saklanır.</p>
+    <p class="alt"><a href="#" id="ha-varsayilan">Varsayılana dön (20 dk)</a></p>
   </div>
 </div>
 

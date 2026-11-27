@@ -59,7 +59,10 @@
   }
 
   /* Pin penceresindeki "ne kadar önce" satırı ve son konum tazeyken (≤ 20 dk) çalışan halka efekti */
-  var CANLI_MS = 20 * 60e3, saatFarki = 0; // saatFarki: sunucu saati - tarayıcı saati (ms)
+  var HALKA_VARSAYILAN = 20, saatFarki = 0; // saatFarki: sunucu saati - tarayıcı saati (ms)
+  function halkaGecerli(n) { return Math.min(1440, Math.max(1, Math.round(n))); }
+  var halkaDk = HALKA_VARSAYILAN; // Ayarlar > Harita Ayarları
+  try { var kayitliDk = Number(localStorage.getItem('er_halka_dk')); if (kayitliDk) halkaDk = halkaGecerli(kayitliDk); } catch (e) {}
   // Konumun GPS'ten alındığı an. KONUM/ARAC_* kayıtlarında zaman zaten fix zamanıdır; diğer tiplerde kayıt anından konum yaşı düşülür.
   function konumAni(k) {
     var t = Date.parse(k.zaman);
@@ -79,7 +82,7 @@
   function pinGuncelle() {
     if (!pin) return;
     var k = pin.erKayit, el = pin.getElement();
-    if (el) el.classList.toggle('canli', sonKonumMu(k) && Date.now() + saatFarki - konumAni(k) <= CANLI_MS);
+    if (el) el.classList.toggle('canli', sonKonumMu(k) && Date.now() + saatFarki - konumAni(k) <= halkaDk * 60e3);
     if (pin.isPopupOpen()) {
       var kutu = pin.getPopup().getElement(), satir = kutu && kutu.querySelector('.pin-gecen');
       if (satir) satir.textContent = gecenSatir(k);
@@ -579,6 +582,34 @@
   function butonlar(kilit) { mesgul = kilit; [].forEach.call($('dbmodal').querySelectorAll('button'), function (b) { if (b.id !== 'dbkapat') b.disabled = kilit; }); }
 
   $('b-db').addEventListener('click', dbAc);
+
+  /* ---------- Ayarlar menüsü ---------- */
+  function ayarMenu(ac) { $('ayar-menu').hidden = !ac; $('b-ayar').setAttribute('aria-expanded', ac ? 'true' : 'false'); }
+  $('b-ayar').addEventListener('click', function () { ayarMenu($('ayar-menu').hidden); });
+  $('ayar-menu').addEventListener('click', function (e) { if (e.target.closest('button')) ayarMenu(false); });
+  // Menü dışına tıklayınca ya da Esc ile kapanır (yakalama aşaması: harita tıklamaları yutsa da çalışır)
+  document.addEventListener('click', function (e) { if (!e.target.closest('.ayar-kap')) ayarMenu(false); }, true);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') ayarMenu(false); });
+
+  /* ---------- Harita Ayarları ---------- */
+  function halkaYaz() {
+    $('ha-dk').value = halkaDk;
+    $('ha-aciklama').textContent = 'Son konum ' + halkaDk + ' dakika veya daha yeniyse kırmızı pinin etrafında halka efekti gösterilir.';
+  }
+  function halkaAyarla(n) {
+    halkaDk = halkaGecerli(n);
+    try { localStorage.setItem('er_halka_dk', String(halkaDk)); } catch (e) {}
+    halkaYaz(); pinGuncelle();
+  }
+  function haKapat() { $('hamodal').hidden = true; }
+  $('b-harita-ayar').addEventListener('click', function () { halkaYaz(); $('hamodal').hidden = false; });
+  $('ha-azalt').addEventListener('click', function () { halkaAyarla(Math.ceil(halkaDk / 5) * 5 - 5); }); // 5'in katlarına oturur
+  $('ha-artir').addEventListener('click', function () { halkaAyarla(Math.floor(halkaDk / 5) * 5 + 5); });
+  $('ha-dk').addEventListener('change', function () { var n = Number(this.value); if (this.value !== '' && isFinite(n)) halkaAyarla(n); else halkaYaz(); });
+  $('ha-varsayilan').addEventListener('click', function (e) { e.preventDefault(); halkaAyarla(HALKA_VARSAYILAN); });
+  $('hakapat').addEventListener('click', haKapat);
+  $('hamodal').addEventListener('mousedown', function (e) { if (e.target === this) haKapat(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !$('hamodal').hidden) haKapat(); });
   $('dbkapat').addEventListener('click', dbKapat);
   $('dbmodal').addEventListener('mousedown', function (e) { if (e.target === this) dbKapat(); });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !$('dbmodal').hidden) dbKapat(); });
