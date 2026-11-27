@@ -58,10 +58,11 @@ function satir($r) {
 }
 
 $ZAMAN = 'COALESCE(duzeltilmis_zaman, konum_zamani)';
-$w = []; $p = [];
+$w = []; $p = []; // tarih dışındaki filtreler (hızlı buton sayaçları bunları kullanır)
+$wt = []; $pt = []; // tarih aralığı
 
-if (($v = utc_param($_GET['bas'] ?? null)) !== null) { $w[] = "$ZAMAN >= ?"; $p[] = $v; }
-if (($v = utc_param($_GET['bit'] ?? null)) !== null) { $w[] = "$ZAMAN <= ?"; $p[] = $v; }
+if (($v = utc_param($_GET['bas'] ?? null)) !== null) { $wt[] = "$ZAMAN >= ?"; $pt[] = $v; }
+if (($v = utc_param($_GET['bit'] ?? null)) !== null) { $wt[] = "$ZAMAN <= ?"; $pt[] = $v; }
 if ($t = liste('tip', '/^[A-Z_]{1,30}$/')) { $w[] = 'log_tipi IN (' . implode(',', array_fill(0, count($t), '?')) . ')'; $p = array_merge($p, $t); }
 if ($t = liste('cihaz', '/^[A-Za-z0-9_-]{1,50}$/')) { $w[] = 'cihaz_adi IN (' . implode(',', array_fill(0, count($t), '?')) . ')'; $p = array_merge($p, $t); }
 $h = $_GET['hareket'] ?? '';
@@ -76,7 +77,17 @@ if (($_GET['konumlu'] ?? '') === '1') { $w[] = 'enlem IS NOT NULL'; }
 $limit = (int)($_GET['limit'] ?? 250);
 if (!in_array($limit, [100, 250, 500, 1000], true)) { $limit = 250; }
 
+$kosulHizli = $w ? 'WHERE ' . implode(' AND ', $w) : '';
+$pHizli = $p;
+$w = array_merge($wt, $w); $p = array_merge($pt, $p);
 $kosul = $w ? 'WHERE ' . implode(' AND ', $w) : '';
+
+// Hızlı buton başlangıçları: panel Başlangıç alanını dakika hassasiyetinde doldurduğu için dakikaya yuvarlanır; "Bugün" = Türkiye (UTC+3) 00:00
+$simdiDk = time() - time() % 60;
+$araliklar = [
+    'dk15' => $simdiDk - 900, 'dk20' => $simdiDk - 1200, 's1' => $simdiDk - 3600, 's6' => $simdiDk - 21600,
+    's24' => $simdiDk - 86400, 's168' => $simdiDk - 604800, 'bugun' => $simdiDk - ($simdiDk + 10800) % 86400,
+];
 $kolon = 'id, kayit, cihaz_adi, log_tipi, enlem, boylam, dogruluk_m, hiz_kmh, yon, pil_yuzdesi, sarjda_mi, pil_sicakligi, arac_hareketli, '
        . 'konum_zamani, konum_zamani_ofset_dk, elapsed_realtime_ms, konum_yasi_ms, duzeltilmis_zaman, zaman_kaynagi, alinma_zamani, ' . $ZAMAN . ' AS zaman';
 
@@ -96,7 +107,14 @@ try {
     $r = $st->fetch(PDO::FETCH_ASSOC);
     $sonKonum = $r ? satir($r) : null;
 
-    $cikti = ['ok' => true, 'toplam' => $toplam, 'kayitlar' => $kayitlar, 'sonKonum' => $sonKonum, 'sunucuZamani' => gmdate('Y-m-d\TH:i:s\Z')];
+    // Her hızlı butonun kaç kayıt getireceği (tek sorgu)
+    $sec = []; $ph = [];
+    foreach ($araliklar as $ad => $t0) { $sec[] = "SUM($ZAMAN >= ?) AS $ad"; $ph[] = gmdate('Y-m-d H:i:s', $t0); }
+    $st = $pdo->prepare('SELECT ' . implode(', ', $sec) . ' FROM emekli_log ' . $kosulHizli);
+    $st->execute(array_merge($ph, $pHizli));
+    $hizli = array_map('intval', $st->fetch(PDO::FETCH_ASSOC));
+
+    $cikti = ['ok' => true, 'toplam' => $toplam, 'kayitlar' => $kayitlar, 'sonKonum' => $sonKonum, 'hizli' => $hizli, 'sunucuZamani' => gmdate('Y-m-d\TH:i:s\Z')];
     if (($_GET['secenek'] ?? '') === '1') {
         $cikti['tipler'] = $pdo->query('SELECT DISTINCT log_tipi FROM emekli_log ORDER BY log_tipi')->fetchAll(PDO::FETCH_COLUMN);
         $cikti['cihazlar'] = $pdo->query('SELECT DISTINCT cihaz_adi FROM emekli_log ORDER BY cihaz_adi')->fetchAll(PDO::FETCH_COLUMN);

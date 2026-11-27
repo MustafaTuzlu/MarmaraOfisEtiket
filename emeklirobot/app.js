@@ -319,6 +319,17 @@
     return q.toString();
   }
 
+  // Hızlı butonlara, diğer filtrelerle birlikte kaç kayıt getireceklerini yazar: "Son 15 dk (7)"
+  function hizliSayilar(s) {
+    if (!s) return;
+    [].forEach.call(document.querySelectorAll('.hizli button'), function (b) {
+      var saat = b.getAttribute('data-saat');
+      var ad = b.hasAttribute('data-dk') ? 'dk' + b.getAttribute('data-dk') : (saat === 'bugun' ? 'bugun' : 's' + saat);
+      if (!b.hasAttribute('data-ad')) b.setAttribute('data-ad', b.textContent);
+      if (typeof s[ad] === 'number') b.textContent = b.getAttribute('data-ad') + ' (' + s[ad].toLocaleString('tr-TR') + ')';
+    });
+  }
+
   var istek = 0;
   function yukle(opts) {
     opts = opts || {};
@@ -337,6 +348,7 @@
           durum.sonId = Math.max(durum.sonId, maxId);
         } else { durum.sonId = maxId; }
         durum.kayitlar = v.kayitlar; durum.sonKonum = v.sonKonum;
+        hizliSayilar(v.hizli);
         $('sayac').textContent = v.toplam + ' kayıt eşleşti, ilk ' + v.kayitlar.length + ' tanesi listeleniyor';
         $('durum').textContent = 'Güncellendi: ' + zaman(v.sunucuZamani) + (yeni ? ' · ' + yeni + ' yeni kayıt' : '');
         // seçili kayıt yeni listede yoksa ya da kullanıcı seçim yapmadıysa en son konuma dön
