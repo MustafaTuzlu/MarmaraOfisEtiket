@@ -42,7 +42,6 @@
 
 <nav class="arac-cubugu" aria-label="Panel araçları">
   <button type="button" data-ac="yolculuk">📊 Yolculuklar ve raporlar</button>
-  <button type="button" data-ac="nezaman">🔎 Buraya ne zaman gittim?</button>
   <button type="button" data-ac="masraf">💳 Masraf</button>
   <button type="button" data-ac="bakim">🔧 Bakım</button>
   <button type="button" data-ac="yerler">📍 Yerlerim</button>

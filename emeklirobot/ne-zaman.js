@@ -5,7 +5,7 @@
   var $ = function (id) { return document.getElementById(id); };
   var O = window.Ortak, esc = O.esc, sayi = O.sayi, sure = O.sure;
   var SATIR = 200;
-  var harita = null, kontrol = null, nokta = null, veri = null, liste = [], no = 0;
+  var harita = null, dugme = null, kontrol = null, nokta = null, veri = null, liste = [], no = 0;
 
   function mesaj(t) { $('nz-mesaj').textContent = t || ''; }
 
@@ -15,6 +15,23 @@
     harita.off('click', haritaTik);
     harita.removeControl(kontrol); kontrol = null;
     $('harita').classList.remove('nz-sec');
+    dugmeDurumu();
+  }
+  function dugmeDurumu() { dugme.classList.toggle('acik', !!kontrol); dugme.setAttribute('aria-pressed', kontrol ? 'true' : 'false'); }
+  // Haritanın solunda, "ortala"nın altında: üzerinde soru işareti olan konum iğnesi
+  function dugmeEkle() {
+    var Kontrol = L.Control.extend({
+      options: { position: 'topleft' },
+      onAdd: function () {
+        var b = L.DomUtil.create('button', 'ortala-btn nz-btn leaflet-bar');
+        b.type = 'button'; b.title = 'Buraya ne zaman gittim?'; b.setAttribute('aria-label', b.title); b.setAttribute('aria-pressed', 'false');
+        b.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 1.5a8.5 8.5 0 0 0-8.5 8.5c0 5.9 8.5 12.5 8.5 12.5s8.500-6.6 8.500-12.500A8.500 8.500 0 0 0 12 1.500z"/><path class="nz-soru" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M9.300 7.900a2.700 2.700 0 1 1 3.900 2.400c-.8.400-1.2 1-1.200 1.900"/><circle class="nz-nokta" cx="12" cy="15.400" r="1.250"/></svg>';
+        L.DomEvent.disableClickPropagation(b);
+        L.DomEvent.on(b, 'click', function () { if (kontrol) secimBitir(); else sec(); }); // ikinci basış seçimi kapatır
+        return b;
+      }
+    });
+    dugme = new Kontrol().addTo(harita).getContainer();
   }
   function haritaTik(e) { secildi(e.latlng.lat, ((e.latlng.lng + 540) % 360) - 180); }
   function sec(veriKalsin) {
@@ -48,6 +65,7 @@
     $('harita').scrollIntoView({ block: 'center' });
     harita.invalidateSize();
     harita.on('click', haritaTik);
+    dugmeDurumu();
   }
 
   /* ---------- Sonuçlar ---------- */
@@ -113,6 +131,7 @@
 
   function baslat(h) {
     harita = h;
+    dugmeEkle();
     O.pencere('nzmodal', 'nzkapat', function () { no++; veri = null; }); // yeniden açınca güncel veri alınır
     $('nz-yaricap').addEventListener('change', ciz);
     $('nz-cihaz').addEventListener('change', ciz);

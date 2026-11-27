@@ -219,6 +219,8 @@ button.tehlike:hover{background:#b91c1c!important}
 .leaflet-container .ortala-btn{display:flex;align-items:center;justify-content:center;width:34px;height:34px;padding:0;background:#fff;color:#0f172a;cursor:pointer}
 .leaflet-container .ortala-btn:hover{background:#f1f5f9}
 @media(max-width:800px){.popup-acik .ortala-btn{visibility:hidden}}
+.nz-btn .nz-soru{stroke:#fff}.nz-btn .nz-nokta{fill:#fff}
+.leaflet-container .nz-btn.acik{background:#2563eb;color:#fff}.nz-btn.acik .nz-soru{stroke:#2563eb}.nz-btn.acik .nz-nokta{fill:#2563eb}
 .liste-araclar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
 .analiz-btn{font:inherit;font-size:13px;font-weight:600;color:#fff;background:#2563eb;border:1px solid #2563eb;padding:6px 14px;border-radius:6px;cursor:pointer;white-space:nowrap}
 .analiz-btn:hover{background:#1d4ed8}
