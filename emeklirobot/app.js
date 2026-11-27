@@ -326,16 +326,27 @@
       var saat = b.getAttribute('data-saat');
       var ad = b.hasAttribute('data-dk') ? 'dk' + b.getAttribute('data-dk') : (saat === 'bugun' ? 'bugun' : 's' + saat);
       if (!b.hasAttribute('data-ad')) b.setAttribute('data-ad', b.textContent);
-      if (typeof s[ad] === 'number') b.textContent = b.getAttribute('data-ad') + ' (' + s[ad].toLocaleString('tr-TR') + ')';
+      if (typeof s[ad] === 'number') b.textContent = b.getAttribute('data-ad') + ' (' + (s[ad] > 999 ? '999+' : s[ad]) + ')';
     });
   }
+
+  // Tam ekran yükleme perdesi (sayfa HTML'de görünür başlar). Yanıp sönmesin diye en az 400 ms kalır.
+  var YK_ENAZ = 400, ykBas = Date.now(), ykTm = null;
+  function ykGoster() { clearTimeout(ykTm); if ($('yukleniyor').hidden) { ykBas = Date.now(); $('yukleniyor').hidden = false; } }
+  function ykGizle() { clearTimeout(ykTm); ykTm = setTimeout(function () { $('yukleniyor').hidden = true; }, Math.max(0, YK_ENAZ - (Date.now() - ykBas))); }
 
   var istek = 0;
   function yukle(opts) {
     opts = opts || {};
     var no = ++istek;
     $('durum').textContent = 'Yükleniyor…';
-    fetch('/emeklirobot/api.php?' + sorgu(!durum.secenekGeldi), { credentials: 'same-origin', cache: 'no-store' })
+    // Açık bir pencere varken (Anlık Durum / DB Ayarları) otomatik yenileme pencerenin üstünü kapatmasın
+    if (!(opts.oto && document.querySelector('.modal:not([hidden])'))) ykGoster();
+    // Yanıt gelmezse perde ekranı kilitli bırakmasın: 30 sn'de istek iptal edilir
+    var iptal = window.AbortController ? new AbortController() : null;
+    var sure = iptal ? setTimeout(function () { iptal.abort(); }, 30000) : null;
+    function bitti() { clearTimeout(sure); if (no === istek) ykGizle(); }
+    fetch('/emeklirobot/api.php?' + sorgu(!durum.secenekGeldi), { credentials: 'same-origin', cache: 'no-store', signal: iptal ? iptal.signal : undefined })
       .then(function (r) { if (r.status === 401) { location.reload(); throw new Error('oturum'); } return r.json(); })
       .then(function (v) {
         if (no !== istek) return;
@@ -365,7 +376,8 @@
           $('detay').innerHTML = '<p class="bos">Kayıt bulunamadı.</p>';
         }
       })
-      .catch(function (e) { if (e && e.message !== 'oturum') $('durum').textContent = 'Veri alınamadı.'; });
+      .catch(function (e) { if (e && e.message !== 'oturum') $('durum').textContent = 'Veri alınamadı.'; })
+      .then(bitti);
   }
 
   var zamanlayici = null;
