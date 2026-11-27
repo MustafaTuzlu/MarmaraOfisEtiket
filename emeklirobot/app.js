@@ -89,6 +89,12 @@
     }
   }
   setInterval(pinGuncelle, 1000);
+  // Cihaz kutusunda kapatılan cihazın kırmızı pini (halkasıyla birlikte) de haritadan kalkar; açılınca geri gelir
+  function pinGorunurluk() {
+    if (!pin) return;
+    if (gorunur[pin.erKayit.cihazAdi] === false) { if (harita.hasLayer(pin)) pin.remove(); }
+    else if (!harita.hasLayer(pin)) { pin.addTo(harita); pinGuncelle(); }
+  }
 
   function sec(id, haritayiKaydir) {
     var k = kayitBul(id);
@@ -107,6 +113,7 @@
         pin.on('popupopen', pinGuncelle);
       }
       pin.erKayit = k;
+      pinGorunurluk();
       // İçerik yalnızca değiştiyse yenilenir: Leaflet her yenilemede haritayı açık pencereye kaydırır
       if (pin.erOzet !== ozetHtml(k)) { pin.erOzet = ozetHtml(k); pin.setPopupContent(pinHtml(k)); }
       pinGuncelle();
@@ -273,6 +280,7 @@
     });
     oklariGuncelle();
     animHazirla(gruplar);
+    pinGorunurluk();
     if (sigdir && tum.length > 1) harita.fitBounds(tum, { maxZoom: 16, padding: [30, 30] });
   }
 
