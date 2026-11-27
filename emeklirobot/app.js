@@ -340,9 +340,11 @@
     var o = [];
     function tarihYaz(v) { return v.replace(/^(\d{4})-(\d\d)-(\d\d)T(\d\d:\d\d).*$/, '$3.$2.$1 $4'); }
     // anahtar: × ile kaldırılırken temizlenecek alanlar (boşlukla ayrılmış id listesi)
-    function ekle(anahtar, ad, deger) {
+    // secim: çoklu seçimli gruplarda (log tipi, cihaz) × yalnızca bu değerin işaretini kaldırır
+    function ekle(anahtar, ad, deger, secim) {
       o.push('<span class="oz"><b>' + esc(ad) + (deger === undefined ? '' : ':') + '</b>' + (deger === undefined ? '' : ' ' + esc(deger)) +
-        '<button type="button" class="oz-sil" data-alan="' + anahtar + '" title="Filtreyi kaldır" aria-label="' + esc(ad) + ' filtresini kaldır">×</button></span>');
+        '<button type="button" class="oz-sil" data-alan="' + anahtar + '"' + (secim === undefined ? '' : ' data-secim="' + esc(secim) + '"') +
+        ' title="Filtreyi kaldır" aria-label="' + esc(ad + (secim === undefined ? '' : ' ' + secim)) + ' filtresini kaldır">×</button></span>');
     }
     function aralik(ad, mn, mx, birim) {
       var a = $(mn).value, b = $(mx).value, k = mn + ' ' + mx;
@@ -352,8 +354,8 @@
     }
     if ($('f-bas').value) ekle('f-bas', 'Başlangıç', tarihYaz($('f-bas').value));
     if ($('f-bit').value) ekle('f-bit', 'Bitiş', tarihYaz($('f-bit').value));
-    var t = secilenler('f-tipler'); if (t.length) ekle('f-tipler', 'Log tipi', t.join(', '));
-    var c = secilenler('f-cihazlar'); if (c.length) ekle('f-cihazlar', 'Cihaz', c.join(', '));
+    secilenler('f-tipler').forEach(function (v) { ekle('f-tipler', 'Log tipi', v, v); });
+    secilenler('f-cihazlar').forEach(function (v) { ekle('f-cihazlar', 'Cihaz', v, v); });
     [['f-hareket', 'Araç'], ['f-sarj', 'Şarj/kontak']].forEach(function (s) { var el = $(s[0]); if (el.value !== '') ekle(s[0], s[1], el.options[el.selectedIndex].text); });
     aralik('Pil', 'f-pilMin', 'f-pilMax', ' %');
     aralik('Pil sıcaklığı', 'f-sicMin', 'f-sicMax', ' °C');
@@ -367,9 +369,10 @@
     if (!e.target.closest('.oz')) return;
     e.preventDefault();
     var b = e.target.closest('.oz-sil'); if (!b) return;
+    var secim = b.getAttribute('data-secim');
     b.getAttribute('data-alan').split(' ').forEach(function (id) {
       var el = $(id);
-      if (id === 'f-tipler' || id === 'f-cihazlar') [].forEach.call(el.querySelectorAll('input'), function (i) { i.checked = false; i.closest('.cip').classList.remove('acik'); });
+      if (id === 'f-tipler' || id === 'f-cihazlar') [].forEach.call(el.querySelectorAll('input'), function (i) { if (i.value === secim) { i.checked = false; i.closest('.cip').classList.remove('acik'); } });
       else if (el.type === 'checkbox') el.checked = false;
       else el.value = '';
     });
