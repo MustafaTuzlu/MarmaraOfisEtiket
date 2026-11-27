@@ -183,3 +183,9 @@ button.tehlike:hover{background:#b91c1c!important}
 .yk-kutu{display:flex;flex-direction:column;align-items:center;gap:12px;background:#fff;border-radius:14px;padding:22px 30px;box-shadow:0 20px 50px rgba(15,23,42,.35);font-size:14px;font-weight:600;color:#334155}
 .yk-halka{width:42px;height:42px;border-radius:50%;border:4px solid #e2e8f0;border-top-color:#3ddc84;animation:yk-don .8s linear infinite}
 @keyframes yk-don{to{transform:rotate(360deg)}}
+.filtre-ozet{display:flex;flex-wrap:wrap;gap:6px;flex:1;min-width:0;margin-left:6px;font-weight:400;font-size:12px}
+.filtre-ac[open] .filtre-ozet{display:none}
+.filtre-ozet .oz{padding:3px 10px;border-radius:999px;background:#eff6ff;border:1px solid #bfdbfe;color:#1e3a8a;overflow-wrap:anywhere}
+.filtre-ozet .oz b{font-weight:600}
+.filtre-ozet .oz-yok{color:#94a3b8;padding:3px 0}
+@media(max-width:800px){.filtre-ac>summary{flex-wrap:wrap}.filtre-ozet{flex:1 0 100%;margin:4px 0 0}}

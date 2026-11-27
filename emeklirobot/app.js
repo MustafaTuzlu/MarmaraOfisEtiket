@@ -335,10 +335,34 @@
   function ykGoster() { clearTimeout(ykTm); if ($('yukleniyor').hidden) { ykBas = Date.now(); $('yukleniyor').hidden = false; } }
   function ykGizle() { clearTimeout(ykTm); ykTm = setTimeout(function () { $('yukleniyor').hidden = true; }, Math.max(0, YK_ENAZ - (Date.now() - ykBas))); }
 
+  // Panel kapalıyken başlığın yanında görünen aktif filtre özeti
+  function filtreOzeti() {
+    var o = [];
+    function tarihYaz(v) { return v.replace(/^(\d{4})-(\d\d)-(\d\d)T(\d\d:\d\d).*$/, '$3.$2.$1 $4'); }
+    function ekle(ad, deger) { o.push('<span class="oz"><b>' + esc(ad) + (deger === undefined ? '' : ':') + '</b>' + (deger === undefined ? '' : ' ' + esc(deger)) + '</span>'); }
+    function aralik(ad, mn, mx, birim) {
+      var a = $(mn).value, b = $(mx).value;
+      if (a !== '' && b !== '') ekle(ad, a + ' – ' + b + birim);
+      else if (a !== '') ekle(ad, '≥ ' + a + birim);
+      else if (b !== '') ekle(ad, '≤ ' + b + birim);
+    }
+    if ($('f-bas').value) ekle('Başlangıç', tarihYaz($('f-bas').value));
+    if ($('f-bit').value) ekle('Bitiş', tarihYaz($('f-bit').value));
+    var t = secilenler('f-tipler'); if (t.length) ekle('Log tipi', t.join(', '));
+    var c = secilenler('f-cihazlar'); if (c.length) ekle('Cihaz', c.join(', '));
+    [['f-hareket', 'Araç'], ['f-sarj', 'Şarj/kontak']].forEach(function (s) { var el = $(s[0]); if (el.value !== '') ekle(s[1], el.options[el.selectedIndex].text); });
+    aralik('Pil', 'f-pilMin', 'f-pilMax', ' %');
+    aralik('Pil sıcaklığı', 'f-sicMin', 'f-sicMax', ' °C');
+    if ($('f-dogMax').value !== '') ekle('Doğruluk', '≤ ' + $('f-dogMax').value + ' m');
+    if ($('f-konumlu').checked) ekle('Yalnızca konumlu');
+    $('f-ozet').innerHTML = o.length ? o.join('') : '<span class="oz-yok">Aktif filtre yok</span>';
+  }
+
   var istek = 0;
   function yukle(opts) {
     opts = opts || {};
     var no = ++istek;
+    filtreOzeti();
     $('durum').textContent = 'Yükleniyor…';
     // Açık bir pencere varken (Anlık Durum / DB Ayarları) otomatik yenileme pencerenin üstünü kapatmasın
     if (!(opts.oto && document.querySelector('.modal:not([hidden])'))) ykGoster();

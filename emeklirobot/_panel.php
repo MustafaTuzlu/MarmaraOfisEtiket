@@ -35,7 +35,7 @@
 
 <section class="kart" id="filtre">
 <details class="filtre-ac">
-<summary>Filtreler</summary>
+<summary><span>Filtreler</span><span id="f-ozet" class="filtre-ozet"></span></summary>
 <div class="filtre-govde">
   <div class="satir">
     <label>Başlangıç <input type="datetime-local" id="f-bas"></label>
