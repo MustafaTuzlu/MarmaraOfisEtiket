@@ -31,6 +31,24 @@
   // Dar ekranda açık pin penceresi cihaz kutusunun altında kalmasın (CSS: .popup-acik)
   harita.on('popupopen popupclose', function (e) { harita.getContainer().classList.toggle('popup-acik', e.type === 'popupopen'); });
   var pin = null;
+  // "Ortala": haritayı son konuma getirir (o cihaz haritada kapalıysa görünen cihazların en yeni konumuna)
+  var OrtalaKontrol = L.Control.extend({
+    options: { position: 'topleft' },
+    onAdd: function () {
+      var b = L.DomUtil.create('button', 'ortala-btn leaflet-bar');
+      b.type = 'button'; b.title = 'Haritayı son konuma ortala';
+      b.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg><span>Ortala</span>';
+      L.DomEvent.disableClickPropagation(b);
+      L.DomEvent.on(b, 'click', ortala);
+      return b;
+    }
+  });
+  new OrtalaKontrol().addTo(harita);
+  function ortala() {
+    function uygun(k) { return konumlu(k) && gorunur[k.cihazAdi] !== false; }
+    var hedef = durum.sonKonum && uygun(durum.sonKonum) ? durum.sonKonum : durum.kayitlar.filter(uygun)[0]; // liste yeniden eskiye sıralı
+    if (hedef) harita.setView([hedef.enlem, hedef.boylam], Math.max(harita.getZoom(), 15));
+  }
   var pinIcon = L.divIcon({
     className: 'pin', iconSize: [28, 38], iconAnchor: [14, 38], popupAnchor: [0, -34],
     html: '<span class="pin-halka"></span><span class="pin-halka"></span><span class="pin-halka"></span><svg width="28" height="38" viewBox="0 0 28 38"><path d="M14 1C6.8 1 1 6.8 1 14c0 9.5 13 23 13 23s13-13.5 13-23C27 6.8 21.2 1 14 1z" fill="#d93025" stroke="#fff" stroke-width="2"/><circle cx="14" cy="14" r="5" fill="#fff"/></svg>'
