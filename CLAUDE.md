@@ -107,7 +107,7 @@ Bu dosya, projede çalışan yapay zekâ (Claude) ve geliştiriciler için kalı
 - Canlıda: `db/2026-11-27-yerler.sql` çalıştırılmalı; yer kaydetme, Yolculuklar/Rapor (ilk açılışta özet hesabı), Bakım ilk kullanımda gözlemlenmeli.
 - "Analiz et" eşikleri bir günlük veriyle ayarlandı; daha çok veriyle gözden geçirilmeli.
 - İsteyince: Telegram/e-posta bildirimleri (SIM olmadığından anlık olmaz; "cihaz sessiz" için zamanlanmış görev gerekir).
-- Android (ayrı proje `../EmekliRobot`): GPS yokken hareketliyken de 15 dk'da bir `DURUM` yazılması işi "Emekli Robot Root" oturumuna devredildi (2026-11-27). Panel hazır: `DURUM` + `aracHareketli=true` "GPS yok" döneminin devamı sayılır. Uygulanınca sözleşme §5 `DURUM` satırı güncellenmeli.
+- Android (ayrı proje `../EmekliRobot`): GPS yokken hareketliyken de 15 dk'da bir `DURUM` yazılması işi "Emekli Robot Root" oturumuna devredildi (2026-11-27). Panel hazır: `DURUM` + `aracHareketli=true` "GPS yok" döneminin devamı sayılır. Android 1.0.9'da yazıldı (Root oturumunun bildirimi, 2026-11-27: testler geçti, henüz commit/telefona kurulum yok); sözleşme §5 güncellendi. Kurulumdan sonra canlı veride gözlemlenmeli (aşırı sıcaklıkta `KONUM_ALINAMADI` olmadan gelen ilk `DURUM` öncesi "veri yok" görünebilir).
 - İsteyince: `kayitlar.php` gzip istek desteği (bölüm 3b).
 - İsteyince: Anlık Durum süre tahminini `emekli_komut` (`tamamlanma − olusturma`) verisine dayandır.
 - İsteyince: Harita ayarını (`er_halka_dk`) ve cihaz renklerini sunucuda saklayıp tarayıcılar arası ortak yap.

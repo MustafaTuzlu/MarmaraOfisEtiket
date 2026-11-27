@@ -188,7 +188,7 @@ ASCII, büyük harf; Türkçe karakter yok.
 | `ARAC_HAREKET` | Araç durağandan harekete geçti | varsa | geçiş anı |
 | `ARAC_DURUYOR` | Araç hareketten durağana geçti | varsa | geçiş anı |
 | `KONUM` | Hareketteyken her 15 sn | evet | |
-| `DURUM` | Durağanken her 15 dk | genelde | |
+| `DURUM` | Araç durağanken 15 dk'da bir; ayrıca (Android 1.0.9+) araç hareketliyken 15 dk'dır kabul edilen konum yoksa 15 dk'da bir | genelde | GPS yokken yazılan: `aracHareketli=true` (duruş kararı verilmez), son bilinen konum + gerçek `konumYasiMs` (hiç konum yoksa `enlem/boylam/dogruluk/konumYasiMs` = null), eski konumda `hizKmh/yon` boş |
 | `KONUM_ALINAMADI` | Konum alınamadı | **null** | `enlem/boylam/dogruluk/konumYasiMs` = null |
 | `CIHAZ_ISINDI` | Pil ≥ 45 °C | varsa | |
 | `CIHAZ_KRITIK_ISINDI` | Pil ≥ 48 °C | varsa | |
@@ -234,6 +234,7 @@ curl -s -X POST https://marmaraofisetiket.net/api/emekli/kayitlar.php \
 
 ## 10. Değişiklik geçmişi (v1 içinde geriye uyumlu eklemeler)
 
+- 2026-11-27: `DURUM`, Android 1.0.9+ ile hareketliyken GPS yokken de yazılır (§5). Alan, tip ve uç nokta değişmedi.
 - 2026-11-25: kayıtlara isteğe bağlı `hizKmh` ve `yon` eklendi. Zorunlu alan değişmedi; yeni log tipi yok. `hizKmh`/`yon` yalnızca taze fix'li kayıtlarda (`KONUM`, `ARAC_*`) dolu, diğerlerinde `null`. Sunucuda `db/2026-11-25-hiz-yon.sql` migrasyonu gerekir.
 - 2026-11-27 (v1.2): `GET surum.php` ve `GET|HEAD indir.php` eklendi (§13). Mevcut uç noktalar değişmedi.
 - 2026-11-26 (v1.1): `GET komut.php` ve `POST anlik.php` eklendi (§12). Mevcut uç noktalar değişmedi. Sunucuda `db/2026-11-26-anlik.sql` migrasyonu gerekir.
