@@ -45,6 +45,19 @@
     return { tur: 'eski', ad: 'Haber yok', metin: 'Son bilgi ' + O.sure(yas) + ' önce: duruyordu (' + O.kisaTarih(basladi) + ' – ' + O.kisaTarih(c.son) + ').' };
   }
 
+  // Pin penceresindeki canlı sayacın aynısı: son konumun alındığı andan beri geçen süre
+  function gecenMetni(an) { return 'Son konum ' + O.gecenYaz(O.simdi() - an) + ' önce alındı'; }
+  function gecenSatiri(c) {
+    var k = c.sonKonum;
+    if (!k) return '';
+    var an = O.konumAni(k.tip, k.t, k.konumYas);
+    return '<p class="sd-gecen" data-an="' + an + '">' + gecenMetni(an) + '</p>';
+  }
+  function sayacYaz() {
+    if (document.hidden) return;
+    [].forEach.call(document.querySelectorAll('#sd-liste .sd-gecen'), function (p) { p.textContent = gecenMetni(Number(p.getAttribute('data-an'))); });
+  }
+
   function bugunMetni(c) {
     var bas = O.gunBasi(O.istGun(Date.now())), g = null;
     c.gunler.forEach(function (x) { if (x.bas === bas) g = x; });
@@ -66,7 +79,7 @@
         (Yerler.bul(k.lat, k.lon) ? '' : dugme({ kaydet: { lat: k.lat, lon: k.lon } }, 'Konumu kaydet'));
     }
     return '<article class="sd-kart sd-' + d.tur + '"><header><b>' + esc(c.ad) + '</b><span class="sd-rozet">' + d.ad + '</span></header>' +
-      '<p class="sd-yer">' + yerSatiri(c) + '</p><p>' + esc(d.metin) + '</p><p class="sd-bugun">' + esc(bugunMetni(c)) + '</p>' + uyariHtml(c.ad) +
+      '<p class="sd-yer">' + yerSatiri(c) + '</p><p>' + esc(d.metin) + '</p><p class="sd-bugun">' + esc(bugunMetni(c)) + '</p>' + gecenSatiri(c) + uyariHtml(c.ad) +
       '<div class="sd-islem">' + islemler + '</div></article>';
   }
 
@@ -94,6 +107,7 @@
     });
     Yerler.degisince(ciz);
     yenile(); uyariYenile();
+    setInterval(sayacYaz, 1000);
     // Dakikada bir yeni veri (sekme görünürken); süre yazıları da böylece güncel kalır
     setInterval(function () { if (!document.hidden) yenile(); }, 60e3);
     document.addEventListener('visibilitychange', function () { if (!document.hidden && Date.now() - sonAlma > 60e3) yenile(); });

@@ -87,20 +87,9 @@
   var halkaDk = HALKA_VARSAYILAN; // Ayarlar > Harita Ayarları
   try { var kayitliDk = Number(localStorage.getItem('er_halka_dk')); if (kayitliDk) halkaDk = halkaGecerli(kayitliDk); } catch (e) {}
   // Konumun GPS'ten alındığı an. KONUM/ARAC_* kayıtlarında zaman zaten fix zamanıdır; diğer tiplerde kayıt anından konum yaşı düşülür.
-  function konumAni(k) {
-    var t = Date.parse(k.zaman);
-    if (!/^(KONUM|ARAC_)/.test(k.logTipi)) t -= k.konumYasiMs || 0;
-    return t;
-  }
-  function gecenYaz(ms) {
-    var s = Math.floor(Math.max(0, ms) / 1000), p = function (n) { return (n < 10 ? '0' : '') + n; };
-    var parca = [[Math.floor(s / 86400), 'gün'], [Math.floor(s % 86400 / 3600), 'saat'], [Math.floor(s % 3600 / 60), 'dk'], [s % 60, 'sn']]
-      .filter(function (x) { return x[0] > 0; }) // sıfır olan birimler yazılmaz
-      .map(function (x) { return p(x[0]) + ' ' + x[1]; });
-    return parca.length ? parca.join(' ') : '00 sn';
-  }
+  function konumAni(k) { return Ortak.konumAni(k.logTipi, Date.parse(k.zaman), k.konumYasiMs); }
   function sonKonumMu(k) { return !!durum.sonKonum && durum.sonKonum.id === k.id; }
-  function gecenSatir(k) { return (sonKonumMu(k) ? 'Son konum ' : 'Bu konum ') + gecenYaz(Date.now() + saatFarki - konumAni(k)) + ' önce alındı'; }
+  function gecenSatir(k) { return (sonKonumMu(k) ? 'Son konum ' : 'Bu konum ') + Ortak.gecenYaz(Date.now() + saatFarki - konumAni(k)) + ' önce alındı'; }
   function pinHtml(k) { return ozetHtml(k) + '<div class="pin-gecen">' + esc(gecenSatir(k)) + '</div>'; }
   function pinGuncelle() {
     if (!pin) return;

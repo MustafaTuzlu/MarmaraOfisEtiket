@@ -89,9 +89,9 @@ if ($analiz === 'say' || $analiz === 'veri') {
         $st = $pdo->prepare('SELECT COUNT(*) FROM emekli_log ' . $ak);
         $st->execute($ap);
         $toplam = (int)$st->fetchColumn();
-        $cikti = ['ok' => true, 'toplam' => $toplam, 'sinir' => ANALIZ_SINIR];
+        $cikti = ['ok' => true, 'toplam' => $toplam, 'sinir' => ANALIZ_SINIR, 'sunucuZamani' => gmdate('Y-m-d\TH:i:s\Z')];
         if ($analiz === 'veri' && $toplam <= ANALIZ_SINIR) {
-            $st = $pdo->prepare("SELECT cihaz_adi, log_tipi, $ZAMAN AS zaman, enlem, boylam, dogruluk_m, hiz_kmh, pil_yuzdesi, sarjda_mi, pil_sicakligi, arac_hareketli, alinma_zamani "
+            $st = $pdo->prepare("SELECT cihaz_adi, log_tipi, $ZAMAN AS zaman, enlem, boylam, dogruluk_m, hiz_kmh, pil_yuzdesi, sarjda_mi, pil_sicakligi, arac_hareketli, alinma_zamani, konum_yasi_ms "
                 . "FROM emekli_log $ak ORDER BY zaman ASC, id ASC LIMIT " . ANALIZ_SINIR);
             $st->execute($ap);
             $satirlar = [];
@@ -99,7 +99,7 @@ if ($analiz === 'say' || $analiz === 'veri') {
                 $satirlar[] = [
                     $r[0], $r[1], strtotime($r[2] . ' UTC'), fl($r[3]), fl($r[4]), fl($r[5]), fl($r[6]),
                     $r[7] === null ? null : (int)$r[7], $r[8] === null ? null : (int)$r[8], fl($r[9]),
-                    $r[10] === null ? null : (int)$r[10], strtotime($r[11] . ' UTC'),
+                    $r[10] === null ? null : (int)$r[10], strtotime($r[11] . ' UTC'), $r[12] === null ? null : (int)$r[12],
                 ];
             }
             $cikti['satirlar'] = $satirlar;

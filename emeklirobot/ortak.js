@@ -46,12 +46,26 @@
 
   // api.php analiz=veri satırı -> analiz motorunun kayıt biçimi (sıra api.php ile aynı olmalı)
   function kayitCevir(r) {
-    return { cihaz: r[0], tip: r[1], t: r[2] * 1000, lat: r[3], lon: r[4], acc: r[5], hiz: r[6], pil: r[7], sarj: r[8] === null ? null : r[8] === 1, sic: r[9], har: r[10] === null ? null : r[10] === 1, alinma: r[11] * 1000 };
+    return { cihaz: r[0], tip: r[1], t: r[2] * 1000, lat: r[3], lon: r[4], acc: r[5], hiz: r[6], pil: r[7], sarj: r[8] === null ? null : r[8] === 1, sic: r[9], har: r[10] === null ? null : r[10] === 1, alinma: r[11] * 1000, konumYas: r[12] || 0 };
   }
+  /* "… önce alındı" (pin penceresi ve son durum kartları aynı kuralı kullanır) */
+  // Konumun alındığı an: KONUM/ARAC_* kayıtlarında kayıt zamanı GPS fix zamanıdır; diğer tiplerde
+  // (KONUM_ALINAMADI dahil) kayıt anından konumun yaşı çıkarılır
+  function konumAni(tip, t, yasMs) { return /^(KONUM$|ARAC_)/.test(tip) ? t : t - (yasMs || 0); }
+  function gecenYaz(ms) {
+    var s = Math.floor(Math.max(0, ms) / 1000), p = function (n) { return (n < 10 ? '0' : '') + n; };
+    var parca = [[Math.floor(s / 86400), 'gün'], [Math.floor(s % 86400 / 3600), 'saat'], [Math.floor(s % 3600 / 60), 'dk'], [s % 60, 'sn']]
+      .filter(function (x) { return x[0] > 0; }) // sıfır olan birimler yazılmaz
+      .map(function (x) { return p(x[0]) + ' ' + x[1]; });
+    return parca.length ? parca.join(' ') : '00 sn';
+  }
+  var saatFarki = 0; // sunucu saati - tarayıcı saati (ms); analiz verisi geldikçe güncellenir
+  function simdi() { return Date.now() + saatFarki; }
   // q: URLSearchParams (api.php filtreleri). Sonuç: {toplam, sinir, kayitlar|null}
   function veriGetir(q, sinyal) {
     q.set('analiz', 'veri');
     return istek('/emeklirobot/api.php?' + q.toString(), null, sinyal).then(function (v) {
+      if (v.sunucuZamani) saatFarki = Date.parse(v.sunucuZamani) - Date.now();
       return { toplam: v.toplam, sinir: v.sinir, kayitlar: v.satirlar ? v.satirlar.map(kayitCevir) : null };
     });
   }
@@ -223,7 +237,7 @@
   window.Ortak = {
     esc: esc, sayi: sayi, saat: saat, gunAd: gunAd, gunKisa: gunKisa, kisaTarih: kisaTarih, sure: sure, km: km, metre: metre,
     istGun: istGun, gunBasi: gunBasi, gunEkle: gunEkle, istek: istek, ozellik: ozellik, hataMetni: hataMetni,
-    kayitCevir: kayitCevir, veriGetir: veriGetir, aralikSorgu: aralikSorgu, pencere: pencere, pencereleriGizle: pencereleriGizle,
+    konumAni: konumAni, gecenYaz: gecenYaz, simdi: simdi, kayitCevir: kayitCevir, veriGetir: veriGetir, aralikSorgu: aralikSorgu, pencere: pencere, pencereleriGizle: pencereleriGizle,
     haritaKur: function (h) { harita = h; }, haritadaGoster: haritadaGoster, haritaTemizle: temizle
   };
 })();
