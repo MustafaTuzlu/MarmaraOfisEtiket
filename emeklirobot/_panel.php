@@ -29,7 +29,7 @@
     <button type="button" id="b-ayar" class="dbbtn" aria-haspopup="true" aria-expanded="false" aria-controls="ayar-menu">Ayarlar <span aria-hidden="true">▾</span></button>
     <div id="ayar-menu" class="ayar-menu" hidden>
       <button type="button" id="b-yerler">Yerlerim</button>
-      <button type="button" id="b-db">DB Ayarları</button>
+      <button type="button" id="b-db">Veritabanı Yönetimi</button>
       <button type="button" id="b-harita-ayar">Harita Ayarları</button>
     </div>
   </div>
@@ -43,7 +43,11 @@
 <nav class="arac-cubugu" aria-label="Panel araçları">
   <button type="button" data-ac="yolculuk">🧭 Yolculuklar</button>
   <button type="button" data-ac="rapor">📊 Rapor</button>
-  <button type="button" data-ac="guzergah">🔁 Sık güzergâhlar</button>
+  <button type="button" data-ac="ziyaret">📌 Ziyaretler</button>
+  <button type="button" data-ac="karne">🗒️ Aylık karne</button>
+  <button type="button" data-ac="dikkat">👀 Dikkat çekenler</button>
+  <button type="button" data-ac="saglik">🩺 Cihaz sağlığı</button>
+  <button type="button" data-ac="masraf">💳 Masraf</button>
   <button type="button" data-ac="bakim">🔧 Bakım</button>
   <button type="button" data-ac="yerler">📍 Yerlerim</button>
 </nav>
@@ -168,9 +172,14 @@
       <button type="button" role="tab" data-sekme="yolculuk">Yolculuklar</button>
       <button type="button" role="tab" data-sekme="rapor">Rapor</button>
       <button type="button" role="tab" data-sekme="guzergah">Sık güzergâhlar</button>
+      <button type="button" role="tab" data-sekme="ziyaret">Ziyaretler</button>
+      <button type="button" role="tab" data-sekme="karne">Aylık karne</button>
+      <button type="button" role="tab" data-sekme="dikkat">Dikkat çekenler</button>
+      <button type="button" role="tab" data-sekme="saglik">Cihaz sağlığı</button>
     </div>
     <div class="rp-suzgec">
-      <label>Dönem <select id="rp-donem"><option value="7">Son 7 gün</option><option value="hafta">Bu hafta</option><option value="ay">Bu ay</option><option value="30" selected>Son 30 gün</option><option value="90">Son 90 gün</option><option value="365">Son 1 yıl</option><option value="ozel">Tarih seç…</option></select></label>
+      <label>Dönem <select id="rp-donem"><option value="7">Son 7 gün</option><option value="hafta">Bu hafta</option><option value="ay">Bu ay</option><option value="30" selected>Son 30 gün</option><option value="gecenay">Geçen ay</option><option value="90">Son 90 gün</option><option value="365">Son 1 yıl</option><option value="aysec">Ay seç…</option><option value="ozel">Tarih seç…</option></select></label>
+      <input type="month" id="rp-ay" aria-label="Ay" hidden>
       <span id="rp-ozel" class="rp-ozel" hidden><label>Başlangıç <input type="date" id="rp-bas"></label><label>Bitiş <input type="date" id="rp-bit"></label></span>
       <label>Cihaz <select id="rp-cihaz"><option value="">Tüm cihazlar</option></select></label>
       <label id="rp-etiket-kap">Tür <select id="rp-etiket"><option value="">Hepsi</option><option value="is">İş</option><option value="ozel">Özel</option><option value="yok">Etiketsiz</option></select></label>
@@ -190,6 +199,20 @@
     <datalist id="bk-adlar"><option value="Yağ değişimi"></option><option value="Periyodik bakım"></option><option value="Lastik değişimi"></option><option value="Muayene"></option><option value="Trafik sigortası"></option><option value="Kasko"></option></datalist>
     <p id="bk-mesaj" class="sayac" role="status"></p>
     <div id="bk-icerik"></div>
+  </div>
+</div>
+
+<div id="msmodal" class="modal" hidden>
+  <div class="modal-kutu az-kutu" role="dialog" aria-modal="true" aria-labelledby="msbaslik">
+    <button type="button" class="modal-kapat" id="mskapat" aria-label="Kapat">×</button>
+    <h2 id="msbaslik">Masraf defteri</h2>
+    <div class="rp-suzgec">
+      <label>Dönem <select id="ms-donem"><option value="ay">Bu ay</option><option value="gecenay">Geçen ay</option><option value="90">Son 90 gün</option><option value="yil" selected>Bu yıl</option><option value="365">Son 1 yıl</option></select></label>
+      <label>Araç <select id="ms-cihaz"><option value="">Tüm araçlar</option></select></label>
+      <span class="rp-cikti"><button type="button" id="ms-excel" class="excel">Excel</button></span>
+    </div>
+    <p id="ms-mesaj" class="sayac" role="status"></p>
+    <div id="ms-icerik"></div>
   </div>
 </div>
 
@@ -238,34 +261,19 @@
 </div>
 
 <div id="dbmodal" class="modal" hidden>
-  <div class="modal-kutu" role="dialog" aria-modal="true" aria-labelledby="dbbaslik">
+  <div class="modal-kutu az-kutu db-kutu" role="dialog" aria-modal="true" aria-labelledby="dbbaslik">
     <button type="button" class="modal-kapat" id="dbkapat" aria-label="Kapat">×</button>
-    <h2 id="dbbaslik">Veritabanı Ayarları</h2>
-    <div class="istat">
-      <div><span>Toplam kayıt</span><strong id="db-toplam">…</strong></div>
-      <div><span>Tablo boyutu</span><strong id="db-boyut">…</strong></div>
-      <div><span>En eski</span><strong id="db-eski">…</strong></div>
-      <div><span>En yeni</span><strong id="db-yeni">…</strong></div>
-    </div>
-    <div id="db-ana">
-      <p class="not">Kayıt silmek için bir seçenek seçin. Silinen kayıtlar geri getirilemez.</p>
-      <div class="sil-butonlar">
-        <button type="button" data-kural="bugun">Bugüne ait olanları sil</button>
-        <button type="button" data-kural="hafta">1 haftadan eski olanları sil</button>
-        <button type="button" data-kural="ay">1 aydan eski olanları sil</button>
-        <button type="button" data-kural="hepsi" class="tehlike">Hepsini sil</button>
-      </div>
-      <p class="alt">Rapor özetleri (yolculuk listesi, rapor, bakım km) bu silmelerden etkilenmez. <a href="#" id="db-ozet-sil">Rapor özetlerini de sil</a></p>
-      <p class="alt"><a href="#" id="db-optimize">Alanı geri kazan (OPTIMIZE)</a> <small>— silmeden sonra tablo boyutu küçülmezse</small></p>
-    </div>
-    <div id="db-onay" hidden>
-      <p id="db-onay-metin" class="onay-metin"></p>
-      <div class="onay-butonlar">
-        <button type="button" id="db-vazgec">Vazgeç</button>
-        <button type="button" id="db-evet" class="tehlike">Evet, sil</button>
-      </div>
+    <h2 id="dbbaslik">Veritabanı Yönetimi</h2>
+    <div id="db-sekmeler" class="rp-sekmeler" role="tablist">
+      <button type="button" role="tab" data-sekme="genel">Genel bakış</button>
+      <button type="button" role="tab" data-sekme="tablolar">Tablolar</button>
+      <button type="button" role="tab" data-sekme="temizlik">Temizlik</button>
+      <button type="button" role="tab" data-sekme="yedek">Yedek</button>
+      <button type="button" role="tab" data-sekme="gecmis">İşlem geçmişi</button>
+      <button type="button" role="tab" data-sekme="rehber">Rehber ve riskler</button>
     </div>
     <p id="db-mesaj" class="mesaj" role="status"></p>
+    <div id="db-icerik"></div>
   </div>
 </div>
 
@@ -277,7 +285,10 @@
 <script src="/emeklirobot/analiz-ui.js"></script>
 <script src="/emeklirobot/son-durum.js"></script>
 <script src="/emeklirobot/rapor.js"></script>
+<script src="/emeklirobot/rapor-ek.js"></script>
+<script src="/emeklirobot/masraf.js"></script>
 <script src="/emeklirobot/bakim.js"></script>
+<script src="/emeklirobot/db-yonetim.js"></script>
 <script src="/emeklirobot/app.js"></script>
 </body>
 </html>

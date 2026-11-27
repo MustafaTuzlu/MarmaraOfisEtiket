@@ -8,6 +8,15 @@
   var SAYFA = 150;
   var sekme = 'yolculuk', veri = null, etiketler = [], no = 0, gosterilen = SAYFA, hedefler = [];
   var senkronSozu = null;
+  var kurallar = [], ayarlar = {}, ekSekmeler = {};
+  // Yeni tablolar (db/2026-11-27-masraf-kural.sql) yoksa rapor yine çalışır; kural ve ayarlar boş kalır
+  function ekVerileriGetir() {
+    return Promise.all([
+      O.ozellik('kurallar').then(function (v) { return v.kurallar; }, function (e) { if (e.kod !== 'tablo_yok') throw e; return []; }),
+      O.ozellik('ayarlar').then(function (v) { return v.ayarlar || {}; }, function (e) { if (e.kod !== 'tablo_yok') throw e; return {}; }),
+      O.ozellik('etiketler').then(function (v) { return v.etiketler; })
+    ]).then(function (v) { kurallar = v[0]; ayarlar = v[1]; etiketler = v[2]; });
+  }
 
   /* ---------- Günlük özet eşitleme ---------- */
   function senkron(ilerleme) {
@@ -74,9 +83,13 @@
   }
 
   /* ---------- Dönem ---------- */
+  function aySonu(ay) { return O.gunEkle(O.gunEkle(ay + '-28', 4).slice(0, 7) + '-01', -1); }
   function donem() {
     var bugun = O.istGun(Date.now()), s = $('rp-donem').value, bas, bit = bugun;
-    if (s === 'hafta') bas = O.gunEkle(bugun, -((new Date(bugun + 'T12:00:00Z').getUTCDay() + 6) % 7));
+    if (s === 'gecenay' || s === 'aysec') {
+      var ay = s === 'aysec' && $('rp-ay').value ? $('rp-ay').value : O.gunEkle(bugun.slice(0, 8) + '01', -1).slice(0, 7);
+      bas = ay + '-01'; bit = aySonu(ay);
+    } else if (s === 'hafta') bas = O.gunEkle(bugun, -((new Date(bugun + 'T12:00:00Z').getUTCDay() + 6) % 7));
     else if (s === 'ay') bas = bugun.slice(0, 8) + '01';
     else if (s === 'ozel') { bas = $('rp-bas').value || O.gunEkle(bugun, -29); bit = $('rp-bit').value || bugun; if (bas > bit) { var t = bas; bas = bit; bit = t; } }
     else bas = O.gunEkle(bugun, -(Number(s) - 1));
@@ -91,7 +104,7 @@
     return function (lat, lon) {
       if (lat === null || lat === undefined) return null;
       var y = Yerler.bul(lat, lon);
-      if (y) return { anahtar: y.anahtar, ad: y.ad, kayitli: true, lat: lat, lon: lon };
+      if (y) return { anahtar: y.anahtar, ad: y.ad, kayitli: true, yerId: y.yer.id, yerTur: y.yer.tur, yerAd: y.yer.ad, lat: lat, lon: lon };
       for (var i = 0; i < K.length; i++) if (Analiz.mesafe(K[i], { lat: lat, lon: lon }) <= Analiz.ayar.YER_YARICAP) return K[i];
       var yeni = { anahtar: 'k' + (K.length + 1), ad: 'Konum ' + (K.length + 1), kayitli: false, lat: lat, lon: lon };
       K.push(yeni); return yeni;
@@ -99,8 +112,8 @@
   }
   function ortanca(d) { if (!d.length) return 0; var s = d.slice().sort(function (a, b) { return a - b; }), n = s.length; return n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2; }
 
-  function hazirla(gunler, d) {
-    var secili = $('rp-cihaz').value, ad = adlandirici();
+  function hazirla(gunler, d, secili) {
+    var ad = adlandirici();
     var G = gunler.filter(function (g) { return !secili || g.cihaz === secili; });
     var Y = [], D = [];
     G.forEach(function (g) {
@@ -123,7 +136,7 @@
       r.sure = ortanca(r.hepsi.map(function (y) { return y.t1 - y.t0; }));
       r.m = ortanca(r.hepsi.map(function (y) { return y.m; }));
     });
-    return { d: d, gunler: G.filter(icinde), onceki: G.filter(function (g) { return g.gun < d.bas; }), yol: Y.filter(icinde), durak: D.filter(icinde),
+    return { d: d, cihaz: secili || '', tumGunler: G, tumYol: Y, tumDurak: D, gunler: G.filter(icinde), onceki: G.filter(function (g) { return g.gun < d.bas; }), yol: Y.filter(icinde), durak: D.filter(icinde),
       guzergah: Object.keys(guzergah).map(function (a) { return guzergah[a]; }) };
   }
 
@@ -138,9 +151,34 @@
     return en ? en.e : null;
   }
   function turAdi(t) { return t === 'is' ? 'İş' : (t === 'ozel' ? 'Özel' : ''); }
+  // Kural ucu eşleşmesi ve ağırlığı (belirli yer > yer türü > her yer); eşleşmezse -1
+  function ucPuani(kural, u) {
+    if (kural === '*') return 0;
+    if (!u || !u.kayitli) return -1;
+    if (kural === 'tur:' + u.yerTur) return 1;
+    return kural === 'yer:' + u.yerId ? 2 : -1;
+  }
+  function kuralBul(y) {
+    var en = null;
+    kurallar.forEach(function (k) {
+      var yonler = [[y.nereden, y.nereye]].concat(k.ikiYon ? [[y.nereye, y.nereden]] : []);
+      yonler.forEach(function (c) {
+        var a = ucPuani(k.kaynak, c[0]), b = ucPuani(k.hedef, c[1]);
+        if (a >= 0 && b >= 0 && (!en || a + b > en.puan)) en = { puan: a + b, kural: k };
+      });
+    });
+    return en ? en.kural : null;
+  }
+  // Elle verilen etiket kuraldan üstündür; 'yok' = bu yolculuğa kural uygulanmasın
+  function etkinTur(y) {
+    var e = etiketBul(y);
+    if (e && e.tur) return { tur: e.tur === 'yok' ? '' : e.tur, oto: false, e: e };
+    var k = kuralBul(y);
+    return { tur: k ? k.tur : '', oto: !!k, e: e };
+  }
   function suzulmus() {
     var f = $('rp-etiket').value;
-    return veri.yol.filter(function (y) { var e = etiketBul(y), t = e ? e.tur : ''; return !f || (f === 'yok' ? !t : t === f); });
+    return veri.yol.filter(function (y) { var t = etkinTur(y).tur; return !f || (f === 'yok' ? !t : t === f); });
   }
   function ucHtml(u) {
     if (!u) return '<span>?</span>';
@@ -158,18 +196,19 @@
   }
   function yolculukCiz() {
     var L_ = suzulmus(), toplam = { is: [0, 0], ozel: [0, 0], '': [0, 0] };
-    veri.yol.forEach(function (y) { var e = etiketBul(y), t = e ? e.tur : ''; toplam[t][0]++; toplam[t][1] += y.m; });
+    veri.yol.forEach(function (y) { var t = etkinTur(y).tur; toplam[t][0]++; toplam[t][1] += y.m; });
     var html = '<div class="rp-kartlar">' + [['İş', 'is'], ['Özel', 'ozel'], ['Etiketsiz', '']].map(function (x) {
       return '<div><span>' + x[0] + '</span><strong>' + km(toplam[x[1]][1]) + '</strong><small>' + toplam[x[1]][0] + ' yolculuk</small></div>';
     }).join('') + '</div>';
     if (!L_.length) return html + '<p class="not">Bu dönemde yolculuk yok.</p>';
     var gun = null;
     L_.slice(0, gosterilen).forEach(function (y) {
-      if (y.gun !== gun) { html += (gun ? '</ul>' : '') + '<h4 class="rp-gun">' + esc(O.gunAd(O.gunBasi(y.gun) + 43200e3)) + '</h4><ul class="rp-yollar">'; gun = y.gun; }
-      var e = etiketBul(y), i = veri.yol.indexOf(y);
+      if (y.gun !== gun) { html += (gun ? '</ul>' : '') + '<h4 class="rp-gun">' + esc(O.gunAd(O.gunBasi(y.gun) + 43200e3)) + ' <button type="button" class="az-git rp-hikaye" data-gun="' + y.gun + '">▶ Günün hikâyesi</button></h4><ul class="rp-yollar">'; gun = y.gun; }
+      var t = etkinTur(y), e = t.e, i = veri.yol.indexOf(y), el = e && e.tur ? e.tur : '', kural = kuralBul(y);
       html += '<li data-yol="' + i + '"><div class="rp-saat">' + saat(y.t0) + ' – ' + saat(y.t1) + '<small>' + esc(y.cihaz) + '</small></div>' +
         '<div class="rp-bilgi"><div>' + ucHtml(y.nereden) + ' → ' + ucHtml(y.nereye) + '</div><small>' + sure(y.t1 - y.t0) + ' · ' + km(y.m) + (y.maks !== null ? ' · en yüksek ' + sayi(y.maks) + ' km/sa' : '') + '</small> ' + kiyas(y) + '</div>' +
-        '<div class="rp-defter"><select class="rp-tur" aria-label="Yolculuk türü"><option value="">Tür seç</option><option value="is"' + (e && e.tur === 'is' ? ' selected' : '') + '>İş</option><option value="ozel"' + (e && e.tur === 'ozel' ? ' selected' : '') + '>Özel</option></select>' +
+        '<div class="rp-defter"><select class="rp-tur' + (t.oto ? ' oto' : '') + '" aria-label="Yolculuk türü"><option value="">' + (kural ? 'Otomatik: ' + turAdi(kural.tur) : 'Tür seç') + '</option><option value="is"' + (el === 'is' ? ' selected' : '') + '>İş</option><option value="ozel"' + (el === 'ozel' ? ' selected' : '') + '>Özel</option>' +
+        (kural || el === 'yok' ? '<option value="yok"' + (el === 'yok' ? ' selected' : '') + '>Hiçbiri</option>' : '') + '</select>' +
         '<input class="rp-not" maxlength="200" placeholder="Not" aria-label="Yolculuk notu" value="' + esc(e ? e.not : '') + '">' +
         '<button type="button" class="az-git rp-oynat">▶ Oynat</button></div></li>';
     });
@@ -184,6 +223,7 @@
     mesaj('Kaydediliyor…');
     O.ozellik('etiket_kaydet', govde).then(function () { return O.ozellik('etiketler'); }).then(function (v) {
       etiketler = v.etiketler; mesaj('Kaydedildi.');
+      li.querySelector('.rp-tur').classList.toggle('oto', etkinTur(y).oto);
       if ($('rp-etiket').value) ciz(); else ozetKartlariYenile();
     }).catch(function (err) { mesaj(O.hataMetni(err)); });
   }
@@ -238,12 +278,12 @@
     var aylar = [], ay = null, g;
     for (g = d.bas; g <= d.bit; g = O.gunEkle(g, 1)) { if (g.slice(0, 7) !== ay) { ay = g.slice(0, 7); aylar.push({ ay: ay, gunler: [] }); } aylar[aylar.length - 1].gunler.push(g); }
     var adlar = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
-    return '<div class="az-bolum"><h4>Takvim (günlük yol)</h4><div class="rp-takvim">' + aylar.map(function (a) {
+    return '<div class="az-bolum"><h4>Takvim (günlük yol) <span class="rp-tepe">güne tıklayınca günün hikâyesi açılır</span></h4><div class="rp-takvim">' + aylar.map(function (a) {
       var bos = (new Date(a.gunler[0] + 'T12:00:00Z').getUTCDay() + 6) % 7, h = '';
       for (var i = 0; i < bos; i++) h += '<i class="bos"></i>';
       h += a.gunler.map(function (x) {
         var v = gunKm[x] || 0, s = !v ? 0 : Math.min(4, Math.ceil(v / en * 4));
-        return '<i class="s' + s + '" title="' + gunYaz(x) + ': ' + km(v) + '">' + Number(x.slice(8)) + '</i>';
+        return '<i class="s' + s + (v ? ' tikla" data-gun="' + x + '" role="button" tabindex="0' : '') + '" title="' + gunYaz(x) + ': ' + km(v) + (v ? ' · günün hikâyesini göster' : '') + '">' + Number(x.slice(8)) + '</i>';
       }).join('');
       return '<div><b>' + adlar[Number(a.ay.slice(5)) - 1] + ' ' + a.ay.slice(0, 4) + '</b><div class="rp-ay"><em>Pt</em><em>Sa</em><em>Ça</em><em>Pe</em><em>Cu</em><em>Ct</em><em>Pz</em>' + h + '</div></div>';
     }).join('') + '</div></div>';
@@ -320,15 +360,17 @@
   }
 
   /* ---------- Excel / yazdırma ---------- */
-  function indir(basliklar, satirlar, genislik, ad) {
+  function indir(basliklar, satirlar, genislik, ad, d) {
+    d = d || veri.d;
     var a = document.createElement('a');
     a.href = URL.createObjectURL(Xlsx.blob(basliklar, satirlar, genislik, ad));
-    a.download = 'emekli-robot-' + ad.toLowerCase() + '-' + veri.d.bas + '_' + veri.d.bit + '.xlsx';
+    a.download = 'emekli-robot-' + ad.toLowerCase() + '-' + d.bas + '_' + d.bit + '.xlsx';
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(function () { URL.revokeObjectURL(a.href); }, 1500);
   }
   function excel() {
     if (!veri) return;
+    if (ekSekmeler[sekme]) { ekSekmeler[sekme].excel(veri); return; }
     if (sekme === 'rapor') {
       indir(['Gün', 'Cihaz', 'Yol (km)', 'Sürüş (dk)', 'Yolculuk', 'Bekleme (dk)', 'GPS yok (dk)', 'Veri yok (dk)', 'En yüksek hız'], veri.gunler.map(function (g) {
         var v = g.veri;
@@ -337,8 +379,8 @@
     } else {
       var L_ = sekme === 'yolculuk' ? suzulmus() : veri.yol;
       indir(['Başlangıç', 'Bitiş', 'Cihaz', 'Nereden', 'Nereye', 'Süre (dk)', 'Mesafe (km)', 'En yüksek hız', 'Tür', 'Not'], L_.slice().reverse().map(function (y) {
-        var e = etiketBul(y);
-        return [new Date(y.t0), new Date(y.t1), y.cihaz, y.nereden ? y.nereden.ad : '', y.nereye ? y.nereye.ad : '', Math.round((y.t1 - y.t0) / 60e3), Math.round(y.m / 100) / 10, y.maks, e ? turAdi(e.tur) : '', e ? e.not : ''];
+        var t = etkinTur(y), e = t.e;
+        return [new Date(y.t0), new Date(y.t1), y.cihaz, y.nereden ? y.nereden.ad : '', y.nereye ? y.nereye.ad : '', Math.round((y.t1 - y.t0) / 60e3), Math.round(y.m / 100) / 10, y.maks, turAdi(t.tur) + (t.oto ? ' (otomatik)' : ''), e ? e.not : ''];
       }), [20, 20, 16, 24, 24, 10, 12, 13, 8, 30], 'Yolculuklar');
     }
   }
@@ -361,10 +403,12 @@
   function ciz() {
     if (!veri) return;
     hedefler = [];
-    $('rp-icerik').innerHTML = sekme === 'yolculuk' ? yolculukCiz() : (sekme === 'rapor' ? raporCiz() : guzergahCiz());
+    var ek = ekSekmeler[sekme];
+    $('rp-icerik').innerHTML = ek ? ek.ciz(veri) : (sekme === 'yolculuk' ? (window.RaporEk ? RaporEk.kuralHtml() : '') + yolculukCiz() : (sekme === 'rapor' ? raporCiz() : guzergahCiz()));
+    if (ek && ek.sonra) ek.sonra(veri);
   }
   var hamGunler = null;
-  function yenidenHazirla() { if (hamGunler) { veri = hazirla(hamGunler.gunler, hamGunler.d); ciz(); } }
+  function yenidenHazirla() { if (hamGunler) { veri = hazirla(hamGunler.gunler, hamGunler.d, $('rp-cihaz').value); ciz(); } }
 
   function yukle() {
     var n = ++no, d = donem(), bilgi = '';
@@ -377,10 +421,9 @@
       var secili = $('rp-cihaz').value;
       $('rp-cihaz').innerHTML = '<option value="">Tüm cihazlar</option>' + s.cihazlar.map(function (c) { return '<option' + (c === secili ? ' selected' : '') + '>' + esc(c) + '</option>'; }).join('');
       durumYaz('Dönem verisi alınıyor…');
-      return Promise.all([O.istek('/emeklirobot/ozellik.php?islem=ozetler&bas=' + d.oncekiBas + '&bit=' + d.bit), O.ozellik('etiketler')]);
+      return Promise.all([O.istek('/emeklirobot/ozellik.php?islem=ozetler&bas=' + d.oncekiBas + '&bit=' + d.bit), ekVerileriGetir()]);
     }).then(function (v) {
       if (!v || n !== no) return;
-      etiketler = v[1].etiketler;
       if (v[0].kesildi) bilgi = 'Dönem çok uzun: sonuçlar eksik olabilir, dönemi daraltın.';
       hamGunler = { gunler: v[0].gunler, d: d };
       durumYaz('');
@@ -392,28 +435,51 @@
     sekme = s; gosterilen = SAYFA;
     [].forEach.call(document.querySelectorAll('#rp-sekmeler button'), function (b) { var a = b.getAttribute('data-sekme') === s; b.classList.toggle('acik', a); b.setAttribute('aria-selected', a ? 'true' : 'false'); });
     $('rp-etiket-kap').hidden = s !== 'yolculuk';
-    $('rp-excel').hidden = s === 'guzergah';
+    $('rp-excel').hidden = s === 'guzergah' || !!(ekSekmeler[s] && !ekSekmeler[s].excel);
+    var secili = document.querySelector('#rp-sekmeler button.acik');
+    if (secili && secili.scrollIntoView && !$('rpmodal').hidden) secili.scrollIntoView({ block: 'nearest', inline: 'nearest' });
     ciz();
   }
-  function ac(s) { $('rpmodal').hidden = false; sekmeSec(s || 'yolculuk'); yukle(); }
+  // Karne aylıktır: ay dışı bir dönem seçiliyse "Bu ay"a geçilir
+  function donemUydur(s) {
+    if (s !== 'karne' || ['ay', 'gecenay', 'aysec'].indexOf($('rp-donem').value) >= 0) return false;
+    $('rp-donem').value = 'ay'; $('rp-ay').hidden = true; $('rp-ozel').hidden = true;
+    return true;
+  }
+  function ac(s) { s = s || 'yolculuk'; donemUydur(s); $('rpmodal').hidden = false; sekmeSec(s); yukle(); }
 
   function baslat() {
     O.pencere('rpmodal', 'rpkapat', function () { no++; });
-    $('rp-sekmeler').addEventListener('click', function (e) { var b = e.target.closest('button'); if (b) sekmeSec(b.getAttribute('data-sekme')); });
+    $('rp-sekmeler').addEventListener('click', function (e) {
+      var b = e.target.closest('button'); if (!b) return;
+      var s = b.getAttribute('data-sekme'), yeniden = donemUydur(s);
+      sekmeSec(s);
+      if (yeniden) yukle();
+    });
     $('rp-donem').addEventListener('change', function () {
       var ozel = this.value === 'ozel';
       $('rp-ozel').hidden = !ozel;
+      $('rp-ay').hidden = this.value !== 'aysec';
+      if (this.value === 'aysec' && !$('rp-ay').value) $('rp-ay').value = O.istGun(Date.now()).slice(0, 7);
       if (ozel && !$('rp-bas').value) { $('rp-bit').value = O.istGun(Date.now()); $('rp-bas').value = O.gunEkle($('rp-bit').value, -29); }
       yukle();
     });
     $('rp-bas').addEventListener('change', yukle);
     $('rp-bit').addEventListener('change', yukle);
+    $('rp-ay').addEventListener('change', yukle);
     $('rp-cihaz').addEventListener('change', function () { gosterilen = SAYFA; yenidenHazirla(); });
     $('rp-etiket').addEventListener('change', function () { gosterilen = SAYFA; ciz(); });
     $('rp-excel').addEventListener('click', excel);
     $('rp-yazdir').addEventListener('click', yazdir);
-    $('rp-icerik').addEventListener('change', function (e) { if (e.target.matches('.rp-tur, .rp-not')) etiketKaydet(e.target.closest('li')); });
+    $('rp-icerik').addEventListener('change', function (e) {
+      if (e.target.matches('.rp-tur, .rp-not')) etiketKaydet(e.target.closest('li'));
+      else if (ekSekmeler[sekme] && ekSekmeler[sekme].degisim) ekSekmeler[sekme].degisim(e, veri);
+    });
+    $('rp-icerik').addEventListener('keydown', function (e) { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('i.tikla')) { e.preventDefault(); e.target.click(); } });
     $('rp-icerik').addEventListener('click', function (e) {
+      var hik = e.target.closest('.rp-hikaye, .rp-ay i.tikla');
+      if (hik) { RaporEk.hikaye(hik.getAttribute('data-gun'), veri); return; }
+      if (window.RaporEk && RaporEk.tik(e, veri)) return;
       var b = e.target.closest('button'); if (!b) return;
       if (b.id === 'rp-fazla') { gosterilen += SAYFA; ciz(); }
       else if (b.classList.contains('rp-oynat')) oynat(b.closest('li'));
@@ -422,5 +488,25 @@
     Yerler.degisince(function () { if (!$('rpmodal').hidden || veri) yenidenHazirla(); });
   }
 
-  window.Rapor = { baslat: baslat, ac: ac, senkron: senkron };
+  // Penceresiz kullanım (masraf, dikkat uyarısı): özetleri ve etiketleri getirip hazırlar
+  function veriAl(bas, bit, cihaz) {
+    var uzunluk = Math.round((O.gunBasi(bit) - O.gunBasi(bas)) / 864e5) + 1;
+    return Promise.all([O.istek('/emeklirobot/ozellik.php?islem=ozetler&bas=' + bas + '&bit=' + bit), ekVerileriGetir(), Yerler.hazir()]).then(function (v) {
+      var h = hazirla(v[0].gunler, { bas: bas, bit: bit, uzunluk: uzunluk, oncekiBas: bas }, cihaz);
+      h.kesildi = v[0].kesildi;
+      return h;
+    });
+  }
+
+  window.Rapor = {
+    baslat: baslat, ac: ac, senkron: senkron, veriAl: veriAl,
+    sekmeEkle: function (ad, s) { ekSekmeler[ad] = s; },
+    // rapor-ek.js ve masraf.js için ortak yardımcılar
+    ic: {
+      ciz: ciz, yukle: yukle, mesaj: mesaj, tablo: tablo, sutunlar: sutunlar, topla: topla, indir: indir, ucHtml: ucHtml, gunYaz: gunYaz, ortanca: ortanca,
+      etkinTur: etkinTur, turAdi: turAdi, ekVerileriGetir: ekVerileriGetir,
+      kurallar: function () { return kurallar; }, ayarlar: function () { return ayarlar; },
+      ucKaydet: function (i) { return hedefler[i]; }
+    }
+  };
 })();

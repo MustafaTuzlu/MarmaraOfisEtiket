@@ -424,3 +424,67 @@ a.az-git{text-decoration:none;display:inline-block}
 .yp-koord input{flex:1;min-width:0;font-size:14px;padding:7px;border:1px solid #cbd5e1;border-radius:6px;font-variant-numeric:tabular-nums}
 .yp-koord button{font:inherit;font-size:13px;font-weight:600;padding:7px 14px;border:1px solid #2563eb;border-radius:6px;background:#eff6ff;color:#1d4ed8;cursor:pointer;white-space:nowrap}
 .yp-koord button:hover{background:#dbeafe}
+/* ---------- Veritabanı yönetimi ---------- */
+.modal-kutu.db-kutu{width:min(980px,100%)}
+#dbmodal .mesaj:empty{display:none}
+.db-saglik{list-style:none;margin:0 0 8px;padding:0!important}
+.db-saglik li{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:8px 10px;border-radius:8px;margin:6px 0;font-size:13px}
+.db-saglik li.ok{background:#dcfce7;color:#166534}.db-saglik li.uy{background:#fef3c7;color:#92400e}.db-saglik li.kr{background:#fee2e2;color:#991b1b}
+.db-cubuklar{list-style:none;margin:0;padding:0!important}
+.db-cubuklar li{display:grid;grid-template-columns:64px minmax(0,1fr) 70px;gap:8px;align-items:center;margin:3px 0;font-size:12px}
+.db-cubuklar i{display:block;height:12px;background:#e2e8f0;border-radius:4px;overflow:hidden}.db-cubuklar b{display:block;height:100%;background:#2563eb}
+.db-cubuklar em{font-style:normal;text-align:right;font-variant-numeric:tabular-nums}
+.db-ad{color:#94a3b8;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.db-bos{color:#94a3b8}
+.rp-tablo td .db-sar,.db-sar{display:inline-block;white-space:normal;min-width:160px}
+.db-adet{font-weight:400;text-transform:none;letter-spacing:0}
+.db-risk{color:#92400e;font-size:12px}
+.db-satir{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.db-satir select,.db-satir input,#db-saklama{font-size:14px;padding:6px;border:1px solid #cbd5e1;border-radius:6px;background:#fff;max-width:100%}
+.db-aralik{display:flex;gap:6px;align-items:center;flex-wrap:wrap}.db-aralik[hidden],.db-cihaz[hidden]{display:none}
+.db-onay-kutu .onay-metin{margin-top:10px;font-size:13px}.db-onay-kutu p{margin:6px 0}
+.db-secenek{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:8px 0}
+.db-soz{width:90px;padding:6px;border:2px solid #dc2626;border-radius:6px;font-size:14px;text-transform:uppercase}
+.db-secimler{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:6px}
+.db-secimler label{display:flex;gap:6px;align-items:baseline;flex-wrap:wrap}.db-secimler small{color:#64748b}
+.db-riskler{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px}
+.db-riskler article{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:10px 12px}
+.db-riskler span{color:#64748b;font-weight:600}
+#db-icerik .az-bolum h4+h4,#db-icerik .rp-tablo+h4{margin-top:12px}
+#db-icerik .az-uyari .az-git{margin-left:4px}
+
+/* ---------- Ek rapor sekmeleri ---------- */
+.rp-gun .az-git{margin-left:8px;font-weight:500}
+.rp-ay i.tikla{cursor:pointer}.rp-ay i.tikla:hover,.rp-ay i.tikla:focus{outline:2px solid #f59e0b}
+.rp-defter select.oto{border-style:dashed;border-color:#2563eb;color:#1d4ed8}
+.rp-kurallar{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:8px 12px;margin-bottom:10px;font-size:13px}
+.rp-kurallar>summary{cursor:pointer;font-weight:600}
+.rp-kurallar ul{list-style:none;padding:0;margin:8px 0}.rp-kurallar li{display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-top:1px solid #e2e8f0}
+.rp-kurallar .rp-suzgec{margin:8px 0 0}.rp-suzgec label.kr-yon{flex-direction:row;align-items:center;gap:6px;padding-bottom:8px}
+.rp-suzgec #rp-ay{font-size:14px;padding:5px;border:1px solid #cbd5e1;border-radius:6px}.rp-suzgec #rp-ay[hidden]{display:none}
+.dk-liste{list-style:none;padding:0;margin:0}.dk-liste li{display:flex;justify-content:space-between;gap:8px 16px;flex-wrap:wrap;padding:9px 0;border-top:1px solid #f1f5f9;font-size:13px}
+.dk-liste .az-cip{white-space:normal}
+.kr-baslik{margin:6px 0 10px;font-size:15px}
+.kr-sayfa+.kr-sayfa,.sg-cihaz+.sg-cihaz{border-top:2px solid #cbd5e1;margin-top:18px;padding-top:10px}
+.sd-dikkat{font:inherit;background:none;border:0;padding:0;color:inherit;cursor:pointer;text-align:left;text-decoration:underline}
+#ms-icerik .bk-form{border-top:0;padding-top:0;margin:0 0 10px}
+#ms-icerik .bk-form .satir input,#ms-icerik .bk-form .satir select{width:140px}
+#ms-ucret{width:90px;padding:5px 8px;border:1px solid #cbd5e1;border-radius:6px;font-size:14px}
+
+/* Günün hikâyesi: harita üstünde olay listesi */
+.leaflet-container .az-don-hikaye{max-width:min(560px,calc(100vw - 70px))}
+.az-hik{flex:1 0 100%;list-style:none;margin:0;padding:0;max-height:150px;overflow:auto;border-bottom:1px solid #e2e8f0}
+.leaflet-container .az-don .az-hik button{display:block;width:100%;text-align:left;border:0;background:none;border-radius:4px;padding:3px 4px}
+.leaflet-container .az-don .az-hik button:hover{background:#f1f5f9}
+.az-hik b{display:inline-block;min-width:18px;color:#2563eb}
+.az-durak span{display:flex;align-items:center;justify-content:center;width:24px;height:24px;box-sizing:border-box;border-radius:50%;background:#0f172a;color:#fff;border:2px solid #fff;font-size:12px;font-weight:700;box-shadow:0 1px 4px rgba(0,0,0,.4)}
+
+@media(max-width:800px){
+  #msmodal,#dbmodal{padding:8px}
+  .az-hik{max-height:66px}
+  #ms-icerik .bk-form .satir input,#ms-icerik .bk-form .satir select{width:100%}
+}
+@media print{
+  body.yazdir-rapor .rp-hikaye,body.yazdir-rapor .rp-kurallar{display:none!important}
+  body.yazdir-rapor .kr-sayfa+.kr-sayfa{break-before:page;border-top:0}
+}

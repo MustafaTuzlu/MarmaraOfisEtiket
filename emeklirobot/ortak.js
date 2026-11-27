@@ -107,14 +107,18 @@
       options: { position: 'bottomleft' },
       onAdd: function () {
         var d = L.DomUtil.create('div', 'az-don');
-        d.innerHTML = '<span>' + esc(h.etiket) + '</span>' +
+        if (h.liste) d.classList.add('az-don-hikaye');
+        d.innerHTML = (h.liste ? '<ol class="az-hik">' + h.liste.map(function (x, i) { return '<li><button type="button" data-is="olay" data-i="' + i + '"><b>' + (x.no || '▸') + '</b> ' + esc(x.yazi) + '</button></li>'; }).join('') + '</ol>' : '') +
+          '<span>' + esc(h.etiket) + '</span>' +
           (iz ? '<button type="button" data-is="oynat">❚❚</button><select data-is="hiz" aria-label="Oynatma hızı"><option value="2">1×</option><option value="4" selected>2×</option><option value="8">4×</option><option value="16">8×</option><option value="32">16×</option></select><em class="az-an"></em>' : '') +
           '<button type="button" data-is="don">← Geri dön</button><button type="button" data-is="sil" aria-label="İşareti kaldır" title="İşareti kaldır">×</button>';
         L.DomEvent.disableClickPropagation(d);
+        L.DomEvent.disableScrollPropagation(d);
         L.DomEvent.on(d, 'click', function (e) {
           var b = e.target.closest('button'); if (!b) return;
           var is = b.getAttribute('data-is');
           if (is === 'oynat') { oynatDegistir(); return; }
+          if (is === 'olay') { olayaGit(h.liste[Number(b.getAttribute('data-i'))]); return; }
           temizle();
           if (is === 'don') geri();
         });
@@ -129,19 +133,32 @@
       L.polyline(cizgi, { color: '#f59e0b', weight: 5, opacity: 1, interactive: false }).addTo(katman);
       L.circleMarker(cizgi[0], { radius: 7, color: '#fff', weight: 2, fillColor: '#16a34a', fillOpacity: 1 }).bindTooltip('Başlangıç').addTo(katman);
       L.circleMarker(cizgi[cizgi.length - 1], { radius: 7, color: '#fff', weight: 2, fillColor: '#dc2626', fillOpacity: 1 }).bindTooltip('Bitiş').addTo(katman);
-      harita.fitBounds(cizgi, { maxZoom: 17, padding: [40, 40] });
+      var kutuYuk = kontrol.getContainer().offsetHeight;
+      harita.fitBounds(cizgi, { maxZoom: 17, paddingTopLeft: [30, 30], paddingBottomRight: [30, Math.min(kutuYuk + 20, harita.getSize().y * .6)] });
     } else {
       var k = h.konum || cizgi[0];
       L.circle(k, { radius: 40, color: '#f59e0b', weight: 2, fillOpacity: .2, interactive: false }).addTo(katman);
       L.circleMarker(k, { radius: 9, color: '#0f172a', weight: 3, fillColor: '#f59e0b', fillOpacity: 1 }).addTo(katman);
       harita.setView(k, 17);
     }
+    (h.duraklar || []).forEach(function (p) {
+      L.marker(p.konum, { zIndexOffset: 1500, icon: L.divIcon({ className: 'az-durak', html: '<span>' + p.no + '</span>', iconSize: [24, 24], iconAnchor: [12, 12] }) }).bindTooltip(esc(p.etiket)).addTo(katman);
+    });
     if (iz) {
       var arac = L.circleMarker([iz[0].lat, iz[0].lon], { radius: 10, color: '#fff', weight: 4, fillColor: '#2563eb', fillOpacity: 1, interactive: false }).addTo(katman);
       oynatici = { iz: iz, arac: arac, konum: 0, oynuyor: true, son: null, kare: 0 };
       anCiz();
       oynatici.kare = requestAnimationFrame(adim);
     }
+  }
+  // Listeden bir olaya tıklayınca oynatma o ana atlar ve duraklar
+  function olayaGit(x) {
+    if (x.konum) harita.setView(x.konum, Math.max(harita.getZoom(), 16));
+    var o = oynatici; if (!o) return;
+    if (o.oynuyor) oynatDegistir();
+    var i = 0; while (i < o.iz.length - 1 && o.iz[i].t < x.t) i++;
+    o.konum = i; anCiz();
+    if (x.konum) harita.setView(x.konum, harita.getZoom());
   }
   function kutuEl(secici) { return kontrol && kontrol.getContainer().querySelector(secici); }
   function anCiz() {

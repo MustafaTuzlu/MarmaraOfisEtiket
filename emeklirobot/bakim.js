@@ -56,6 +56,12 @@
     return { durum: durum, metin: parca.join(' · ') };
   }
 
+  // Aylık karne için tüm maddelerin bugünkü durumu
+  function durumlar() {
+    return getir().then(function (m) {
+      return m.bakimlar.map(function (b) { return { cihaz: b.cihaz, ad: b.ad, metin: degerlendir(b, m.araclar[b.cihaz]).metin }; });
+    });
+  }
   // Son durum kartındaki uyarılar (saklı özetlerle; yeniden hesaplama yapmaz)
   function uyarilar() {
     return getir().then(function (m) {
@@ -146,5 +152,5 @@
     });
   }
 
-  window.Bakim = { baslat: baslat, ac: ac, uyarilar: uyarilar };
+  window.Bakim = { baslat: baslat, ac: ac, uyarilar: uyarilar, durumlar: durumlar };
 })();

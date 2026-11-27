@@ -1,6 +1,6 @@
 <?php
-// Kayıtlı yerler, günlük özetler, yolculuk etiketleri, bakım. Yalnızca oturum; değiştiren işlemler POST + CSRF.
-// Tablolar: db/2026-11-27-yerler.sql. PHP 7.0+ uyumlu.
+// Kayıtlı yerler, günlük özetler, yolculuk etiketleri ve kuralları, bakım, masraf, ortak ayarlar. Yalnızca oturum; değiştiren işlemler POST + CSRF.
+// Tablolar: db/2026-11-27-yerler.sql ve db/2026-11-27-masraf-kural.sql. PHP 7.0+ uyumlu.
 require __DIR__ . '/_ortak.php';
 oturum_baslat();
 header('Content-Type: application/json; charset=utf-8');
@@ -67,6 +67,12 @@ function tur_girdi($v) {
 }
 
 $ZAMAN = 'COALESCE(duzeltilmis_zaman, konum_zamani)';
+// Tarayıcılar arası ortak ayarlar: anahtar => [en az, en çok] (hepsi tamsayı ya da ondalık sayı)
+$AYARLAR = ['km_ucreti' => [0, 10000], 'saklama_ay' => [0, 120], 'gece_bas' => [0, 23], 'gece_bit' => [0, 23], 'uzak_km' => [1, 2000]];
+function kural_ucu($v) {
+    if (!is_string($v) || !preg_match('/^(\*|tur:(ev|is|diger)|yer:[1-9][0-9]{0,9})$/', $v)) { hatali('kural_ucu'); }
+    return $v;
+}
 
 try {
     $pdo = db();
@@ -129,10 +135,72 @@ try {
             }
             cikis(200, ['ok' => true, 'araclar' => $araclar, 'bakimlar' => $bakimlar]);
         }
+        if ($islem === 'kurallar') {
+            $liste = [];
+            foreach ($pdo->query('SELECT id, kaynak, hedef, iki_yon, tur FROM emekli_kural ORDER BY id') as $r) {
+                $liste[] = ['id' => (int)$r['id'], 'kaynak' => $r['kaynak'], 'hedef' => $r['hedef'], 'ikiYon' => (int)$r['iki_yon'] === 1, 'tur' => $r['tur']];
+            }
+            cikis(200, ['ok' => true, 'kurallar' => $liste]);
+        }
+        if ($islem === 'masraflar') {
+            $st = $pdo->prepare('SELECT id, cihaz_adi, tarih, tur, tutar, litre, km, notu FROM emekli_masraf WHERE tarih >= ? AND tarih <= ? ORDER BY tarih DESC, id DESC LIMIT 3000');
+            $st->execute([tarih($_GET['bas'] ?? null, 'bas'), tarih($_GET['bit'] ?? null, 'bit')]);
+            $liste = [];
+            while ($r = $st->fetch(PDO::FETCH_ASSOC)) {
+                $liste[] = ['id' => (int)$r['id'], 'cihaz' => $r['cihaz_adi'], 'tarih' => $r['tarih'], 'tur' => $r['tur'], 'tutar' => (float)$r['tutar'],
+                    'litre' => $r['litre'] === null ? null : (float)$r['litre'], 'km' => $r['km'] === null ? null : (int)$r['km'], 'not' => $r['notu']];
+            }
+            cikis(200, ['ok' => true, 'masraflar' => $liste]);
+        }
+        if ($islem === 'ayarlar') {
+            $a = [];
+            foreach ($pdo->query('SELECT anahtar, deger FROM emekli_ayar') as $r) {
+                if (isset($AYARLAR[$r['anahtar']])) { $a[$r['anahtar']] = (float)$r['deger']; }
+            }
+            cikis(200, ['ok' => true, 'ayarlar' => (object)$a]);
+        }
         cikis(400, ['ok' => false, 'hata' => 'islem']);
     }
 
     /* ---------- Değiştiren işlemler ---------- */
+    if ($islem === 'kural_kaydet') {
+        $deger = [kural_ucu($g['kaynak'] ?? null), kural_ucu($g['hedef'] ?? null), !empty($g['ikiYon']) ? 1 : 0];
+        if (!in_array($g['tur'] ?? null, ['is', 'ozel'], true)) { hatali('tur'); }
+        $deger[] = $g['tur'];
+        $pdo->prepare('INSERT INTO emekli_kural (kaynak, hedef, iki_yon, tur) VALUES (?, ?, ?, ?)')->execute($deger);
+        cikis(200, ['ok' => true]);
+    }
+    if ($islem === 'kural_sil') {
+        $pdo->prepare('DELETE FROM emekli_kural WHERE id = ?')->execute([kimlik($g)]);
+        cikis(200, ['ok' => true]);
+    }
+    if ($islem === 'masraf_kaydet') {
+        if (!in_array($g['tur'] ?? null, ['yakit', 'otopark', 'kopru', 'bakim', 'diger'], true)) { hatali('tur'); }
+        $deger = [
+            cihaz($g['cihaz'] ?? null), tarih($g['tarih'] ?? null, 'tarih'), $g['tur'], round(ondalik($g['tutar'] ?? null, 0, 10000000, 'tutar'), 2),
+            isset($g['litre']) ? round(ondalik($g['litre'], 0, 5000, 'litre'), 2) : null,
+            isset($g['km']) ? tamsayi($g['km'], 0, 5000000, 'km') : null,
+            metin($g['not'] ?? '', 0, 200, 'not'),
+        ];
+        if (!empty($g['id'])) {
+            $pdo->prepare('UPDATE emekli_masraf SET cihaz_adi = ?, tarih = ?, tur = ?, tutar = ?, litre = ?, km = ?, notu = ? WHERE id = ?')->execute(array_merge($deger, [kimlik($g)]));
+        } else {
+            $deger[] = simdi_utc();
+            $pdo->prepare('INSERT INTO emekli_masraf (cihaz_adi, tarih, tur, tutar, litre, km, notu, olusturma) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')->execute($deger);
+        }
+        cikis(200, ['ok' => true]);
+    }
+    if ($islem === 'masraf_sil') {
+        $pdo->prepare('DELETE FROM emekli_masraf WHERE id = ?')->execute([kimlik($g)]);
+        cikis(200, ['ok' => true]);
+    }
+    if ($islem === 'ayar_kaydet') {
+        $anahtar = $g['anahtar'] ?? null;
+        if (!is_string($anahtar) || !isset($AYARLAR[$anahtar])) { hatali('anahtar'); }
+        $v = ondalik($g['deger'] ?? null, $AYARLAR[$anahtar][0], $AYARLAR[$anahtar][1], 'deger');
+        $pdo->prepare('INSERT INTO emekli_ayar (anahtar, deger) VALUES (?, ?) ON DUPLICATE KEY UPDATE deger = VALUES(deger)')->execute([$anahtar, (string)round($v, 2)]);
+        cikis(200, ['ok' => true]);
+    }
     if ($islem === 'yer_kaydet') {
         $ad = metin($g['ad'] ?? null, 1, 60, 'ad');
         $tur = tur_girdi($g['tur'] ?? null);
@@ -187,17 +255,12 @@ try {
         $pdo->commit();
         cikis(200, ['ok' => true, 'yazilan' => count($liste)]);
     }
-    if ($islem === 'ozet_sil') {
-        $n = $pdo->exec('DELETE FROM emekli_gun');
-        error_log('emeklirobot panel: rapor özetleri silindi adet=' . (int)$n . ' ip=' . ($_SERVER['REMOTE_ADDR'] ?? ''));
-        cikis(200, ['ok' => true, 'silinen' => (int)$n]);
-    }
     if ($islem === 'etiket_kaydet') {
         $c = cihaz($g['cihaz'] ?? null);
         $t0 = tamsayi($g['t0'] ?? null, 0, 4000000000, 't0');
         $t1 = tamsayi($g['t1'] ?? null, $t0, 4000000000, 't1');
         $tur = $g['tur'] ?? '';
-        if (!in_array($tur, ['', 'is', 'ozel'], true)) { hatali('tur'); }
+        if (!in_array($tur, ['', 'is', 'ozel', 'yok'], true)) { hatali('tur'); } // yok: otomatik kural bu yolculuğa uygulanmasın
         $notu = metin($g['not'] ?? '', 0, 200, 'not');
         $id = empty($g['id']) ? 0 : kimlik($g);
         if ($tur === '' && $notu === '') {

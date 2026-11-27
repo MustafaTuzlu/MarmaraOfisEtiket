@@ -342,7 +342,16 @@
   /* Sunucuda saklanan günlük özet (rapor, yolculuk listesi, bakım km). Biçim değişirse OZET_SURUM artırılır.
      Zamanlar epoch saniye. yol: [t0, t1, metre, enYuksekHiz|null, basLat, basLon, bitLat, bitLon] (başladığı güne yazılır)
      durak: [t0, t1, lat, lon, belirsiz(0|1)] (güne kırpılmış, en az 1 dk) */
-  var OZET_SURUM = 1;
+  var OZET_SURUM = 2; // 2: cihaz sağlığı (sag)
+  // O günün cihaz sağlığı: gönderim gecikmesi (sn), GPS kaybı, ısınma, sıcaklık, pil, doğruluk, en uzun kayıtsız süre (sn)
+  function gunSagligi(K, g) {
+    var bit = g.bas + 864e5, G = K.filter(function (k) { return k.t >= g.bas && k.t < bit; });
+    var s = saglik(G, []);
+    var sessiz = g.olaylar.reduce(function (m, e) { return e.tur === 'yok' ? Math.max(m, e.t1 - e.t0) : m; }, 0);
+    return { adet: G.length, gecO: s.gecikmeOrtanca === null ? null : Math.round(s.gecikmeOrtanca / 1000), gecM: Math.round(s.gecikmeMaks / 1000),
+      konumYok: s.konumYok, isinma: s.isinma, kritik: s.kritik, sicM: s.sicMaks ? s.sicMaks.deger : null, pilMin: s.pilMin,
+      sarjDusus: s.sarjdaDusus ? 1 : 0, acc: s.accOrtanca, zayif: s.zayifKonum, sessiz: Math.round(sessiz / 1000) };
+  }
   function ozetle(kayitlar) {
     var grup = {}, cikti = [];
     kayitlar.forEach(function (k) { (grup[k.cihaz] = grup[k.cihaz] || []).push(k); });
@@ -377,7 +386,7 @@
         var yol = yolculuklar.filter(function (y) { return y.gun === g.bas; }).map(function (y) { return y.v; });
         cikti.push({ cihaz: ad, gun: new Date(g.bas + A.SAAT_FARKI).toISOString().slice(0, 10), veri: {
           surus: sn(o.surus), m: Math.round(o.mesafe), bekleme: sn(o.bekleme), gps: sn(o.gps), yok: sn(o.veriYok),
-          maks: o.maks ? o.maks.hiz : null, maksT: o.maks ? sn(o.maks.t) : null, saat: saat.map(Math.round), yol: yol, durak: durak } });
+          maks: o.maks ? o.maks.hiz : null, maksT: o.maks ? sn(o.maks.t) : null, saat: saat.map(Math.round), yol: yol, durak: durak, sag: gunSagligi(K, g) } });
       });
     });
     return cikti;

@@ -3,7 +3,7 @@
   'use strict';
   var $ = function (id) { return document.getElementById(id); };
   var O = window.Ortak, esc = O.esc;
-  var kayitlar = null, uyarilar = {}, bilinen = [], mesgul = false, sonAlma = 0, hedefler = [];
+  var kayitlar = null, uyarilar = {}, dikkat = {}, bilinen = [], mesgul = false, sonAlma = 0, hedefler = [];
 
   function sorgula(saatGeri) { return O.veriGetir(O.aralikSorgu(Date.now() - saatGeri * 3600e3, Date.now() + 3600e3)); }
 
@@ -18,6 +18,8 @@
   }
   function uyariYenile() {
     if (window.Bakim) Bakim.uyarilar().then(function (u) { uyarilar = u; ciz(); }, function () {});
+    // Dün/bugün dikkat çeken hareket sayısı (saklı özetlerle)
+    if (window.RaporEk) RaporEk.sonUyarilar().then(function (u) { dikkat = u; ciz(); }, function () {});
   }
 
   function yerSatiri(c) {
@@ -50,7 +52,10 @@
   }
 
   function dugme(veri, yazi) { hedefler.push(veri); return '<button type="button" class="az-git" data-sd="' + (hedefler.length - 1) + '">' + yazi + '</button>'; }
-  function uyariHtml(ad) { return uyarilar[ad] ? '<p class="sd-bakim">🔧 ' + uyarilar[ad].map(esc).join('<br>🔧 ') + '</p>' : ''; }
+  function uyariHtml(ad) {
+    return (uyarilar[ad] ? '<p class="sd-bakim">🔧 ' + uyarilar[ad].map(esc).join('<br>🔧 ') + '</p>' : '') +
+      (dikkat[ad] ? '<p class="sd-bakim"><button type="button" class="sd-dikkat">👀 Dün ve bugün ' + dikkat[ad] + ' dikkat çeken yolculuk — incele</button></p>' : '');
+  }
 
   function kart(c) {
     var d = durumu(c), k = c.sonKonum, islemler = '';
@@ -82,6 +87,7 @@
     try { if (localStorage.getItem('er_sd_kapali') === '1') d.open = false; } catch (e) {}
     d.addEventListener('toggle', function () { try { localStorage.setItem('er_sd_kapali', d.open ? '0' : '1'); } catch (e) {} });
     $('sd-liste').addEventListener('click', function (e) {
+      if (e.target.closest('.sd-dikkat')) { Rapor.ac('dikkat'); return; }
       var b = e.target.closest('button[data-sd]'); if (!b) return;
       var h = hedefler[Number(b.getAttribute('data-sd'))];
       if (h.kaydet) Yerler.duzenle(h.kaydet); else O.haritadaGoster(h);
