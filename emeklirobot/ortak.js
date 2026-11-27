@@ -238,6 +238,6 @@
     esc: esc, sayi: sayi, saat: saat, gunAd: gunAd, gunKisa: gunKisa, kisaTarih: kisaTarih, sure: sure, km: km, metre: metre,
     istGun: istGun, gunBasi: gunBasi, gunEkle: gunEkle, istek: istek, ozellik: ozellik, hataMetni: hataMetni,
     konumAni: konumAni, gecenYaz: gecenYaz, simdi: simdi, kayitCevir: kayitCevir, veriGetir: veriGetir, aralikSorgu: aralikSorgu, pencere: pencere, pencereleriGizle: pencereleriGizle,
-    haritaKur: function (h) { harita = h; }, haritadaGoster: haritadaGoster, haritaTemizle: temizle
+    haritaKur: function (h) { harita = h; }, haritadaGoster: haritadaGoster, haritaTemizle: temizle, haritaMesgul: function () { return !!kontrol; }
   };
 })();

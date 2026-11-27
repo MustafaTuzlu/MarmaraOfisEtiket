@@ -44,11 +44,16 @@
     }
   });
   new OrtalaKontrol().addTo(harita);
-  function ortala() {
+  function ortaHedefi() {
     function uygun(k) { return konumlu(k) && gorunur[k.cihazAdi] !== false; }
-    var hedef = durum.sonKonum && uygun(durum.sonKonum) ? durum.sonKonum : durum.kayitlar.filter(uygun)[0]; // liste yeniden eskiye sıralı
+    return durum.sonKonum && uygun(durum.sonKonum) ? durum.sonKonum : durum.kayitlar.filter(uygun)[0]; // liste yeniden eskiye sıralı
+  }
+  function ortala() {
+    var hedef = ortaHedefi();
     if (hedef) harita.setView([hedef.enlem, hedef.boylam], Math.max(harita.getZoom(), 15));
   }
+  // Harita başka bir iş için kullanılıyorsa (animasyon, rota gösterimi, konum kaydetme, nokta seçme) kendiliğinden kaydırılmaz
+  function haritaSerbest() { return !anim.oynuyor && !Ortak.haritaMesgul() && $('yerpanel').hidden && !$('harita').classList.contains('nz-sec'); }
   var pinIcon = L.divIcon({
     className: 'pin', iconSize: [28, 38], iconAnchor: [14, 38], popupAnchor: [0, -34],
     html: '<span class="pin-halka"></span><span class="pin-halka"></span><span class="pin-halka"></span><svg width="28" height="38" viewBox="0 0 28 38"><path d="M14 1C6.8 1 1 6.8 1 14c0 9.5 13 23 13 23s13-13.5 13-23C27 6.8 21.2 1 14 1z" fill="#d93025" stroke="#fff" stroke-width="2"/><circle cx="14" cy="14" r="5" fill="#fff"/></svg>'
@@ -504,6 +509,7 @@
         if (!v.ok) throw new Error('sunucu');
         if (v.tipler) { durum.secenekGeldi = true; durum.tipler = birlestir(birlestir(Object.keys(TIP), v.tipler), secilenler('f-tipler')); durum.cihazlar = birlestir(v.cihazlar, secilenler('f-cihazlar')); cipler('f-tipler', durum.tipler, TIP); cipler('f-cihazlar', durum.cihazlar); SonDurum.cihazlar(v.cihazlar); }
         var maxId = v.kayitlar.reduce(function (m, k) { return k.id > m ? k.id : m; }, 0), yeni = 0;
+        var oncekiEnBuyuk = durum.sonId;
         if (opts.oto && durum.sonId !== null) {
           v.kayitlar.forEach(function (k) { if (k.id > durum.sonId) yeni++; });
           if (yeni > 0) ses();
@@ -532,6 +538,9 @@
           if (pin) { harita.removeLayer(pin); pin = null; }
           $('detay').innerHTML = '<p class="bos">Kayıt bulunamadı.</p>';
         }
+        // Otomatik yenilemede yeni bir son konum geldiyse harita "Ortala"ya basılmış gibi oraya gider
+        var son = ortaHedefi();
+        if (yeni > 0 && son && son.id > oncekiEnBuyuk && haritaSerbest()) ortala();
       })
       .catch(function (e) { if (e && e.message !== 'oturum') $('durum').textContent = 'Veri alınamadı.'; })
       .then(bitti);
