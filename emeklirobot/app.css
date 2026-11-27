@@ -344,7 +344,7 @@ a.az-git{text-decoration:none;display:inline-block}
 .rp-suzgec label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:#475569}
 .rp-suzgec select,.rp-suzgec input{font-size:14px;padding:6px;border:1px solid #cbd5e1;border-radius:6px;background:#fff}
 .rp-suzgec label[hidden],.rp-ozel[hidden],.rp-cikti button[hidden]{display:none}
-.rp-ozel{display:flex;gap:8px;flex-wrap:wrap}
+.rp-ozel{display:flex;gap:8px;flex-wrap:wrap}.ms-yollar summary{cursor:pointer;margin-bottom:6px}
 .rp-cikti{margin-left:auto;display:flex;gap:6px}.rp-cikti button{font-family:inherit;cursor:pointer}
 #rp-mesaj:empty,#bk-mesaj:empty,#yr-mesaj:empty{display:none}
 .rp-kartlar{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:4px}

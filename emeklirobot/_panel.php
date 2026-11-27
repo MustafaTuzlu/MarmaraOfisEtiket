@@ -207,7 +207,8 @@
     <button type="button" class="modal-kapat" id="mskapat" aria-label="Kapat">×</button>
     <h2 id="msbaslik">Masraf defteri</h2>
     <div class="rp-suzgec">
-      <label>Dönem <select id="ms-donem"><option value="ay">Bu ay</option><option value="gecenay">Geçen ay</option><option value="90">Son 90 gün</option><option value="yil" selected>Bu yıl</option><option value="365">Son 1 yıl</option></select></label>
+      <label>Dönem <select id="ms-donem"><option value="ay">Bu ay</option><option value="gecenay">Geçen ay</option><option value="90">Son 90 gün</option><option value="yil" selected>Bu yıl</option><option value="365">Son 1 yıl</option><option value="ozel">Özel (tarih ve saat)</option></select></label>
+      <span id="ms-ozel" class="rp-ozel" hidden><label>Başlangıç <input type="datetime-local" id="ms-bas"></label><label>Bitiş <input type="datetime-local" id="ms-bit"></label></span>
       <label>Araç <select id="ms-cihaz"><option value="">Tüm araçlar</option></select></label>
       <span class="rp-cikti"><button type="button" id="ms-excel" class="excel">Excel</button></span>
     </div>
