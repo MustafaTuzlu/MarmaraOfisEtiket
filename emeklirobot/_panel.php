@@ -206,6 +206,10 @@
 
 <div id="yerpanel" role="dialog" aria-labelledby="yp-baslik" hidden>
   <div class="yp-ust"><b id="yp-baslik">Konum kaydet</b><span>Haritaya tıklayın ya da işareti sürükleyin.</span></div>
+  <div class="yp-koord">
+    <label for="yp-koord">Koordinat (enlem, boylam)</label>
+    <div><input id="yp-koord" maxlength="80" placeholder="41.1144876, 28.5647841" autocomplete="off" autocapitalize="off" spellcheck="false"><button type="button" id="yp-git">Konuma git</button></div>
+  </div>
   <div class="yp-alanlar">
     <label>Yer <select id="yp-yer"></select></label>
     <span id="yp-yeni" class="yp-yeni"><label>Yeni yer adı <input id="yp-ad" maxlength="60" placeholder="örn. TorunCenter"></label><label>Tür <select id="yp-tur"><option value="ev">Ev</option><option value="is">İş yeri</option><option value="diger">Diğer</option></select></label></span>

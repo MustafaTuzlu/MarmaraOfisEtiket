@@ -8,6 +8,7 @@
   var VARSAYILAN_YARICAP = 150, YAKIN = 800;
   var harita = null, liste = [], hataDurumu = null, dinleyenler = [], yukleme = null;
   var duzen = null; // açık yer düzenleyici
+  var uygulananKoord = ''; // koordinat kutusunda haritaya son uygulanan metin
 
   function degisti() { dinleyenler.forEach(function (f) { f(); }); }
   function yukle() {
@@ -74,6 +75,7 @@
     $('yp-etiket').value = nokta ? nokta.etiket : '';
     $('yp-yaricap').value = yaricap; $('yp-yaricap-yaz').textContent = yaricap + ' m';
     $('yp-mesaj').textContent = ''; $('yp-kaydet').disabled = false;
+    $('yp-koord').value = ''; uygulananKoord = '';
     yeniAlanlar(); cakisma();
     $('yerpanel').hidden = false;
     $('harita').scrollIntoView({ block: 'start' });
@@ -84,6 +86,25 @@
     isaret.on('drag', function () { daire.setLatLng(isaret.getLatLng()); cakisma(); });
   }
   function haritaTik(e) { duzen.isaret.setLatLng(e.latlng); duzen.daire.setLatLng(e.latlng); cakisma(); }
+  // "41.1144876,28.5647841" biçimi; virgülün önünde/arkasında ve uçlarda boşluk olabilir
+  function koordAyir(metin) {
+    var m = /^\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*$/.exec(metin);
+    if (!m) return null;
+    var lat = Number(m[1]), lon = Number(m[2]);
+    return Math.abs(lat) <= 90 && Math.abs(lon) <= 180 ? [lat, lon] : null;
+  }
+  function koordGit() {
+    var p = koordAyir($('yp-koord').value);
+    if (!p) { $('yp-mesaj').textContent = 'Koordinat okunamadı. Örnek: 41.1144876, 28.5647841'; $('yp-koord').focus(); return false; }
+    $('yp-mesaj').textContent = '';
+    uygulananKoord = $('yp-koord').value;
+    duzen.isaret.setLatLng(p); duzen.daire.setLatLng(p);
+    $('harita').scrollIntoView({ block: 'start' });
+    window.scrollBy(0, -70);
+    harita.setView(p, Math.max(harita.getZoom(), 16));
+    cakisma();
+    return true;
+  }
   function yeniAlanlar() {
     var yeni = $('yp-yer').value === '';
     $('yp-yeni').hidden = !yeni;
@@ -107,6 +128,12 @@
     if (geriDon) geri();
   }
   function kaydet() {
+    // Koordinat yazılıp "Konuma git"e basılmadıysa eski nokta kaydedilmesin: önce haritada gösterilir
+    var yazilan = $('yp-koord').value;
+    if (yazilan.trim() && yazilan !== uygulananKoord) {
+      if (koordGit()) $('yp-mesaj').textContent = 'Harita girilen konuma gitti. Kontrol edip tekrar Kaydet’e basın.';
+      return;
+    }
     var p = duzen.isaret.getLatLng(), secili = Number($('yp-yer').value) || null;
     var nokta = { etiket: $('yp-etiket').value.trim(), lat: p.lat, lon: ((p.lng + 540) % 360) - 180, yaricap: Number($('yp-yaricap').value) };
     var govde, islem;
@@ -171,6 +198,8 @@
     $('yp-yer').addEventListener('change', function () { yeniAlanlar(); cakisma(); });
     $('yp-yaricap').addEventListener('input', function () { $('yp-yaricap-yaz').textContent = this.value + ' m'; duzen.daire.setRadius(Number(this.value)); cakisma(); });
     $('yp-kaydet').addEventListener('click', kaydet);
+    $('yp-git').addEventListener('click', koordGit);
+    $('yp-koord').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); koordGit(); } });
     $('yp-vazgec').addEventListener('click', function () { duzenKapat(true); });
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && duzen) setTimeout(function () { duzenKapat(true); }, 0); });
     return yukle();

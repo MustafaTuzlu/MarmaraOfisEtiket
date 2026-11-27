@@ -418,3 +418,9 @@ a.az-git{text-decoration:none;display:inline-block}
   body.yazdir-rapor .rp-tablo{overflow:visible}.yazdir-rapor .rp-tablo td{white-space:normal}
   body.yazdir-rapor *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 }
+.yp-koord{margin-bottom:8px}
+.yp-koord label{display:block;font-size:12px;color:#475569;margin-bottom:3px}
+.yp-koord>div{display:flex;gap:8px}
+.yp-koord input{flex:1;min-width:0;font-size:14px;padding:7px;border:1px solid #cbd5e1;border-radius:6px;font-variant-numeric:tabular-nums}
+.yp-koord button{font:inherit;font-size:13px;font-weight:600;padding:7px 14px;border:1px solid #2563eb;border-radius:6px;background:#eff6ff;color:#1d4ed8;cursor:pointer;white-space:nowrap}
+.yp-koord button:hover{background:#dbeafe}
