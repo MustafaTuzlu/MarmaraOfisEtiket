@@ -68,7 +68,10 @@
   }
   function gecenYaz(ms) {
     var s = Math.floor(Math.max(0, ms) / 1000), p = function (n) { return (n < 10 ? '0' : '') + n; };
-    return p(Math.floor(s / 86400)) + ' gün ' + p(Math.floor(s % 86400 / 3600)) + ' saat ' + p(Math.floor(s % 3600 / 60)) + ' dk ' + p(s % 60) + ' sn';
+    var parca = [[Math.floor(s / 86400), 'gün'], [Math.floor(s % 86400 / 3600), 'saat'], [Math.floor(s % 3600 / 60), 'dk'], [s % 60, 'sn']]
+      .filter(function (x) { return x[0] > 0; }) // sıfır olan birimler yazılmaz
+      .map(function (x) { return p(x[0]) + ' ' + x[1]; });
+    return parca.length ? parca.join(' ') : '00 sn';
   }
   function sonKonumMu(k) { return !!durum.sonKonum && durum.sonKonum.id === k.id; }
   function gecenSatir(k) { return (sonKonumMu(k) ? 'Son konum ' : 'Bu konum ') + gecenYaz(Date.now() + saatFarki - konumAni(k)) + ' önce alındı'; }
