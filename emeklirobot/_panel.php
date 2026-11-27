@@ -97,7 +97,10 @@
     <h2>Son
       <select id="f-limit"><option value="100">100</option><option value="250" selected>250</option><option value="500">500</option><option value="1000">1000</option></select>
       kayıt</h2>
-    <a href="#" id="b-excel" class="excel">Excel indir (.xlsx)</a>
+    <div class="liste-araclar">
+      <button type="button" id="b-analiz" class="analiz-btn">Analiz et</button>
+      <a href="#" id="b-excel" class="excel">Excel indir (.xlsx)</a>
+    </div>
   </div>
   <div class="tablo-kap">
     <table id="liste"><thead></thead><tbody></tbody></table>
@@ -122,6 +125,20 @@
     <p id="an-mesaj" class="mesaj" role="status"></p>
     <p id="an-geri" class="sayac"></p>
     <p id="an-not" class="not" hidden></p>
+  </div>
+</div>
+
+<div id="azmodal" class="modal" hidden>
+  <div class="modal-kutu az-kutu" role="dialog" aria-modal="true" aria-labelledby="azbaslik">
+    <button type="button" class="modal-kapat" id="azkapat" aria-label="Kapat">×</button>
+    <h2 id="azbaslik">Analiz</h2>
+    <div class="az-ust">
+      <span id="az-kapsam" class="sayac"></span>
+      <label class="az-hiz-sinir">Hız sınırı <input type="number" id="az-hiz" min="10" max="300" step="5" inputmode="numeric"> km/sa</label>
+    </div>
+    <p id="az-uyari" class="az-uyari" hidden></p>
+    <div id="az-durum" class="az-durum" role="status" hidden></div>
+    <div id="az-icerik"></div>
   </div>
 </div>
 
@@ -175,6 +192,8 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="/emeklirobot/xlsx.js"></script>
+<script src="/emeklirobot/analiz.js"></script>
+<script src="/emeklirobot/analiz-ui.js"></script>
 <script src="/emeklirobot/app.js"></script>
 </body>
 </html>

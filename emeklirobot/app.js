@@ -842,6 +842,7 @@
     anSec(b.getAttribute('data-cihaz'));
   });
 
+  AnalizUI.baslat({ harita: harita, sorgu: function () { return sorgu(false); } }); // "Analiz et": ekrandaki filtrelerle
   urlOku();
   yukle({ ilk: true, sifirla: true });
 })();

@@ -77,6 +77,40 @@ if (($_GET['konumlu'] ?? '') === '1') { $w[] = 'enlem IS NOT NULL'; }
 $limit = (int)($_GET['limit'] ?? 250);
 if (!in_array($limit, [100, 250, 500, 1000], true)) { $limit = 250; }
 
+// "Analiz et": filtreye uyan TÜM kayıtlar (liste limiti uygulanmaz). Önce satır sayısı bilinir; sınır üstünde veri hiç çekilmez.
+// analiz=say -> yalnızca sayı; analiz=veri -> küçük diziler (bellek ve aktarım için kolon adları tekrarlanmaz; sıra app tarafında analiz-ui.js ile aynı olmalı)
+const ANALIZ_SINIR = 20000;
+$analiz = $_GET['analiz'] ?? '';
+if ($analiz === 'say' || $analiz === 'veri') {
+    $aw = array_merge($wt, $w); $ap = array_merge($pt, $p);
+    $ak = $aw ? 'WHERE ' . implode(' AND ', $aw) : '';
+    try {
+        $pdo = db();
+        $st = $pdo->prepare('SELECT COUNT(*) FROM emekli_log ' . $ak);
+        $st->execute($ap);
+        $toplam = (int)$st->fetchColumn();
+        $cikti = ['ok' => true, 'toplam' => $toplam, 'sinir' => ANALIZ_SINIR];
+        if ($analiz === 'veri' && $toplam <= ANALIZ_SINIR) {
+            $st = $pdo->prepare("SELECT cihaz_adi, log_tipi, $ZAMAN AS zaman, enlem, boylam, dogruluk_m, hiz_kmh, pil_yuzdesi, sarjda_mi, pil_sicakligi, arac_hareketli, alinma_zamani "
+                . "FROM emekli_log $ak ORDER BY zaman ASC, id ASC LIMIT " . ANALIZ_SINIR);
+            $st->execute($ap);
+            $satirlar = [];
+            while ($r = $st->fetch(PDO::FETCH_NUM)) {
+                $satirlar[] = [
+                    $r[0], $r[1], strtotime($r[2] . ' UTC'), fl($r[3]), fl($r[4]), fl($r[5]), fl($r[6]),
+                    $r[7] === null ? null : (int)$r[7], $r[8] === null ? null : (int)$r[8], fl($r[9]),
+                    $r[10] === null ? null : (int)$r[10], strtotime($r[11] . ' UTC'),
+                ];
+            }
+            $cikti['satirlar'] = $satirlar;
+        }
+        cikis(200, $cikti);
+    } catch (Exception $e) {
+        error_log('emeklirobot analiz: ' . $e->getMessage());
+        cikis(500, ['ok' => false, 'hata' => 'sunucu']);
+    }
+}
+
 $kosulHizli = $w ? 'WHERE ' . implode(' AND ', $w) : '';
 $pHizli = $p;
 $w = array_merge($wt, $w); $p = array_merge($pt, $p);

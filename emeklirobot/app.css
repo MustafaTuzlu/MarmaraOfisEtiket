@@ -219,3 +219,62 @@ button.tehlike:hover{background:#b91c1c!important}
 .leaflet-container .ortala-btn{display:flex;align-items:center;justify-content:center;width:34px;height:34px;padding:0;background:#fff;color:#0f172a;cursor:pointer}
 .leaflet-container .ortala-btn:hover{background:#f1f5f9}
 @media(max-width:800px){.popup-acik .ortala-btn{visibility:hidden}}
+.liste-araclar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.analiz-btn{font:inherit;font-size:13px;font-weight:600;color:#fff;background:#2563eb;border:1px solid #2563eb;padding:6px 14px;border-radius:6px;cursor:pointer;white-space:nowrap}
+.analiz-btn:hover{background:#1d4ed8}
+.modal-kutu.az-kutu{width:min(900px,100%);max-height:92vh;overscroll-behavior:contain}
+.az-ust{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.az-hiz-sinir{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:#475569;margin-left:auto}
+.az-hiz-sinir input{width:66px;padding:5px 6px;border:1px solid #cbd5e1;border-radius:6px;font-size:14px}
+.az-uyari{background:#fffbeb;border:1px solid #fde68a;color:#92400e;border-radius:10px;padding:10px 12px;font-size:13px;margin:0 0 10px}
+.az-uyari[hidden],.az-durum[hidden]{display:none}
+.az-durum{display:flex;align-items:center;justify-content:center;gap:14px;padding:30px 12px;font-size:14px;color:#334155;text-align:center}
+.az-durum .yk-halka{width:28px;height:28px;border-width:3px;flex:none}
+.az-durum.uyari{background:#fffbeb;border:1px solid #fde68a;border-radius:10px;color:#92400e;padding:18px 14px;display:block}
+.az-cihaz{border:1px solid #cbd5e1;border-radius:12px;margin-bottom:12px;overflow:hidden}
+.az-cihaz>summary{background:#0f172a;color:#fff;padding:12px 14px}
+.az-cihaz>summary,.az-gun>summary{cursor:pointer;list-style:none;display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;user-select:none}
+.az-cihaz>summary::-webkit-details-marker,.az-gun>summary::-webkit-details-marker{display:none}
+.az-cihaz>summary:before,.az-gun>summary:before{content:"\25B8";display:inline-block;transition:transform .2s}
+.az-cihaz[open]>summary:before,.az-gun[open]>summary:before{transform:rotate(90deg)}
+.az-cihaz-ad{font-weight:700;font-size:16px}
+.az-cipler{display:flex;flex-wrap:wrap;gap:5px}
+.az-cip{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;background:#e2e8f0;color:#1e293b;white-space:nowrap;font-weight:500}
+.az-cip.uy{background:#fef3c7;color:#92400e}
+.az-cihaz-govde{padding:10px 12px 12px}
+.az-son{margin:0 0 10px;font-size:13px;color:#475569}
+.az-gun{border:1px solid #e2e8f0;border-radius:10px;margin-bottom:8px}
+.az-gun>summary{padding:10px 12px;background:#f8fafc;border-radius:10px}
+.az-gun-ad{font-weight:600;font-size:14px}
+.az-gun-govde:not(:empty){padding:10px 12px 4px}
+.az-ozet-metin{margin:0 0 10px;font-size:14px;line-height:1.55}
+.az-serit{position:relative;height:16px;border-radius:6px;background:#f1f5f9;overflow:hidden}
+.az-serit i{position:absolute;top:0;bottom:0}
+.az-serit .az-yol{background:#16a34a}.az-serit .az-bekle{background:#64748b}.az-serit .az-gps{background:#f59e0b}
+.az-serit .az-yok{background:repeating-linear-gradient(45deg,#cbd5e1 0 4px,#f1f5f9 4px 8px)}
+.az-olcek{display:flex;justify-content:space-between;font-size:10px;color:#94a3b8;margin:2px 0 8px}
+.az-olaylar{list-style:none;margin:0;padding:0}
+.az-olay{display:grid;grid-template-columns:96px minmax(0,1fr);gap:10px;padding:9px 0;border-top:1px solid #f1f5f9}
+.az-saat{font-size:12px;color:#475569;font-variant-numeric:tabular-nums;padding-top:1px;white-space:nowrap}
+.az-metin{border-left:3px solid #64748b;padding-left:10px;font-size:13px}
+.az-olay.az-yol .az-metin{border-color:#16a34a}.az-olay.az-gps .az-metin{border-color:#f59e0b}.az-olay.az-yok .az-metin{border-color:#cbd5e1;border-left-style:dashed}
+.az-olay-bas{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px}
+.az-metin p{margin:3px 0 0;color:#475569;line-height:1.6}
+.az-git{font:inherit;font-size:12px;color:#1d4ed8;background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:1px 8px;cursor:pointer;white-space:nowrap}
+.az-git:hover{background:#dbeafe}
+.az-olay-bas .az-git{margin-left:auto}
+.az-bolum{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px 14px;margin-top:8px;font-size:13px}
+.az-bolum h4{margin:0 0 6px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#64748b}
+.az-bolum p{margin:4px 0}
+.az-bolum ul{margin:0;padding-left:18px}.az-bolum li{margin:5px 0}
+.leaflet-container .az-don{display:flex;align-items:center;gap:6px;flex-wrap:wrap;background:#fff;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,.35);padding:6px 8px;font-size:12px;max-width:calc(100vw - 90px)}
+.az-don span{font-weight:600}
+.az-don button{font:inherit;border:1px solid #cbd5e1;background:#f8fafc;border-radius:6px;padding:4px 9px;cursor:pointer}
+.az-don button[data-is="don"]{background:#2563eb;border-color:#2563eb;color:#fff}
+@media(max-width:800px){
+  #azmodal{padding:8px}
+  .modal-kutu.az-kutu{padding:16px 12px}
+  .az-cihaz-govde{padding:8px}
+  .az-olay{grid-template-columns:1fr;gap:3px}
+  .az-saat{font-weight:600}
+}
