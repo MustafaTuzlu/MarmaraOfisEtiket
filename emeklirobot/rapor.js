@@ -115,12 +115,13 @@
   function hazirla(gunler, d, secili) {
     var ad = adlandirici();
     var G = gunler.filter(function (g) { return !secili || g.cihaz === secili; });
-    var Y = [], D = [];
+    var Y = [], D = [], P = [];
     G.forEach(function (g) {
       (g.veri.yol || []).forEach(function (v) {
         Y.push({ cihaz: g.cihaz, gun: g.gun, t0: v[0] * 1000, t1: v[1] * 1000, m: v[2], maks: v[3], nereden: ad(v[4], v[5]), nereye: ad(v[6], v[7]) });
       });
-      (g.veri.durak || []).forEach(function (v) { D.push({ cihaz: g.cihaz, gun: g.gun, t0: v[0] * 1000, t1: v[1] * 1000, yer: ad(v[2], v[3]), belirsiz: v[4] === 1 }); });
+      (g.veri.durak || []).forEach(function (v) { D.push({ cihaz: g.cihaz, gun: g.gun, t0: v[0] * 1000, t1: v[1] * 1000, lat: v[2], lon: v[3], yer: ad(v[2], v[3]), belirsiz: v[4] === 1 }); });
+      (g.veri.gpsy || []).forEach(function (v) { P.push({ cihaz: g.cihaz, gun: g.gun, t0: v[0] * 1000, t1: v[1] * 1000, lat: v[2], lon: v[3], fark: v[4], yer: ad(v[2], v[3]) }); });
     });
     Y.sort(function (a, b) { return b.t0 - a.t0; });
     var icinde = function (x) { return x.gun >= d.bas && x.gun <= d.bit; };
@@ -136,7 +137,7 @@
       r.sure = ortanca(r.hepsi.map(function (y) { return y.t1 - y.t0; }));
       r.m = ortanca(r.hepsi.map(function (y) { return y.m; }));
     });
-    return { d: d, cihaz: secili || '', tumGunler: G, tumYol: Y, tumDurak: D, gunler: G.filter(icinde), onceki: G.filter(function (g) { return g.gun < d.bas; }), yol: Y.filter(icinde), durak: D.filter(icinde),
+    return { kayip: P.filter(icinde), d: d, cihaz: secili || '', tumGunler: G, tumYol: Y, tumDurak: D, gunler: G.filter(icinde), onceki: G.filter(function (g) { return g.gun < d.bas; }), yol: Y.filter(icinde), durak: D.filter(icinde),
       guzergah: Object.keys(guzergah).map(function (a) { return guzergah[a]; }) };
   }
 
@@ -176,9 +177,17 @@
     var k = kuralBul(y);
     return { tur: k ? k.tur : '', oto: !!k, e: e };
   }
+  function kucuk(s) { return String(s || '').toLocaleLowerCase('tr-TR'); }
+  function arananlar() { return kucuk($('rp-ara').value).split(/\s+/).filter(Boolean); }
+  // Her kelime, yolculuğun yer adları, notu ya da cihaz adında geçmeli
+  function aramayaUyar(y, K) {
+    if (!K.length) return true;
+    var e = etiketBul(y), metin = kucuk([y.nereden ? y.nereden.ad : '', y.nereye ? y.nereye.ad : '', e ? e.not : '', y.cihaz].join(' | '));
+    return K.every(function (k) { return metin.indexOf(k) >= 0; });
+  }
   function suzulmus() {
-    var f = $('rp-etiket').value;
-    return veri.yol.filter(function (y) { var t = etkinTur(y).tur; return !f || (f === 'yok' ? !t : t === f); });
+    var f = $('rp-etiket').value, K = arananlar();
+    return veri.yol.filter(function (y) { var t = etkinTur(y).tur; return (!f || (f === 'yok' ? !t : t === f)) && aramayaUyar(y, K); });
   }
   function ucHtml(u) {
     if (!u) return '<span>?</span>';
@@ -200,7 +209,9 @@
     var html = '<div class="rp-kartlar">' + [['İş', 'is'], ['Özel', 'ozel'], ['Etiketsiz', '']].map(function (x) {
       return '<div><span>' + x[0] + '</span><strong>' + km(toplam[x[1]][1]) + '</strong><small>' + toplam[x[1]][0] + ' yolculuk</small></div>';
     }).join('') + '</div>';
-    if (!L_.length) return html + '<p class="not">Bu dönemde yolculuk yok.</p>';
+    var araniyor = arananlar().length > 0;
+    if (araniyor) html += '<p class="rp-bulunan"><b>' + L_.length + ' yolculuk bulundu · ' + km(L_.reduce(function (t, y) { return t + y.m; }, 0)) + '</b> <span class="not">Yalnızca seçili dönemde aranır; bulamazsanız dönemi genişletin.</span></p>';
+    if (!L_.length) return html + '<p class="not">' + (araniyor ? 'Eşleşen yolculuk yok.' : 'Bu dönemde yolculuk yok.') + '</p>';
     var gun = null;
     L_.slice(0, gosterilen).forEach(function (y) {
       if (y.gun !== gun) { html += (gun ? '</ul>' : '') + '<h4 class="rp-gun">' + esc(O.gunAd(O.gunBasi(y.gun) + 43200e3)) + ' <button type="button" class="az-git rp-hikaye" data-gun="' + y.gun + '">▶ Günün hikâyesi</button></h4><ul class="rp-yollar">'; gun = y.gun; }
@@ -387,7 +398,7 @@
   function yazdir() {
     if (!veri) return;
     var eski = gosterilen; gosterilen = 1e9; ciz();
-    $('rp-baski').textContent = 'Dönem: ' + gunYaz(veri.d.bas) + ' – ' + gunYaz(veri.d.bit) + ($('rp-cihaz').value ? ' · ' + $('rp-cihaz').value : ' · Tüm cihazlar');
+    $('rp-baski').textContent = 'Dönem: ' + gunYaz(veri.d.bas) + ' – ' + gunYaz(veri.d.bit) + ($('rp-cihaz').value ? ' · ' + $('rp-cihaz').value : ' · Tüm cihazlar') + (sekme === 'yolculuk' && arananlar().length ? ' · Arama: “' + $('rp-ara').value.trim() + '”' : '');
     document.body.classList.add('yazdir-rapor');
     window.print();
     document.body.classList.remove('yazdir-rapor');
@@ -435,6 +446,7 @@
     sekme = s; gosterilen = SAYFA;
     [].forEach.call(document.querySelectorAll('#rp-sekmeler button'), function (b) { var a = b.getAttribute('data-sekme') === s; b.classList.toggle('acik', a); b.setAttribute('aria-selected', a ? 'true' : 'false'); });
     $('rp-etiket-kap').hidden = s !== 'yolculuk';
+    $('rp-ara-kap').hidden = s !== 'yolculuk';
     $('rp-excel').hidden = s === 'guzergah' || !!(ekSekmeler[s] && !ekSekmeler[s].excel);
     var secili = document.querySelector('#rp-sekmeler button.acik');
     if (secili && secili.scrollIntoView && !$('rpmodal').hidden) secili.scrollIntoView({ block: 'nearest', inline: 'nearest' });
@@ -469,6 +481,8 @@
     $('rp-ay').addEventListener('change', yukle);
     $('rp-cihaz').addEventListener('change', function () { gosterilen = SAYFA; yenidenHazirla(); });
     $('rp-etiket').addEventListener('change', function () { gosterilen = SAYFA; ciz(); });
+    var araBekle = 0;
+    $('rp-ara').addEventListener('input', function () { clearTimeout(araBekle); araBekle = setTimeout(function () { gosterilen = SAYFA; ciz(); }, 200); });
     $('rp-excel').addEventListener('click', excel);
     $('rp-yazdir').addEventListener('click', yazdir);
     $('rp-icerik').addEventListener('change', function (e) {

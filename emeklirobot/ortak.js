@@ -95,6 +95,34 @@
     if (kontrol) { harita.removeControl(kontrol); kontrol = null; }
   }
 
+  // Hıza göre rota renkleri (oynatılan yolculuk)
+  var HIZ_YAVAS = 20, HIZ_HIZLI = 70, BOSLUK = 180e3;
+  var RENK = { yavas: '#dc2626', normal: '#f59e0b', hizli: '#16a34a', yok: '#64748b' };
+  function parcaSinifi(a, b) {
+    if (b.t - a.t > BOSLUK) return 'yok'; // arada kayıt yok: çizgi tahminidir
+    var H = [a.hiz, b.hiz].filter(function (h) { return h !== null && h !== undefined; });
+    var hiz = H.length ? H.reduce(function (t, h) { return t + h; }, 0) / H.length : (b.t > a.t ? L.latLng(a.lat, a.lon).distanceTo([b.lat, b.lon]) / ((b.t - a.t) / 1000) * 3.6 : 0);
+    return hiz < HIZ_YAVAS ? 'yavas' : (hiz < HIZ_HIZLI ? 'normal' : 'hizli');
+  }
+  // Gösterilen rota, kayıt noktaları ve yön oklarının üstünde durur (yoksa cihaz rengi hız renklerini örter)
+  function ustKatman(ad, z) { if (!harita.getPane(ad)) harita.createPane(ad).style.zIndex = z; return ad; }
+  // Aynı renkteki ardışık parçalar tek çizgi yapılır
+  function renkliRota(iz) {
+    var parca = null;
+    function yaz() { if (parca) L.polyline(parca.nokta, { pane: 'er-rota', color: RENK[parca.s], weight: 5, opacity: 1, interactive: false, dashArray: parca.s === 'yok' ? '6 9' : null, className: 'az-rota-' + parca.s }).addTo(katman); }
+    for (var i = 1; i < iz.length; i++) {
+      var s = parcaSinifi(iz[i - 1], iz[i]);
+      if (!parca || parca.s !== s) { yaz(); parca = { s: s, nokta: [[iz[i - 1].lat, iz[i - 1].lon]] }; }
+      parca.nokta.push([iz[i].lat, iz[i].lon]);
+    }
+    yaz();
+  }
+  function lejant() {
+    return '<div class="az-lejant">' + [['yavas', '< ' + HIZ_YAVAS], ['normal', HIZ_YAVAS + '–' + HIZ_HIZLI], ['hizli', '> ' + HIZ_HIZLI + ' km/sa'], ['yok', 'kayıt yok']].map(function (x) {
+      return '<i class="r-' + x[0] + '"></i>' + x[1];
+    }).join(' ') + '</div>';
+  }
+
   /* h: {etiket, nokta:[[lat,lon]…]} ya da {etiket, konum:[lat,lon]}; iz:[{t,lat,lon,hiz}] verilirse oynatma düğmeleri çıkar.
      don: "Geri dön"e basılınca çağrılır (verilmezse açık pencereler gizlenip aynı yerden geri açılır). */
   function haritadaGoster(h) {
@@ -103,13 +131,14 @@
     katman = L.layerGroup().addTo(harita);
     var iz = h.iz && h.iz.length > 1 ? h.iz : null;
     var cizgi = iz ? iz.map(function (p) { return [p.lat, p.lon]; }) : h.nokta;
+    var rotaPane = ustKatman('er-rota', 610), durakPane = ustKatman('er-durak', 620);
     var Kutu = L.Control.extend({
       options: { position: 'bottomleft' },
       onAdd: function () {
         var d = L.DomUtil.create('div', 'az-don');
         if (h.liste) d.classList.add('az-don-hikaye');
         d.innerHTML = (h.liste ? '<ol class="az-hik">' + h.liste.map(function (x, i) { return '<li><button type="button" data-is="olay" data-i="' + i + '"><b>' + (x.no || '▸') + '</b> ' + esc(x.yazi) + '</button></li>'; }).join('') + '</ol>' : '') +
-          '<span>' + esc(h.etiket) + '</span>' +
+          '<span>' + esc(h.etiket) + '</span>' + (iz ? lejant() : '') +
           (iz ? '<button type="button" data-is="oynat">❚❚</button><select data-is="hiz" aria-label="Oynatma hızı"><option value="2">1×</option><option value="4" selected>2×</option><option value="8">4×</option><option value="16">8×</option><option value="32">16×</option></select><em class="az-an"></em>' : '') +
           '<button type="button" data-is="don">← Geri dön</button><button type="button" data-is="sil" aria-label="İşareti kaldır" title="İşareti kaldır">×</button>';
         L.DomEvent.disableClickPropagation(d);
@@ -128,11 +157,17 @@
     kontrol = new Kutu().addTo(harita);
     $('harita').scrollIntoView({ block: 'center' });
     harita.invalidateSize();
-    if (cizgi && cizgi.length > 1) {
-      L.polyline(cizgi, { color: '#0f172a', weight: 9, opacity: .55, interactive: false }).addTo(katman);
-      L.polyline(cizgi, { color: '#f59e0b', weight: 5, opacity: 1, interactive: false }).addTo(katman);
-      L.circleMarker(cizgi[0], { radius: 7, color: '#fff', weight: 2, fillColor: '#16a34a', fillOpacity: 1 }).bindTooltip('Başlangıç').addTo(katman);
-      L.circleMarker(cizgi[cizgi.length - 1], { radius: 7, color: '#fff', weight: 2, fillColor: '#dc2626', fillOpacity: 1 }).bindTooltip('Bitiş').addTo(katman);
+    if (h.daire) L.circle(h.daire.konum, { radius: h.daire.yaricap, color: '#2563eb', weight: 2, fillOpacity: .12, interactive: false }).addTo(katman);
+    if (h.daginik) { // birbirine bağlı olmayan noktalar (yalnızca numaralı işaretler)
+      var tum = h.daginik.length ? h.daginik : [h.daire.konum];
+      if (tum.length > 1) harita.fitBounds(tum, { maxZoom: 16, paddingTopLeft: [30, 30], paddingBottomRight: [30, Math.min(kontrol.getContainer().offsetHeight + 20, harita.getSize().y * .6)] });
+      else if (h.daire) harita.fitBounds(L.latLng(h.daire.konum).toBounds(h.daire.yaricap * 3), { maxZoom: 17 });
+      else harita.setView(tum[0], 16);
+    } else if (cizgi && cizgi.length > 1) {
+      L.polyline(cizgi, { pane: rotaPane, color: '#0f172a', weight: 9, opacity: .55, interactive: false }).addTo(katman);
+      if (iz) renkliRota(iz); else L.polyline(cizgi, { pane: rotaPane, color: '#f59e0b', weight: 5, opacity: 1, interactive: false }).addTo(katman);
+      L.circleMarker(cizgi[0], { pane: durakPane, radius: 7, color: '#fff', weight: 2, fillColor: '#16a34a', fillOpacity: 1 }).bindTooltip('Başlangıç').addTo(katman);
+      L.circleMarker(cizgi[cizgi.length - 1], { pane: durakPane, radius: 7, color: '#fff', weight: 2, fillColor: '#dc2626', fillOpacity: 1 }).bindTooltip('Bitiş').addTo(katman);
       var kutuYuk = kontrol.getContainer().offsetHeight;
       harita.fitBounds(cizgi, { maxZoom: 17, paddingTopLeft: [30, 30], paddingBottomRight: [30, Math.min(kutuYuk + 20, harita.getSize().y * .6)] });
     } else {
@@ -142,10 +177,10 @@
       harita.setView(k, 17);
     }
     (h.duraklar || []).forEach(function (p) {
-      L.marker(p.konum, { zIndexOffset: 1500, icon: L.divIcon({ className: 'az-durak', html: '<span>' + p.no + '</span>', iconSize: [24, 24], iconAnchor: [12, 12] }) }).bindTooltip(esc(p.etiket)).addTo(katman);
+      L.marker(p.konum, { pane: durakPane, zIndexOffset: 1500, icon: L.divIcon({ className: 'az-durak', html: '<span>' + p.no + '</span>', iconSize: [24, 24], iconAnchor: [12, 12] }) }).bindTooltip(esc(p.etiket)).addTo(katman);
     });
     if (iz) {
-      var arac = L.circleMarker([iz[0].lat, iz[0].lon], { radius: 10, color: '#fff', weight: 4, fillColor: '#2563eb', fillOpacity: 1, interactive: false }).addTo(katman);
+      var arac = L.circleMarker([iz[0].lat, iz[0].lon], { pane: durakPane, radius: 10, color: '#fff', weight: 4, fillColor: '#2563eb', fillOpacity: 1, interactive: false }).addTo(katman);
       oynatici = { iz: iz, arac: arac, konum: 0, oynuyor: true, son: null, kare: 0 };
       anCiz();
       oynatici.kare = requestAnimationFrame(adim);

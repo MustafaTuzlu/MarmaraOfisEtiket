@@ -296,6 +296,7 @@
   }
   function tik(e) {
     var sil = e.target.closest('[data-kural-sil]');
+    if (korTik(e)) return true;
     if (sil) { if (confirm('Bu kural silinsin mi?')) kuralIslem('kural_sil', { id: Number(sil.getAttribute('data-kural-sil')) }); return true; }
     if (e.target.closest('#kr-ekle')) {
       var g = { kaynak: document.getElementById('kr-kaynak').value, hedef: document.getElementById('kr-hedef').value, tur: document.getElementById('kr-tur').value, ikiYon: document.getElementById('kr-iki').checked };
@@ -306,17 +307,71 @@
     return false;
   }
 
+  /* ---------- GPS kör noktaları ---------- */
+  var AYNI_YER = 150; // sinyal kesildiği yere bu kadar yakında dönerse "aynı yerde"
+  var korListe = [];
+  function korGruplari(veri) {
+    var G = {};
+    veri.kayip.forEach(function (k) {
+      var a = k.yer.kayitli ? 'y' + k.yer.yerId : k.yer.anahtar;
+      var g = G[a] = G[a] || { yer: k.yer, ad: k.yer.kayitli ? k.yer.yerAd : k.yer.ad, olay: [], sure: 0, ayni: 0, uzak: [], bilinmeyen: 0, gun: {} };
+      g.olay.push(k); g.sure += k.t1 - k.t0; g.gun[O.istGun(k.t0)] = 1;
+      if (k.fark === null) g.bilinmeyen++; else if (k.fark <= AYNI_YER) g.ayni++; else g.uzak.push(k.fark);
+    });
+    return Object.keys(G).map(function (a) { return G[a]; }).sort(function (a, b) { return (b.olay.length - a.olay.length) || (b.sure - a.sure); });
+  }
+  function korDavranis(g) {
+    var P = [];
+    if (g.ayni) P.push(g.ayni + ' kez aynı yerde geri geldi');
+    if (g.uzak.length) P.push(g.uzak.length + ' kez başka yerde (tipik ' + O.metre(I.ortanca(g.uzak)) + ' ötede)');
+    if (g.bilinmeyen) P.push(g.bilinmeyen + ' kez dönüş yeri bilinmiyor');
+    return P.join(' · ');
+  }
+  function korNokta(g, no) {
+    var k = g.olay[g.olay.length - 1];
+    return { no: no, konum: [k.lat, k.lon], etiket: g.ad + ': ' + g.olay.length + ' kez, toplam ' + sure(g.sure) };
+  }
+  function korCiz(veri) {
+    korListe = korGruplari(veri);
+    var eksik = veri.gunler.filter(function (g) { return g.veri.gps > 0 && !g.veri.gpsy; }).length;
+    var uyari = eksik ? '<p class="az-uyari">GPS’siz süre içeren ' + eksik + ' cihaz-gün için konum bilgisi yok (ham kayıtları silinmiş eski özetler); bu listeye girmez.</p>' : '';
+    if (!korListe.length) return uyari + '<p class="not">Bu dönemde kayda geçen bir GPS kaybı yok.</p>';
+    var toplam = veri.kayip.reduce(function (t, k) { return t + k.t1 - k.t0; }, 0);
+    return uyari + kartlar([['GPS kaybı', sayi(veri.kayip.length) + ' kez', ''], ['Toplam süre', sure(toplam), 'tipik ' + sure(I.ortanca(veri.kayip.map(function (k) { return k.t1 - k.t0; })))], ['Farklı nokta', sayi(korListe.length), '']]) +
+      '<p><button type="button" class="analiz-btn" data-kor="hepsi">Haritada göster' + (korListe.length > 40 ? ' (en sık 40)' : '') + '</button></p>' +
+      bolum('Sinyalin kesildiği yerler', I.tablo(['No', 'Yer', 'Kez', 'Gün', 'Toplam süre', 'Nasıl geri geldi', 'Son', ''], korListe.slice(0, 100).map(function (g, i) {
+        var son = g.olay.reduce(function (m, k) { return k.t0 > m.t0 ? k : m; }, g.olay[0]);
+        return [i + 1, I.ucHtml(g.yer), g.olay.length, Object.keys(g.gun).length, sure(g.sure), '<span class="db-sar">' + esc(korDavranis(g)) + '</span>', O.kisaTarih(son.t0),
+          '<button type="button" class="az-git" data-kor="' + i + '">Haritada</button>'];
+      }))) +
+      '<p class="not">İşaret, sinyal kesilmeden önceki son bilinen konumdur; sinyalin kaybolduğu tam yer biraz ileride olabilir. “Aynı yerde geri geldi” (' + AYNI_YER + ' m içinde) çoğunlukla kapalı otopark ya da bina içini, “başka yerde” sinyal yokken yer değiştirildiğini düşündürür; kesin neden kayıtlardan bilinemez.</p>';
+  }
+  function korTik(e) {
+    var b = e.target.closest('button[data-kor]'); if (!b) return false;
+    var a = b.getAttribute('data-kor'), L_ = a === 'hepsi' ? korListe.slice(0, 40).map(function (g, i) { return korNokta(g, i + 1); }) : [korNokta(korListe[Number(a)], Number(a) + 1)];
+    O.haritadaGoster({ etiket: a === 'hepsi' ? 'GPS kör noktaları (' + L_.length + ')' : L_[0].etiket, duraklar: L_, daginik: L_.map(function (x) { return x.konum; }) });
+    return true;
+  }
+  R.sekmeEkle('kor', {
+    ciz: korCiz,
+    excel: function (veri) {
+      I.indir(['Başlangıç', 'Bitiş', 'Süre (dk)', 'Cihaz', 'Yer', 'Enlem', 'Boylam', 'Dönüşte uzaklık (m)'], veri.kayip.slice().sort(function (a, b) { return a.t0 - b.t0; }).map(function (k) {
+        return [new Date(k.t0), new Date(k.t1), Math.round((k.t1 - k.t0) / 60e3), k.cihaz, k.yer.ad, k.lat, k.lon, k.fark];
+      }), [20, 20, 10, 16, 24, 12, 12, 20], 'GPS-kor-noktalari');
+    }
+  });
+
   /* ---------- Günün hikâyesi ---------- */
-  function hikayeOynat(cihaz, gun) {
-    var bas = O.gunBasi(gun);
-    I.mesaj('Günün kayıtları alınıyor…');
+  function hikayeOynat(cihaz, gun, yaz) {
+    var bas = O.gunBasi(gun), mesaj = yaz || I.mesaj;
+    mesaj('Günün kayıtları alınıyor…');
     Yerler.hazir().then(function () { return O.veriGetir(O.aralikSorgu(bas - 864e5, bas + 2 * 864e5 - 1000, cihaz)); })
       .then(function (r) { return r.kayitlar ? r : O.veriGetir(O.aralikSorgu(bas, bas + 864e5 - 1000, cihaz)); })
       .then(function (r) {
         var K = r.kayitlar || [], c = Analiz.coz(K, { hizSinir: 1000, yerBul: Yerler.bul, yakinBul: Yerler.yakin })[0];
         var g = c && c.gunler.filter(function (x) { return x.bas === bas; })[0];
         var iz = K.filter(function (k) { return k.t >= bas && k.t < bas + 864e5 && k.lat !== null; });
-        if (!g || iz.length < 2) { I.mesaj(I.gunYaz(gun) + ' için ham kayıtlar yok (silinmiş olabilir); hikâye oynatılamıyor.'); return; }
+        if (!g || iz.length < 2) { mesaj(I.gunYaz(gun) + ' için ham kayıtlar yok (silinmiş olabilir); hikâye oynatılamıyor.'); return; }
         var liste = [], duraklar = [], no = 0;
         g.olaylar.forEach(function (e) {
           var aralik = saat(e.t0) + '–' + (e.t1 >= bas + 864e5 ? '24:00' : saat(e.t1)), s = sure(e.t1 - e.t0);
@@ -332,9 +387,9 @@
             liste.push({ t: e.t0, no: no, yazi: yazi, konum: [e.konum.lat, e.konum.lon] });
           } else liste.push({ t: e.t0, yazi: aralik + ' Veri yok (' + s + ')' });
         });
-        I.mesaj('');
+        mesaj('');
         O.haritadaGoster({ etiket: cihaz + ' · ' + I.gunYaz(gun), iz: iz, liste: liste, duraklar: duraklar });
-      }).catch(function (e) { I.mesaj(O.hataMetni(e)); });
+      }).catch(function (e) { mesaj(O.hataMetni(e)); });
   }
   // O gün birden çok cihaz hareket ettiyse hangisi olduğu sorulur
   function hikaye(gun, veri) {
@@ -348,5 +403,5 @@
     m.scrollIntoView({ block: 'nearest' });
   }
 
-  window.RaporEk = { kuralHtml: kuralHtml, tik: tik, hikaye: hikaye, sonUyarilar: sonUyarilar };
+  window.RaporEk = { kuralHtml: kuralHtml, tik: tik, hikaye: hikaye, hikayeOynat: hikayeOynat, ziyaretler: ziyaretler, sonUyarilar: sonUyarilar };
 })();

@@ -206,7 +206,7 @@
   }
 
   window.Yerler = {
-    baslat: baslat, yukle: yukle, bul: bul, yakin: yakin, duzenle: duzenle, yonetAc: yonetAc,
+    baslat: baslat, yukle: yukle, koordAyir: koordAyir, bul: bul, yakin: yakin, duzenle: duzenle, yonetAc: yonetAc,
     ikon: function (t) { return IKON[t] || IKON.diger; },
     degisince: function (f) { dinleyenler.push(f); },
     hazir: function () { return yukleme || yukle(); },

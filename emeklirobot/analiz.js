@@ -341,8 +341,9 @@
 
   /* Sunucuda saklanan günlük özet (rapor, yolculuk listesi, bakım km). Biçim değişirse OZET_SURUM artırılır.
      Zamanlar epoch saniye. yol: [t0, t1, metre, enYuksekHiz|null, basLat, basLon, bitLat, bitLon] (başladığı güne yazılır)
-     durak: [t0, t1, lat, lon, belirsiz(0|1)] (güne kırpılmış, en az 1 dk) */
-  var OZET_SURUM = 2; // 2: cihaz sağlığı (sag)
+     durak: [t0, t1, lat, lon, belirsiz(0|1)] (güne kırpılmış, en az 1 dk)
+     gpsy: [t0, t1, lat, lon, donusFarki(m)|null] GPS'siz dönemler (başladığı güne yazılır; konum = kesilmeden önceki son konum) */
+  var OZET_SURUM = 3; // 2: cihaz sağlığı (sag), 3: GPS kayıp noktaları (gpsy)
   // O günün cihaz sağlığı: gönderim gecikmesi (sn), GPS kaybı, ısınma, sıcaklık, pil, doğruluk, en uzun kayıtsız süre (sn)
   function gunSagligi(K, g) {
     var bit = g.bas + 864e5, G = K.filter(function (k) { return k.t >= g.bas && k.t < bit; });
@@ -370,6 +371,11 @@
         yolculuklar.push({ gun: gunBasi(s.t0), v: [sn(s.t0), sn(s.t1), Math.round(p.mesafe), p.maks ? p.maks.hiz : null,
           u.bas ? yuvarla(u.bas[0]) : null, u.bas ? yuvarla(u.bas[1]) : null, u.bit ? yuvarla(u.bit[0]) : null, u.bit ? yuvarla(u.bit[1]) : null] });
       });
+      var kayiplar = [];
+      S.forEach(function (s) {
+        if (s.tur !== 'gps' || !s.konum || s.t1 - s.t0 < 60e3) return;
+        kayiplar.push({ gun: gunBasi(s.t0), v: [sn(s.t0), sn(s.t1), yuvarla(s.konum.lat), yuvarla(s.konum.lon), s.fark === null ? null : Math.round(s.fark)] });
+      });
       gunler(K, T, S).forEach(function (g) {
         var o = g.ozet, saat = [], durak = [], h;
         for (h = 0; h < 24; h++) saat.push(0);
@@ -386,7 +392,8 @@
         var yol = yolculuklar.filter(function (y) { return y.gun === g.bas; }).map(function (y) { return y.v; });
         cikti.push({ cihaz: ad, gun: new Date(g.bas + A.SAAT_FARKI).toISOString().slice(0, 10), veri: {
           surus: sn(o.surus), m: Math.round(o.mesafe), bekleme: sn(o.bekleme), gps: sn(o.gps), yok: sn(o.veriYok),
-          maks: o.maks ? o.maks.hiz : null, maksT: o.maks ? sn(o.maks.t) : null, saat: saat.map(Math.round), yol: yol, durak: durak, sag: gunSagligi(K, g) } });
+          maks: o.maks ? o.maks.hiz : null, maksT: o.maks ? sn(o.maks.t) : null, saat: saat.map(Math.round), yol: yol, durak: durak, sag: gunSagligi(K, g),
+          gpsy: kayiplar.filter(function (x) { return x.gun === g.bas; }).map(function (x) { return x.v; }) } });
       });
     });
     return cikti;

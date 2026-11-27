@@ -47,6 +47,8 @@
   <button type="button" data-ac="karne">🗒️ Aylık karne</button>
   <button type="button" data-ac="dikkat">👀 Dikkat çekenler</button>
   <button type="button" data-ac="saglik">🩺 Cihaz sağlığı</button>
+  <button type="button" data-ac="kor">📡 GPS kör noktaları</button>
+  <button type="button" data-ac="nezaman">🔎 Buraya ne zaman gittim?</button>
   <button type="button" data-ac="masraf">💳 Masraf</button>
   <button type="button" data-ac="bakim">🔧 Bakım</button>
   <button type="button" data-ac="yerler">📍 Yerlerim</button>
@@ -181,6 +183,7 @@
       <button type="button" role="tab" data-sekme="karne">Aylık karne</button>
       <button type="button" role="tab" data-sekme="dikkat">Dikkat çekenler</button>
       <button type="button" role="tab" data-sekme="saglik">Cihaz sağlığı</button>
+      <button type="button" role="tab" data-sekme="kor">GPS kör noktaları</button>
     </div>
     <div class="rp-suzgec">
       <label>Dönem <select id="rp-donem"><option value="7">Son 7 gün</option><option value="hafta">Bu hafta</option><option value="ay">Bu ay</option><option value="30" selected>Son 30 gün</option><option value="gecenay">Geçen ay</option><option value="90">Son 90 gün</option><option value="365">Son 1 yıl</option><option value="aysec">Ay seç…</option><option value="ozel">Tarih seç…</option></select></label>
@@ -188,11 +191,26 @@
       <span id="rp-ozel" class="rp-ozel" hidden><label>Başlangıç <input type="date" id="rp-bas"></label><label>Bitiş <input type="date" id="rp-bit"></label></span>
       <label>Cihaz <select id="rp-cihaz"><option value="">Tüm cihazlar</option></select></label>
       <label id="rp-etiket-kap">Tür <select id="rp-etiket"><option value="">Hepsi</option><option value="is">İş</option><option value="ozel">Özel</option><option value="yok">Etiketsiz</option></select></label>
+      <label id="rp-ara-kap">Yer ya da not ara <input type="search" id="rp-ara" maxlength="80" placeholder="örn. Torun, müşteri" autocomplete="off" spellcheck="false"></label>
       <span class="rp-cikti"><button type="button" id="rp-excel" class="excel">Excel</button><button type="button" id="rp-yazdir" class="excel">Yazdır / PDF</button></span>
     </div>
     <div id="rp-durum" class="az-durum" role="status" hidden></div>
     <p id="rp-mesaj" class="sayac" role="status"></p>
     <div id="rp-icerik"></div>
+  </div>
+</div>
+
+<div id="nzmodal" class="modal" hidden>
+  <div class="modal-kutu az-kutu" role="dialog" aria-modal="true" aria-labelledby="nzbaslik">
+    <button type="button" class="modal-kapat" id="nzkapat" aria-label="Kapat">×</button>
+    <h2 id="nzbaslik">Buraya ne zaman gittim?</h2>
+    <div class="rp-suzgec">
+      <label>Yarıçap <select id="nz-yaricap"><option value="75">75 m</option><option value="150" selected>150 m</option><option value="300">300 m</option><option value="500">500 m</option><option value="1000">1 km</option></select></label>
+      <label>Cihaz <select id="nz-cihaz"><option value="">Tüm cihazlar</option></select></label>
+      <span class="rp-cikti"><button type="button" id="nz-excel" class="excel">Excel</button></span>
+    </div>
+    <p id="nz-mesaj" class="sayac" role="status"></p>
+    <div id="nz-icerik"></div>
   </div>
 </div>
 
@@ -292,6 +310,7 @@
 <script src="/emeklirobot/son-durum.js"></script>
 <script src="/emeklirobot/rapor.js"></script>
 <script src="/emeklirobot/rapor-ek.js"></script>
+<script src="/emeklirobot/ne-zaman.js"></script>
 <script src="/emeklirobot/masraf.js"></script>
 <script src="/emeklirobot/bakim.js"></script>
 <script src="/emeklirobot/db-yonetim.js"></script>
