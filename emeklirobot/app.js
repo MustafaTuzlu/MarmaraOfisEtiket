@@ -28,10 +28,12 @@
   var harita = L.map('harita').setView([41.0082, 28.9784], 10);
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(harita);
   var katman = L.layerGroup().addTo(harita);
+  // Dar ekranda açık pin penceresi cihaz kutusunun altında kalmasın (CSS: .popup-acik)
+  harita.on('popupopen popupclose', function (e) { harita.getContainer().classList.toggle('popup-acik', e.type === 'popupopen'); });
   var pin = null;
   var pinIcon = L.divIcon({
     className: 'pin', iconSize: [28, 38], iconAnchor: [14, 38], popupAnchor: [0, -34],
-    html: '<svg width="28" height="38" viewBox="0 0 28 38"><path d="M14 1C6.8 1 1 6.8 1 14c0 9.5 13 23 13 23s13-13.5 13-23C27 6.8 21.2 1 14 1z" fill="#d93025" stroke="#fff" stroke-width="2"/><circle cx="14" cy="14" r="5" fill="#fff"/></svg>'
+    html: '<span class="pin-halka"></span><span class="pin-halka"></span><span class="pin-halka"></span><svg width="28" height="38" viewBox="0 0 28 38"><path d="M14 1C6.8 1 1 6.8 1 14c0 9.5 13 23 13 23s13-13.5 13-23C27 6.8 21.2 1 14 1z" fill="#d93025" stroke="#fff" stroke-width="2"/><circle cx="14" cy="14" r="5" fill="#fff"/></svg>'
   });
   window.addEventListener('resize', function () { harita.invalidateSize(); });
   function detayAcKapa(ac) {
@@ -56,6 +58,32 @@
       '<br>Pil: ' + (k.pilYuzdesi === null ? '—' : k.pilYuzdesi + '%') + ' · ' + (k.pilSicakligi === null ? '—' : k.pilSicakligi + '°C');
   }
 
+  /* Pin penceresindeki "ne kadar önce" satırı ve son konum tazeyken (≤ 20 dk) çalışan halka efekti */
+  var CANLI_MS = 20 * 60e3, saatFarki = 0; // saatFarki: sunucu saati - tarayıcı saati (ms)
+  // Konumun GPS'ten alındığı an. KONUM/ARAC_* kayıtlarında zaman zaten fix zamanıdır; diğer tiplerde kayıt anından konum yaşı düşülür.
+  function konumAni(k) {
+    var t = Date.parse(k.zaman);
+    if (!/^(KONUM|ARAC_)/.test(k.logTipi)) t -= k.konumYasiMs || 0;
+    return t;
+  }
+  function gecenYaz(ms) {
+    var s = Math.floor(Math.max(0, ms) / 1000), p = function (n) { return (n < 10 ? '0' : '') + n; };
+    return p(Math.floor(s / 86400)) + ' gün ' + p(Math.floor(s % 86400 / 3600)) + ' saat ' + p(Math.floor(s % 3600 / 60)) + ' dk ' + p(s % 60) + ' sn';
+  }
+  function sonKonumMu(k) { return !!durum.sonKonum && durum.sonKonum.id === k.id; }
+  function gecenSatir(k) { return (sonKonumMu(k) ? 'Son konum ' : 'Bu konum ') + gecenYaz(Date.now() + saatFarki - konumAni(k)) + ' önce alındı'; }
+  function pinHtml(k) { return ozetHtml(k) + '<div class="pin-gecen">' + esc(gecenSatir(k)) + '</div>'; }
+  function pinGuncelle() {
+    if (!pin) return;
+    var k = pin.erKayit, el = pin.getElement();
+    if (el) el.classList.toggle('canli', sonKonumMu(k) && Date.now() + saatFarki - konumAni(k) <= CANLI_MS);
+    if (pin.isPopupOpen()) {
+      var kutu = pin.getPopup().getElement(), satir = kutu && kutu.querySelector('.pin-gecen');
+      if (satir) satir.textContent = gecenSatir(k);
+    }
+  }
+  setInterval(pinGuncelle, 1000);
+
   function sec(id, haritayiKaydir) {
     var k = kayitBul(id);
     if (!k) return;
@@ -64,10 +92,18 @@
       tr.classList.toggle('secili', Number(tr.getAttribute('data-id')) === id);
     });
     detayYaz(k);
-    if (pin) { harita.removeLayer(pin); pin = null; }
+    // Aynı kayıt yeniden seçilirse (otomatik yenileme) pin korunur: açık pencere kapanmaz, efekt baştan başlamaz
+    if (pin && (!konumlu(k) || pin.erKayit.id !== k.id)) { harita.removeLayer(pin); pin = null; }
     if (konumlu(k)) {
-      pin = L.marker([k.enlem, k.boylam], { icon: pinIcon, zIndexOffset: 1000 }).addTo(harita).bindPopup(ozetHtml(k));
-      pin.on('click', function () { detayYaz(k); });
+      if (!pin) {
+        pin = L.marker([k.enlem, k.boylam], { icon: pinIcon, zIndexOffset: 1000 }).addTo(harita).bindPopup('');
+        pin.on('click', function () { detayYaz(this.erKayit); });
+        pin.on('popupopen', pinGuncelle);
+      }
+      pin.erKayit = k;
+      // İçerik yalnızca değiştiyse yenilenir: Leaflet her yenilemede haritayı açık pencereye kaydırır
+      if (pin.erOzet !== ozetHtml(k)) { pin.erOzet = ozetHtml(k); pin.setPopupContent(pinHtml(k)); }
+      pinGuncelle();
       if (haritayiKaydir) harita.panTo([k.enlem, k.boylam]);
     }
   }
@@ -405,6 +441,7 @@
           durum.sonId = Math.max(durum.sonId, maxId);
         } else { durum.sonId = maxId; }
         durum.kayitlar = v.kayitlar; durum.sonKonum = v.sonKonum;
+        if (v.sunucuZamani) saatFarki = Date.parse(v.sunucuZamani) - Date.now();
         hizliSayilar(v.hizli);
         $('sayac').textContent = v.toplam + ' kayıt eşleşti, ilk ' + v.kayitlar.length + ' tanesi listeleniyor';
         $('durum').textContent = 'Güncellendi: ' + zaman(v.sunucuZamani) + (yeni ? ' · ' + yeni + ' yeni kayıt' : '');
