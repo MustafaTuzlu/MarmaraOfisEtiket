@@ -792,13 +792,14 @@
   Rapor.baslat();
   NeZaman.baslat(harita);
   Bakim.baslat();
+  Darbe.baslat();
   Masraf.baslat();
   DbYonetim.baslat();
   SonDurum.baslat();
   document.querySelector('.arac-cubugu').addEventListener('click', function (e) {
     var b = e.target.closest('button[data-ac]'); if (!b) return;
     var a = b.getAttribute('data-ac');
-    if (a === 'yerler') Yerler.yonetAc(); else if (a === 'bakim') Bakim.ac(); else if (a === 'masraf') Masraf.ac(); else Rapor.ac(a);
+    if (a === 'yerler') Yerler.yonetAc(); else if (a === 'bakim') Bakim.ac(); else if (a === 'masraf') Masraf.ac(); else if (a === 'darbe') Darbe.ac(); else Rapor.ac(a);
   });
   $('b-yerler').addEventListener('click', Yerler.yonetAc);
   urlOku();

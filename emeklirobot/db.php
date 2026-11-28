@@ -38,6 +38,8 @@ function tablolar() {
             'kurallar' => ['hepsi' => ['TÜM bakım maddeleri', true, null]]],
         'emekli_arac' => ['ad' => 'Araç kilometreleri', 'aciklama' => 'Bakım için girilen gösterge kilometreleri.', 'korumali' => false,
             'kurallar' => ['hepsi' => ['TÜM kilometre kayıtları', true, null]]],
+        'emekli_darbe' => ['ad' => 'Darbe adayları', 'aciklama' => 'Telefon sensörlerinin işaretlediği olayların özeti ve GPS izi (konum içerir). Kaza tespiti değildir.', 'korumali' => false,
+            'kurallar' => ['test' => ['Deneme kayıtları (cihaz adı TEST-darbe)', false, null], 'cihaz' => ['Bir cihazın tüm darbe adayları', true, 'cihaz'], 'hepsi' => ['TÜM darbe adayları', true, null]]],
         'emekli_komut' => ['ad' => 'Anlık durum istekleri', 'aciklama' => '“Anlık Durum” için telefona bırakılan istekler ve sonuç durumları.', 'korumali' => false,
             'kurallar' => ['biten7' => ['7 günden eski, sonuçlanmış istekler', false, null], 'biten' => ['Sonuçlanmış tüm istekler', false, null], 'hepsi' => ['TÜM istekler (bekleyenler dahil)', true, null]]],
         'cihaz_anlik' => ['ad' => 'Son anlık durum', 'aciklama' => 'Her cihazın en son gönderdiği anlık durum (cihaz başına tek satır).', 'korumali' => false,
@@ -79,6 +81,7 @@ function kosul($tablo, $kural, $deger, $ZAMAN) {
         }
         return null;
     }
+    if ($tablo === 'emekli_darbe') { return $kural === 'test' ? ['WHERE cihaz_adi = ?', ['TEST-darbe']] : null; }
     if ($tablo === 'emekli_komut') {
         if ($kural === 'biten') { return ['WHERE bekleyen IS NULL', []]; }
         if ($kural === 'biten7') { return ['WHERE bekleyen IS NULL AND olusturma < ?', [gmdate('Y-m-d H:i:s', $simdi - 7 * 86400)]]; }
@@ -139,18 +142,21 @@ function yedek_tablo($pdo, $t, $w, $p) {
     $sira = [];
     foreach ($pk as $k) { $sira[] = '`' . str_replace('`', '', $k) . '`'; }
     $sonId = 0; $atla = 0; $toplam = 0;
+    // Satırı büyük tabloda (GPS izi, satır başına ~100 KB'a kadar) bellek ve phpMyAdmin içe aktarma paket sınırı için küçük parçalar
+    $parca = $t === 'emekli_darbe' ? 20 : YEDEK_PARCA;
+    $ekleme = $t === 'emekli_darbe' ? 5 : 200;
     while (true) {
         $kosullar = $w; $degerler = $p;
         if ($artan) { $kosullar[] = '`id` > ?'; $degerler[] = $sonId; }
         $sql = "SELECT * FROM `$t`" . ($kosullar ? ' WHERE ' . implode(' AND ', $kosullar) : '')
-            . ($sira ? ' ORDER BY ' . implode(', ', $sira) : '') . ' LIMIT ' . YEDEK_PARCA . ($artan ? '' : ' OFFSET ' . (int)$atla);
+            . ($sira ? ' ORDER BY ' . implode(', ', $sira) : '') . ' LIMIT ' . $parca . ($artan ? '' : ' OFFSET ' . (int)$atla);
         $st = $pdo->prepare($sql);
         $st->execute($degerler);
         $satirlar = $st->fetchAll(PDO::FETCH_ASSOC);
         $st->closeCursor();
         if (!$satirlar) { break; }
         $kolon = '`' . implode('`,`', array_keys($satirlar[0])) . '`';
-        foreach (array_chunk($satirlar, 200) as $dilim) {
+        foreach (array_chunk($satirlar, $ekleme) as $dilim) {
             $parti = [];
             foreach ($dilim as $r) {
                 $d = [];
@@ -163,7 +169,7 @@ function yedek_tablo($pdo, $t, $w, $p) {
         $n = count($satirlar);
         $toplam += $n; $atla += $n;
         if ($artan) { $sonId = $satirlar[$n - 1]['id']; }
-        if ($n < YEDEK_PARCA) { break; }
+        if ($n < $parca) { break; }
     }
     return $toplam;
 }

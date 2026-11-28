@@ -45,6 +45,7 @@
   <button type="button" data-ac="masraf">💳 Masraf</button>
   <button type="button" data-ac="bakim">🔧 Bakım</button>
   <button type="button" data-ac="yerler">📍 Yerlerim</button>
+  <button type="button" data-ac="darbe">📳 Darbe adayları</button>
 </nav>
 
 <div id="yedek-serit" class="yedek-serit" role="status" hidden>
@@ -207,6 +208,21 @@
   </div>
 </div>
 
+<div id="drmodal" class="modal" hidden>
+  <div class="modal-kutu az-kutu" role="dialog" aria-modal="true" aria-labelledby="drbaslik">
+    <button type="button" class="modal-kapat" id="drkapat" aria-label="Kapat">×</button>
+    <h2 id="drbaslik">Darbe adayları</h2>
+    <p class="not">Telefon sensörlerinin işaretlediği olaylar. <b>Kaza tespiti değildir</b>; eşikler henüz doğrulanmadı. Gerçek durum ve not yalnız telefondan düzenlenir.</p>
+    <div class="rp-suzgec">
+      <label>Cihaz <select id="dr-cihaz"><option value="">Tüm cihazlar</option></select></label>
+      <label>Etiket <select id="dr-etiket"><option value="">Hepsi</option><option value="OLASI_DARBE">Olası darbe</option><option value="TELEFON_DUSMESI_SUPHESI">Telefon düşmesi şüphesi</option><option value="BELIRLENEMEDI">Belirlenemedi</option></select></label>
+      <span class="rp-cikti"><button type="button" id="dr-yenile" class="excel">Yenile</button><button type="button" id="dr-excel" class="excel">Excel</button></span>
+    </div>
+    <p id="dr-mesaj" class="sayac" role="status"></p>
+    <div id="dr-icerik"></div>
+  </div>
+</div>
+
 <div id="bkmodal" class="modal" hidden>
   <div class="modal-kutu az-kutu" role="dialog" aria-modal="true" aria-labelledby="bkbaslik">
     <button type="button" class="modal-kapat" id="bkkapat" aria-label="Kapat">×</button>
@@ -306,6 +322,7 @@
 <script src="/emeklirobot/ne-zaman.js"></script>
 <script src="/emeklirobot/masraf.js"></script>
 <script src="/emeklirobot/bakim.js"></script>
+<script src="/emeklirobot/darbe.js"></script>
 <script src="/emeklirobot/db-yonetim.js"></script>
 <script src="/emeklirobot/app.js"></script>
 </body>

@@ -60,6 +60,7 @@
     emekli_gun: 'Yolculuk listesi, rapor, ziyaretler, karne ve bakım km hesabı bu günleri kaybeder. Ham logu duran günler yeniden hesaplanabilir; logu silinmiş günler KALICI olarak gider.',
     emekli_yolculuk_etiket: 'Elle verilen İş/Özel etiketleri ve notlar gider. İş yolu masraf dökümü ve karne değişir. Otomatik kurallar etkisini sürdürür.',
     emekli_masraf: 'Harcama geçmişi, km başı maliyet ve yakıt tüketimi hesabı gider. Başka kopyası yoktur.',
+    emekli_darbe: 'Telefonlar eski olayları kendileri siler (50 olay sınırı) ve gönderdiklerini normalde yeniden göndermez; silinen darbe adaylarının sunucuda başka kopyası olmayabilir.',
     emekli_bakim: 'Bakım hatırlatıcıları ve son yapılma bilgileri gider; uyarılar çıkmaz.',
     emekli_arac: 'Girilen gösterge km’leri gider; kilometre tahmini ve km’ye bağlı bakım uyarıları çalışmaz.',
     emekli_komut: 'Sonuçlanmış istekleri silmek güvenlidir. Bekleyenler silinirse telefondan beklenen anlık durum gelmeyebilir.',
@@ -81,7 +82,7 @@
   /* ---------- Genel bakış ---------- */
   function saglik() {
     var L = [], eksik = bilgi.tablolar.filter(function (t) { return !t.var; });
-    if (eksik.length) L.push(['kr', 'Eksik tablo: ' + eksik.map(function (t) { return t.tablo; }).join(', ') + '. phpMyAdmin’de db/2026-11-27-yerler.sql ve db/2026-11-27-masraf-kural.sql dosyalarını çalıştırın.', '']);
+    if (eksik.length) L.push(['kr', 'Eksik tablo: ' + eksik.map(function (t) { return t.tablo; }).join(', ') + '. phpMyAdmin’de ilgili SQL dosyalarını (db/2026-11-27-yerler.sql, db/2026-11-27-masraf-kural.sql, darbe adayları için db/2026-11-28-darbe.sql) çalıştırın.', '']);
     if (bilgi.ozetEksik) L.push(['uy', sayi(bilgi.ozetEksik) + ' günün rapor özeti eksik ya da eski.', '<button type="button" class="az-git" data-is="senkron">Şimdi hesapla</button>']);
     if (bilgi.saklamaAsan) L.push(['uy', 'Saklama süresini (' + bilgi.saklamaAy + ' ay) aşan ' + sayi(bilgi.saklamaAsan) + ' log var.', '<button type="button" class="az-git" data-is="saklama-temizle">İncele ve temizle</button>']);
     if (bilgi.konumsuzYer) L.push(['uy', bilgi.konumsuzYer + ' kayıtlı yerin konumu yok; analizde eşleşmez.', '<button type="button" class="az-git" data-is="yerler">Yerlerim</button>']);

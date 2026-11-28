@@ -502,3 +502,9 @@ a.az-git{text-decoration:none;display:inline-block}
   body.yazdir-rapor .rp-hikaye,body.yazdir-rapor .rp-kurallar{display:none!important}
   body.yazdir-rapor .kr-sayfa+.kr-sayfa{break-before:page;border-top:0}
 }
+
+/* ---------- Darbe adayları ---------- */
+#dr-mesaj:empty{display:none}.dr-ust{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 8px}.dr-baslik{font-size:15px;margin:0 0 8px}
+.dr-dl{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px 14px;margin:0}.dr-dl dt{font-size:12px;color:#64748b}.dr-dl dd{margin:0;font-size:14px;overflow-wrap:anywhere;white-space:pre-wrap}
+.dr-gps{margin-top:12px}.dr-gps summary{cursor:pointer;font-size:13px;margin-bottom:6px}#dr-excel:disabled{opacity:.5;cursor:default}
+@media(max-width:800px){#drmodal{padding:8px}}

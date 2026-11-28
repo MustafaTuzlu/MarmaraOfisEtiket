@@ -234,6 +234,7 @@ curl -s -X POST https://marmaraofisetiket.net/api/emekli/kayitlar.php \
 
 ## 10. Değişiklik geçmişi (v1 içinde geriye uyumlu eklemeler)
 
+- 2026-11-28 (v1.3): `POST darbeler.php` eklendi (§14). Mevcut uç noktalar, kayıt alanları ve log tipleri değişmedi. Sunucuda `db/2026-11-28-darbe.sql` migrasyonu gerekir.
 - 2026-11-27: `DURUM`, Android 1.0.9+ ile hareketliyken GPS yokken de yazılır (§5). Alan, tip ve uç nokta değişmedi.
 - 2026-11-25: kayıtlara isteğe bağlı `hizKmh` ve `yon` eklendi. Zorunlu alan değişmedi; yeni log tipi yok. `hizKmh`/`yon` yalnızca taze fix'li kayıtlarda (`KONUM`, `ARAC_*`) dolu, diğerlerinde `null`. Sunucuda `db/2026-11-25-hiz-yon.sql` migrasyonu gerekir.
 - 2026-11-27 (v1.2): `GET surum.php` ve `GET|HEAD indir.php` eklendi (§13). Mevcut uç noktalar değişmedi.
@@ -297,6 +298,123 @@ Telefondaki "Güncellemeyi kontrol et" için: sunucu yalnızca yayındaki sürü
 ```
 - Sıra: önce `emekli.apk`, **sonra** `surum.json` yüklenir (telefon yeni sürümü görünce APK hazır olsun). Yeni sürümde ikisi de üzerine yazılır.
 
-## 14. Sürüm notu
+## 14. Darbe adayları (v1.3)
+
+Telefonun sensörlerle yakaladığı **darbe adaylarının özeti ve GPS izi**. Bu bir kaza tespiti değildir; eşikler doğrulanmamıştır, arayüzlerde "kaza" yerine "olası darbe / darbe adayı" denir. Ham ivme, jiroskop ve basınç dalga şekli **gönderilmez** (telefonda kalır).
+
+`kayitlar.php`, telefonun `logs` kuyruğu ve log tipleri **değişmez**. Darbe gönderimi ayrı kuyruktur; hatası log gönderimini etkilememelidir. Sunucu tablosu `emekli_darbe`, migrasyon `db/2026-11-28-darbe.sql` (phpMyAdmin'de bir kez elle çalıştırılır).
+
+### 14.1 `POST /api/emekli/darbeler.php`
+
+`X-Api-Key` gerekir. `Content-Type: application/json`. **İstek başına tek olay**; gövde en çok **128 KB** (131072 bayt).
+
+```json
+{"id":"7d0c2a51-9a34-4a9b-8f3d-1c2b3a4d5e6f","cihazAdi":"EmektarNote9","uygulama":"1.1.1",
+ "zaman":"2026-11-28T14:03:07+03:00","elapsedRealtime":85200000,"gonderimElapsedRealtime":85390000,"gonderimZamani":"2026-11-28T14:06:17+03:00",
+ "tepeFarkMs":0,"asama":"TAMAM","etiket":"BELIRLENEMEDI","tetikleme":1,"tepeG":3.2,"sureMs":45,"deltaVKmh":4.8,"tekOrnek":false,"doymus":false,
+ "serbestDususMs":0,"enYuksekAcisalHizDps":120.5,"yonDegisimiDerece":8.0,"basincDegisimiHpa":null,
+ "hizOnceKmh":42.0,"hiz10Kmh":40.5,"hiz60Kmh":38.0,"hiz120Kmh":null,"belirginHizKaybi":false,
+ "sensor":"ivme 8g, 200 Hz; jiroskop 200 Hz","gercekDurum":null,"not":null,
+ "gps":[{"tMs":-1000,"enlem":41.0082,"boylam":28.9784,"hizKmh":42.0,"yon":181.0,"dogruluk":4,"uydu":14,"reddedildi":false}]}
+```
+
+**Zorunlu alanlar**
+
+| Alan | Tip | Kural |
+|---|---|---|
+| `id` | string UUID | `8-4-4-4-12`. Aynı olayda hep aynı; sunucu küçük harfe çevirir. |
+| `cihazAdi` | string | `kayitlar.php` ile aynı kural. |
+| `zaman` | ISO 8601 + dilim | İlk tetikleme anı (telefonun duvar saati). Kesir kabul edilir, atılır. |
+| `asama` | `OZET` \| `DALGA` \| `TAMAM` | `OZET`/`DALGA` = yarım. |
+| `etiket` | `OLASI_DARBE` \| `TELEFON_DUSMESI_SUPHESI` \| `BELIRLENEMEDI` | |
+| `tetikleme` | tamsayı | 1…100000 |
+| `tepeG` | sayı | 0…1000 |
+| `gps` | dizi | 0…**400** eleman (§14.2). GPS yoksa `[]`. |
+
+**İsteğe bağlı alanlar** (`null` ya da hiç gönderilmemesi serbest)
+
+| Alan | Tip / aralık |
+|---|---|
+| `uygulama` | metin; 20 karakterden fazlası kesilir |
+| `sureMs`, `serbestDususMs` | sayı, 0…600000 |
+| `deltaVKmh` | sayı, 0…1000 |
+| `enYuksekAcisalHizDps` | sayı, 0…100000 |
+| `yonDegisimiDerece` | sayı, -100000…100000 |
+| `basincDegisimiHpa` | sayı, -1200…1200 |
+| `hizOnceKmh`, `hiz10Kmh`, `hiz60Kmh`, `hiz120Kmh` | sayı, 0…400 |
+| `tekOrnek`, `doymus`, `belirginHizKaybi` | bool (0/1 değil) |
+| `sensor` | metin; 500 karakterden fazlası **kesilir** (hata değil) |
+| `gercekDurum` | `KASIS_CUKUR` \| `SERT_FREN` \| `KAPI` \| `TELEFON` \| `CARPISMA` \| `BILINMIYOR` |
+| `not` | metin; 500 karakterden (Unicode kod noktası) fazlası **kesilir**. Telefon da 500'de sınırlamalı. |
+| `tepeFarkMs` | tamsayı, 0…3600000. En yüksek tepenin `zaman`'dan kaç ms sonra olduğu. `gps[].tMs` tepeye göre olduğundan birleşik olaylarda gerekir; yoksa 0 sayılır. |
+| `elapsedRealtime` | tamsayı ms ≥ 0. **İlk tetikleme anındaki** `SystemClock.elapsedRealtime()`; saklanmalı. |
+| `gonderimElapsedRealtime` | tamsayı ms ≥ 0. Her gönderim denemesinde o an okunur. |
+| `gonderimZamani` | ISO 8601 + dilim; gönderim anındaki duvar saati. |
+
+Sayılar sonlu olmalı (`NaN`/`Infinity` JSON'da geçersizdir; telefon `null` göndermeli). Bilinmeyen ek alanlar yok sayılır ve saklanmaz.
+
+**Saat düzeltmesi:** §7 ile aynı kural (`ELAPSED` = `elapsedRealtime` + `gonderimElapsedRealtime`; olmazsa `CIHAZ` = `gonderimZamani`; olmazsa `YOK`). Fark: sonuç olay **ilk kez kaydedilirken** hesaplanır ve sonraki güncellemelerde **değişmez** (not düzeltmesi haftalar sonra, telefon yeniden başladıktan sonra gelebilir). İlk kayıtta hesaplanamadıysa (`YOK`) da sonradan hesaplanmaz. Telefon yeniden başladıysa ve bunu biliyorsa `elapsedRealtime` göndermesin.
+
+### 14.2 `gps` elemanı
+
+| Alan | Zorunlu | Kural |
+|---|---|---|
+| `tMs` | evet | tamsayı, -3600000…3600000; **en yüksek tepeye** göre ms |
+| `enlem`, `boylam` | evet | -90…90, -180…180 |
+| `hizKmh` | hayır | 0…400 |
+| `yon` | hayır | 0 ≤ yon ≤ 360 |
+| `dogruluk` | hayır | 0…1000000 (m) |
+| `uydu` | hayır | tamsayı 0…200 |
+| `reddedildi` | hayır | bool, varsayılan `false` (kalite süzgecinin reddettiği fix) |
+
+Normal aralık tepenin -30 … +120 sn'si, yaklaşık 1 Hz. 400'den fazla nokta varsa telefon seyreltir (tepe çevresini koruyarak).
+
+### 14.3 Güncelleme kuralı
+
+- `id` yoksa yeni satır açılır; varsa **aynı satır güncellenir** (yeni satır açılmaz).
+- Güncelleme **tam değiştirmedir**: her istek olayın o anki bütün halini taşımalı. Gönderilmeyen isteğe bağlı alan `null` olur (böylece `gercekDurum` ve `not` temizlenebilir). İstisna: saat düzeltmesi (yukarıda).
+- Aşama sırası `OZET` < `DALGA` < `TAMAM`. Gelen aşama kayıtlı olandan **geriyse** hiçbir şey değişmez ve yine 200 döner (`"sonuc":"yoksayildi"`; geciken eski deneme tamamlanmış kaydı bozmasın). Aynı ya da ileri aşama günceller.
+- Aynı aşamadaki isteklerde **son gelen** geçerlidir; telefon bir olay için aynı anda tek istek göndermeli.
+- Sunucu, telefon eski olayları silse de (50 olay sınırı) kayıtları tutar. Telefondan silme bildirimi yoktur.
+- `gercekDurum` ve `not` bu sürümde yalnız telefondan düzenlenir; panel salt okunurdur.
+
+### 14.4 Yanıtlar
+
+**200**: olay sunucuda kalıcıdır.
+
+```json
+{"ok":true,"sonuc":"eklendi","sunucuZamani":"2026-11-28T11:06:18Z"}
+```
+
+`sonuc`: `eklendi` \| `guncellendi` \| `yoksayildi`. Üçü de başarıdır.
+
+| HTTP | `hata.kod` | Telefon ne yapmalı |
+|---|---|---|
+| 400 | `bos_govde`, `gecersiz_json` | Uygulama hatası; olayı tut, aynı içeriği döngüye sokma |
+| 401 | `yetkisiz` | Olayı tut; anahtar düzelene dek dur |
+| 405 | `yontem_desteklenmiyor` | Uygulama hatası |
+| 413 | `govde_cok_buyuk` | GPS izini seyreltip yeniden dene |
+| 415 | `icerik_tipi_desteklenmiyor` | Uygulama hatası |
+| 422 | `gecersiz_darbe` (+ `hatalar:[{alan,neden}]`) | Hiçbir şey yazılmadı. Olayı **silme**; içerik ya da uygulama sürümü değişene dek yeniden deneme. Sıradaki olaylar etkilenmesin |
+| 404 | — | Uç henüz yayında değil; sonra dene |
+| 503 | `tablo_yok`, `veritabani_hatasi`, `sunucu_yapilandirmasi_eksik` | Olayı tut; backoff ile dene (`tablo_yok` = migrasyon çalıştırılmamış) |
+| 500 | `sunucu_hatasi` | Olayı tut; backoff ile dene (güvenli) |
+| 3xx / ağ hatası | — | Başarı sayma; yeniden dene (tekrar gönderim güvenli) |
+
+### 14.5 Deneme ve yayın sırası
+
+1. Sunucu + panel yayınlanır, SQL elle bir kez çalıştırılır.
+2. Uç `curl` ile `cihazAdi` = **`TEST-darbe`** kullanılarak denenir (panelden temizlenebilir: Veritabanı Yönetimi → Temizlik → Darbe adayları → "Deneme kayıtları").
+3. Ancak bundan sonra Android gönderimi içeren sürüm yayınlanır.
+
+```bash
+curl -s -X POST https://marmaraofisetiket.net/api/emekli/darbeler.php \
+  -H "X-Api-Key: $ANAHTAR" -H "Content-Type: application/json" \
+  -d '{"id":"00000000-0000-4000-8000-000000000001","cihazAdi":"TEST-darbe","zaman":"2026-11-28T12:00:00+03:00","asama":"TAMAM","etiket":"BELIRLENEMEDI","tetikleme":1,"tepeG":2.6,"gps":[]}'
+```
+
+İlk çalıştırmada `"sonuc":"eklendi"`, ikinci çalıştırmada `"sonuc":"guncellendi"` beklenir.
+
+## 15. Sürüm notu
 
 Bu sözleşme v1'dir. Geriye dönük uyumsuz değişiklikte yeni yol (`/api/emekli/v2/`) açılır; mevcut telefon uygulaması bozulmaz.
