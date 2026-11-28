@@ -376,7 +376,8 @@ Normal aralık tepenin -30 … +120 sn'si, yaklaşık 1 Hz. 400'den fazla nokta 
 - Aşama sırası `OZET` < `DALGA` < `TAMAM`. Gelen aşama kayıtlı olandan **geriyse** hiçbir şey değişmez ve yine 200 döner (`"sonuc":"yoksayildi"`; geciken eski deneme tamamlanmış kaydı bozmasın). Aynı ya da ileri aşama günceller.
 - Aynı aşamadaki isteklerde **son gelen** geçerlidir; telefon bir olay için aynı anda tek istek göndermeli.
 - Sunucu, telefon eski olayları silse de (50 olay sınırı) kayıtları tutar. Telefondan silme bildirimi yoktur.
-- `gercekDurum` ve `not` bu sürümde yalnız telefondan düzenlenir; panel salt okunurdur.
+- `gercekDurum` ve `not` bu sürümde yalnız telefondan düzenlenir; panel olay içeriğini değiştiremez.
+- Panelden tek bir olay **silinebilir** (ayrıca Veritabanı Yönetimi’nden toplu temizlik). Sunucu silinen `id`’yi hatırlamaz: telefon aynı olayı sonradan yeniden gönderirse **yeni kayıt olarak eklenir** (`"sonuc":"eklendi"`; saat düzeltmesi o gönderime göre yeniden hesaplanır). Telefon tarafında değişiklik gerekmez.
 
 ### 14.4 Yanıtlar
 

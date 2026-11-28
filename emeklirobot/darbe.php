@@ -1,5 +1,5 @@
 <?php
-// Darbe adayları (panel, salt okunur): liste ve tek olayın GPS izi. Yalnızca oturum. PHP 7.0+ uyumlu.
+// Darbe adayları (panel): liste, tek olayın GPS izi (GET) ve tek kaydı silme (POST + CSRF). Yalnızca oturum. PHP 7.0+ uyumlu.
 require __DIR__ . '/_ortak.php';
 oturum_baslat();
 header('Content-Type: application/json; charset=utf-8');
@@ -7,8 +7,37 @@ header('Content-Type: application/json; charset=utf-8');
 function cikis($http, $veri) { http_response_code($http); echo json_encode($veri, JSON_UNESCAPED_UNICODE); exit; }
 
 if (!girisli()) { cikis(401, ['ok' => false, 'hata' => 'oturum']); }
+$csrf = (string)($_SESSION['csrf'] ?? '');
 session_write_close();
-if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'GET') { header('Allow: GET'); cikis(405, ['ok' => false, 'hata' => 'yontem']); }
+$yontem = $_SERVER['REQUEST_METHOD'] ?? '';
+if ($yontem !== 'GET' && $yontem !== 'POST') { header('Allow: GET, POST'); cikis(405, ['ok' => false, 'hata' => 'yontem']); }
+
+// Tek kaydı kalıcı siler (liste satırındaki ×). Toplu silme yalnız Veritabanı Yönetimi'ndedir.
+if ($yontem === 'POST') {
+    if ($csrf === '' || !hash_equals($csrf, (string)($_SERVER['HTTP_X_CSRF_TOKEN'] ?? ''))) { cikis(403, ['ok' => false, 'hata' => 'csrf']); }
+    $g = json_decode((string)file_get_contents('php://input', false, null, 0, 1024), true);
+    $no = is_array($g) ? ($g['no'] ?? null) : null;
+    if (!is_array($g) || ($g['islem'] ?? '') !== 'sil' || !is_int($no) || $no < 1) { cikis(400, ['ok' => false, 'hata' => 'girdi']); }
+    try {
+        $pdo = db();
+        $st = $pdo->prepare('SELECT uuid, cihaz_adi, zaman FROM emekli_darbe WHERE id = ?');
+        $st->execute([$no]);
+        $r = $st->fetch(PDO::FETCH_ASSOC);
+        if (!$r) { cikis(404, ['ok' => false, 'hata' => 'yok']); }
+        $pdo->prepare('DELETE FROM emekli_darbe WHERE id = ? LIMIT 1')->execute([$no]);
+        $hedef = 'emekli_darbe / tek kayıt (' . $r['cihaz_adi'] . ', ' . $r['zaman'] . ' UTC, ' . $r['uuid'] . ')';
+        $ip = substr((string)($_SERVER['REMOTE_ADDR'] ?? ''), 0, 45);
+        error_log("emeklirobot db: sil $hedef ip=$ip");
+        try {
+            $pdo->prepare('INSERT INTO emekli_islem_log (zaman, islem, hedef, adet, ip) VALUES (?, ?, ?, ?, ?)')->execute([gmdate('Y-m-d H:i:s'), 'sil', $hedef, 1, $ip]);
+        } catch (Exception $e) { error_log('emeklirobot darbe: islem log yazılamadı: ' . $e->getMessage()); }
+        cikis(200, ['ok' => true]);
+    } catch (Exception $e) {
+        if ($e instanceof PDOException && (string)$e->getCode() === '42S02') { cikis(503, ['ok' => false, 'hata' => 'tablo_yok']); }
+        error_log('emeklirobot darbe sil: ' . $e->getMessage());
+        cikis(500, ['ok' => false, 'hata' => 'sunucu']);
+    }
+}
 
 const SINIR = 500;
 function epoch($dt) { return $dt === null ? null : strtotime($dt . ' UTC'); }

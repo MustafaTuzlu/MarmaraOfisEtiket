@@ -1,4 +1,4 @@
-/* "Darbe adayları": telefon sensörlerinin işaretlediği olaylar (özet + GPS izi). Salt okunur.
+/* "Darbe adayları": telefon sensörlerinin işaretlediği olaylar (özet + GPS izi). İçerik değiştirilemez; kayıt tek tek silinebilir.
    Kaza tespiti değildir; eşikler doğrulanmamıştır. Gerçek durum ve not yalnız telefondan düzenlenir. */
 (function () {
   'use strict';
@@ -53,7 +53,7 @@
   function havuzBilgi() {
     var S = suzulmus(), e = S.filter(function (o) { return elenme(o).length; }).length;
     return '<p class="az-uyari">' + (hepsiAcik() ? 'Tüm kayıtlar gösteriliyor: ' + (S.length - e) + ' havuzda, ' + e + ' elenmiş.' : 'Havuz görünümü: ' + (S.length - e) + ' kayıt gösteriliyor, ' + e + ' kayıt gizli.') +
-      ' Bu <b>doğrulanmış bir süzgeç değildir</b> (sayılar bir günlük veriye bakılarak seçildi); gerçek bir darbe de elenebilir. Hiçbir kayıt silinmez. Havuza giren: tek örnek olmayan olaylardan, darbe öncesi hızı en az ' +
+      ' Bu <b>doğrulanmış bir süzgeç değildir</b> (sayılar bir günlük veriye bakılarak seçildi); gerçek bir darbe de elenebilir. Süzgeç hiçbir kaydı silmez. Havuza giren: tek örnek olmayan olaylardan, darbe öncesi hızı en az ' +
       HAVUZ.HIZ_KMH + ' km/sa olanlar ile araç dururken olup şarj takma/çıkarmaya ' + HAVUZ.SARJ_SN + ' sn’den uzak olanlar. Geç ulaşan loglar sonucu değiştirebilir.</p>';
   }
 
@@ -66,7 +66,7 @@
       '<div class="rp-tablo"><table><thead><tr><th></th><th>Zaman</th><th>Cihaz</th><th>Etiket</th><th>Tepe</th><th>Süre</th><th>Δv (yaklaşık)</th><th>Hız: önce → 10 sn</th><th>Gerçek durum</th></tr></thead><tbody>' +
       L.map(function (o) {
         var v = o.veri, n = elenme(o);
-        return '<tr><td><button type="button" class="az-git" data-is="ac" data-no="' + o.no + '">İncele</button></td><td>' + tarih(o.zaman) + '</td><td>' + esc(o.cihaz) + '</td><td>' + etiketCip(o) + (n.length ? '<small class="dr-neden">Elendi: ' + esc(n.join('; ')) + '</small>' : '') + '</td><td><b>' + deger(o.tepeG, 'G', 1) + '</b>' + (v.doymus ? ' ' + cip('doymuş', 'uy') : '') + '</td>' +
+        return '<tr><td><button type="button" class="dr-sil" data-is="sil" data-no="' + o.no + '" title="Bu kaydı sil" aria-label="' + esc(tarih(o.zaman) + ' ' + o.cihaz) + ' kaydını sil">×</button><button type="button" class="az-git" data-is="ac" data-no="' + o.no + '">İncele</button></td><td>' + tarih(o.zaman) + '</td><td>' + esc(o.cihaz) + '</td><td>' + etiketCip(o) + (n.length ? '<small class="dr-neden">Elendi: ' + esc(n.join('; ')) + '</small>' : '') + '</td><td><b>' + deger(o.tepeG, 'G', 1) + '</b>' + (v.doymus ? ' ' + cip('doymuş', 'uy') : '') + '</td>' +
           '<td>' + deger(v.sureMs, 'ms') + '</td><td>' + deger(v.deltaVKmh, 'km/sa', 1) + '</td><td>' + deger(v.hizOnceKmh) + ' → ' + deger(v.hiz10Kmh, 'km/sa') + '</td><td>' + esc(durumAdi(o)) + '</td></tr>';
       }).join('') + '</tbody></table></div>';
   }
@@ -127,6 +127,26 @@
       $('drmodal').querySelector('.modal-kutu').scrollTop = 0;
     }).catch(function (e) { if (x === detayNo) { acik = null; listeCiz(); mesaj(hataYaz(e)); } });
   }
+  function sil(n, dugme) {
+    var o = olaylar.filter(function (x) { return x.no === n; })[0];
+    if (!o || !confirm(tarih(o.zaman) + ' · ' + o.cihaz + ' darbe adayı kalıcı olarak silinsin mi?\n\nGeri alınamaz. Telefonda bu olayın notu ya da gerçek durumu sonradan değiştirilirse kayıt yeniden gönderilip listeye dönebilir.')) return;
+    var x = no;
+    function cikar() {
+      var once = olaylar.length;
+      olaylar = olaylar.filter(function (y) { return y.no !== n; });
+      toplam -= once - olaylar.length;
+      listeCiz();
+    }
+    dugme.disabled = true; mesaj('Siliniyor…');
+    O.istek('/emeklirobot/darbe.php', { islem: 'sil', no: n }).then(function () {
+      if (x !== no) return;
+      cikar(); mesaj('Kayıt silindi.');
+    }).catch(function (e) {
+      if (x !== no) return;
+      if (e && e.kod === 'yok') { cikar(); mesaj('Kayıt zaten silinmiş.'); return; }
+      dugme.disabled = false; mesaj('Kayıt silinemedi. Sayfayı yenileyip tekrar deneyin.');
+    });
+  }
   function listeyeDon() { detayNo++; acik = null; hedef = null; mesaj(''); listeCiz(); }
 
   function yukle() {
@@ -164,7 +184,8 @@
     $('dr-icerik').addEventListener('click', function (e) {
       var b = e.target.closest('button[data-is]'); if (!b) return;
       var is = b.getAttribute('data-is');
-      if (is === 'ac') detayAc(Number(b.getAttribute('data-no')));
+      if (is === 'sil') sil(Number(b.getAttribute('data-no')), b);
+      else if (is === 'ac') detayAc(Number(b.getAttribute('data-no')));
       else if (is === 'liste') listeyeDon();
       else if (is === 'harita' && hedef) O.haritadaGoster(hedef);
     });
