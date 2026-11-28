@@ -216,6 +216,7 @@
     <div class="rp-suzgec">
       <label>Cihaz <select id="dr-cihaz"><option value="">Tüm cihazlar</option></select></label>
       <label>Etiket <select id="dr-etiket"><option value="">Hepsi</option><option value="OLASI_DARBE">Olası darbe</option><option value="TELEFON_DUSMESI_SUPHESI">Telefon düşmesi şüphesi</option><option value="BELIRLENEMEDI">Belirlenemedi</option></select></label>
+      <label class="dr-hepsi"><input type="checkbox" id="dr-hepsi"> Elenenleri göster</label>
       <span class="rp-cikti"><button type="button" id="dr-yenile" class="excel">Yenile</button><button type="button" id="dr-excel" class="excel">Excel</button></span>
     </div>
     <p id="dr-mesaj" class="sayac" role="status"></p>

@@ -7,6 +7,28 @@
   var ETIKET = { OLASI_DARBE: ['Olası darbe', 'kr'], TELEFON_DUSMESI_SUPHESI: ['Telefon düşmesi şüphesi', 'uy'], BELIRLENEMEDI: ['Belirlenemedi', ''] };
   var DURUM = { KASIS_CUKUR: 'Kasis / çukur', SERT_FREN: 'Sert fren', KAPI: 'Kapı çarpması', TELEFON: 'Telefona dokunma / düşme', CARPISMA: 'Çarpışma', BILINMIYOR: 'Bilinmiyor' };
   var KAYNAK = { ELAPSED: 'sunucu saatine göre düzeltildi', CIHAZ: 'telefon saat farkıyla düzeltildi', YOK: 'telefon saati (düzeltilemedi)' };
+  // Varsayılan görünüm ("havuz"): doğrulanmış bir süzgeç DEĞİL; sayılar bir günlük veriye bakılarak seçildi. Kayıt silinmez.
+  var HAVUZ = {
+    HIZ_KMH: 20,    // seyirde: darbe öncesi GPS hızı en az bu kadar
+    SARJ_SN: 60,    // park/duruşta: şarj takma/çıkarma loguna bu süreden yakınsa elenir (sınır dahil)
+    LOG_SN: 1200    // araç durumu için son log en çok bu kadar eski olabilir (darbe.php ±1 saat bakar)
+  };
+  // Dönüş: elenme nedenleri; boş dizi = havuzda. Kural: tek örnek değil VE (seyirde YA DA duran araçta şarj değişiminden uzak)
+  function elenme(o) {
+    var c = o.cevre || {}, hiz = o.veri.hizOnceKmh, neden = [];
+    var hizVar = hiz !== null && hiz !== undefined, seyir = hizVar && hiz >= HAVUZ.HIZ_KMH;
+    var bilinen = c.sonLogSn !== null && c.sonLogSn !== undefined && c.sonLogSn <= HAVUZ.LOG_SN && c.sonHareketli !== null;
+    var yakinSarj = c.sarjFarkSn !== null && c.sarjFarkSn !== undefined && Math.abs(c.sarjFarkSn) <= HAVUZ.SARJ_SN;
+    var park = bilinen && c.sonHareketli === false && !yakinSarj;
+    if (o.veri.tekOrnek === true) neden.push('tek örnek');
+    if (!seyir && !park) {
+      neden.push(hizVar ? 'hız ' + HAVUZ.HIZ_KMH + ' km/sa altı' : 'hız bilinmiyor');
+      if (!bilinen) neden.push('araç durumu bilinmiyor');
+      else if (c.sonHareketli) neden.push('araç hareketli');
+      if (yakinSarj) neden.push((c.sarjTip === 'SARJ_BASLADI' ? 'şarj başlamasına' : 'şarj kesilmesine') + ' yakın (' + Math.abs(c.sarjFarkSn) + ' sn ' + (c.sarjFarkSn > 0 ? 'önce' : 'sonra') + ')');
+    }
+    return neden;
+  }
   var olaylar = [], toplam = 0, acik = null, no = 0, detayNo = 0, hedef = null;
 
   var tamBicim = new Intl.DateTimeFormat('tr-TR', { timeZone: 'Europe/Istanbul', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
@@ -26,17 +48,25 @@
     var c = $('dr-cihaz').value, e = $('dr-etiket').value;
     return olaylar.filter(function (o) { return (!c || o.cihaz === c) && (!e || o.etiket === e); });
   }
+  function hepsiAcik() { return $('dr-hepsi').checked; }
+  function gorunen() { return suzulmus().filter(function (o) { return hepsiAcik() || !elenme(o).length; }); }
+  function havuzBilgi() {
+    var S = suzulmus(), e = S.filter(function (o) { return elenme(o).length; }).length;
+    return '<p class="az-uyari">' + (hepsiAcik() ? 'Tüm kayıtlar gösteriliyor: ' + (S.length - e) + ' havuzda, ' + e + ' elenmiş.' : 'Havuz görünümü: ' + (S.length - e) + ' kayıt gösteriliyor, ' + e + ' kayıt gizli.') +
+      ' Bu <b>doğrulanmış bir süzgeç değildir</b> (sayılar bir günlük veriye bakılarak seçildi); gerçek bir darbe de elenebilir. Hiçbir kayıt silinmez. Havuza giren: tek örnek olmayan olaylardan, darbe öncesi hızı en az ' +
+      HAVUZ.HIZ_KMH + ' km/sa olanlar ile araç dururken olup şarj takma/çıkarmaya ' + HAVUZ.SARJ_SN + ' sn’den uzak olanlar. Geç ulaşan loglar sonucu değiştirebilir.</p>';
+  }
 
   function listeCiz() {
     if (acik) return;
-    var L = suzulmus();
+    var L = gorunen(), S = suzulmus();
     $('dr-excel').disabled = !L.length;
-    if (!L.length) { $('dr-icerik').innerHTML = '<p class="not">' + (olaylar.length ? 'Bu süzgece uyan olay yok.' : 'Henüz sunucuya ulaşan darbe adayı yok.') + '</p>'; return; }
-    $('dr-icerik').innerHTML = (toplam > olaylar.length ? '<p class="not">Toplam ' + sayi(toplam) + ' olaydan en yeni ' + sayi(olaylar.length) + ' tanesi gösteriliyor.</p>' : '') +
+    if (!L.length) { $('dr-icerik').innerHTML = (S.length ? havuzBilgi() : '') + '<p class="not">' + (S.length ? 'Havuzda kayıt yok. Elenen kayıtlar için “Elenenleri göster”i işaretleyin.' : (olaylar.length ? 'Bu süzgece uyan olay yok.' : 'Henüz sunucuya ulaşan darbe adayı yok.')) + '</p>'; return; }
+    $('dr-icerik').innerHTML = havuzBilgi() + (toplam > olaylar.length ? '<p class="not">Toplam ' + sayi(toplam) + ' olaydan en yeni ' + sayi(olaylar.length) + ' tanesi gösteriliyor.</p>' : '') +
       '<div class="rp-tablo"><table><thead><tr><th></th><th>Zaman</th><th>Cihaz</th><th>Etiket</th><th>Tepe</th><th>Süre</th><th>Δv (yaklaşık)</th><th>Hız: önce → 10 sn</th><th>Gerçek durum</th></tr></thead><tbody>' +
       L.map(function (o) {
-        var v = o.veri;
-        return '<tr><td><button type="button" class="az-git" data-is="ac" data-no="' + o.no + '">İncele</button></td><td>' + tarih(o.zaman) + '</td><td>' + esc(o.cihaz) + '</td><td>' + etiketCip(o) + '</td><td><b>' + deger(o.tepeG, 'G', 1) + '</b>' + (v.doymus ? ' ' + cip('doymuş', 'uy') : '') + '</td>' +
+        var v = o.veri, n = elenme(o);
+        return '<tr><td><button type="button" class="az-git" data-is="ac" data-no="' + o.no + '">İncele</button></td><td>' + tarih(o.zaman) + '</td><td>' + esc(o.cihaz) + '</td><td>' + etiketCip(o) + (n.length ? '<small class="dr-neden">Elendi: ' + esc(n.join('; ')) + '</small>' : '') + '</td><td><b>' + deger(o.tepeG, 'G', 1) + '</b>' + (v.doymus ? ' ' + cip('doymuş', 'uy') : '') + '</td>' +
           '<td>' + deger(v.sureMs, 'ms') + '</td><td>' + deger(v.deltaVKmh, 'km/sa', 1) + '</td><td>' + deger(v.hizOnceKmh) + ' → ' + deger(v.hiz10Kmh, 'km/sa') + '</td><td>' + esc(durumAdi(o)) + '</td></tr>';
       }).join('') + '</tbody></table></div>';
   }
@@ -68,6 +98,7 @@
     $('dr-icerik').innerHTML = '<p class="dr-ust"><button type="button" class="az-git" data-is="liste">← Listeye dön</button> ' +
       (hedef ? '<button type="button" class="analiz-btn" data-is="harita">Haritada göster</button>' : '<span class="not">Bu olayda GPS noktası yok.</span>') + '</p>' +
       '<h3 class="dr-baslik">' + tarih(o.zaman) + ' · ' + esc(o.cihaz) + ' ' + etiketCip(o) + '</h3>' +
+      '<p class="not">' + (elenme(o).length ? 'Havuz süzgecinde elendi: ' + esc(elenme(o).join('; ')) + '.' : 'Havuz süzgecinde: havuzda.') + ' (Doğrulanmış bir süzgeç değildir.)</p>' +
       (o.asama === 'TAMAM' ? '' : '<p class="az-uyari">Olay kaydı yarım (aşama: ' + esc(o.asama) + '). Sonraki değerler eksik olabilir.</p>') +
       '<div class="az-bolum"><h4>Telefonda işaretlenen</h4>' + tablo([['Gerçek durum', esc(durumAdi(o))], ['Not', v.not ? esc(v.not) : '—']]) + '</div>' +
       '<div class="az-bolum"><h4>Sensör özeti</h4>' + tablo([
@@ -112,21 +143,22 @@
   }
 
   function excel() {
-    var L = suzulmus(), gun = O.istGun(Date.now());
+    var L = gorunen(), gun = O.istGun(Date.now());
     function zaman(sn) { return sn === null ? null : new Date(sn * 1000); }
     function b(v) { return v === null || v === undefined ? null : (v ? 'Evet' : 'Hayır'); }
     function s(v) { return v === undefined ? null : v; }
-    Rapor.ic.indir(['Zaman', 'Cihaz', 'Etiket', 'Aşama', 'Tepe (G)', 'Süre (ms)', 'Δv (km/sa)', 'Tetikleme', 'Tek örnek', 'Doymuş', 'Serbest düşüş (ms)', 'Açısal hız (°/sn)', 'Hız önce', 'Hız 10 sn', 'Hız 60 sn', 'Hız 120 sn', 'Belirgin hız kaybı', 'Gerçek durum', 'Not', 'GPS noktası', 'Uygulama'],
+    Rapor.ic.indir(['Zaman', 'Cihaz', 'Etiket', 'Aşama', 'Tepe (G)', 'Süre (ms)', 'Δv (km/sa)', 'Tetikleme', 'Tek örnek', 'Doymuş', 'Serbest düşüş (ms)', 'Açısal hız (°/sn)', 'Hız önce', 'Hız 10 sn', 'Hız 60 sn', 'Hız 120 sn', 'Belirgin hız kaybı', 'Gerçek durum', 'Not', 'GPS noktası', 'Uygulama', 'Havuzda', 'Elenme nedeni'],
       L.map(function (o) {
         var v = o.veri;
-        return [zaman(o.zaman), o.cihaz, (ETIKET[o.etiket] || [o.etiket])[0], o.asama, o.tepeG, s(v.sureMs), s(v.deltaVKmh), s(v.tetikleme), b(v.tekOrnek), b(v.doymus), s(v.serbestDususMs), s(v.enYuksekAcisalHizDps), s(v.hizOnceKmh), s(v.hiz10Kmh), s(v.hiz60Kmh), s(v.hiz120Kmh), b(v.belirginHizKaybi), o.gercekDurum ? durumAdi(o) : null, s(v.not), o.gpsAdet, s(v.uygulama)];
-      }), [20, 16, 24, 8, 10, 10, 11, 10, 10, 9, 14, 14, 9, 9, 9, 10, 14, 22, 40, 10, 10], 'Darbe-adaylari', { bas: gun, bit: gun });
+        return [zaman(o.zaman), o.cihaz, (ETIKET[o.etiket] || [o.etiket])[0], o.asama, o.tepeG, s(v.sureMs), s(v.deltaVKmh), s(v.tetikleme), b(v.tekOrnek), b(v.doymus), s(v.serbestDususMs), s(v.enYuksekAcisalHizDps), s(v.hizOnceKmh), s(v.hiz10Kmh), s(v.hiz60Kmh), s(v.hiz120Kmh), b(v.belirginHizKaybi), o.gercekDurum ? durumAdi(o) : null, s(v.not), o.gpsAdet, s(v.uygulama), b(!elenme(o).length), elenme(o).join('; ') || null];
+      }), [20, 16, 24, 8, 10, 10, 11, 10, 10, 9, 14, 14, 9, 9, 9, 10, 14, 22, 40, 10, 10, 9, 50], 'Darbe-adaylari', { bas: gun, bit: gun });
   }
 
   function baslat() {
     O.pencere('drmodal', 'drkapat', function () { no++; detayNo++; });
     $('dr-cihaz').addEventListener('change', function () { listeyeDon(); });
     $('dr-etiket').addEventListener('change', function () { listeyeDon(); });
+    $('dr-hepsi').addEventListener('change', function () { listeyeDon(); });
     $('dr-yenile').addEventListener('click', yukle);
     $('dr-excel').addEventListener('click', excel);
     $('dr-icerik').addEventListener('click', function (e) {
